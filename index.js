@@ -5,10 +5,10 @@ const axios = require('axios');
 const app = express();
 app.use(bodyParser.json());
 
-// Meta Developer Dashboard ke liye Verification Webhook
+// Meta Developer Dashboard verification
 app.get('/webhook', (req, res) => {
-    const VERIFY_TOKEN = "shahid_creatives_secret_token_123"; // Aapka verify token
-    
+    const VERIFY_TOKEN = "shahid_creatives_secret_token_123";
+
     const mode = req.query['hub.mode'];
     const token = req.query['hub.verify_token'];
     const challenge = req.query['hub.challenge'];
@@ -23,9 +23,9 @@ app.get('/webhook', (req, res) => {
     }
 });
 
-// WhatsApp Messages Handle Karne Ke Liye Post Webhook
+// WhatsApp Messages Handle
 app.post('/webhook', async (req, res) => {
-    res.sendStatus(200); // Meta ko turant response bhejein
+    res.sendStatus(200); // Meta ko turant response bhejien
 
     const body = req.body;
 
@@ -40,26 +40,25 @@ app.post('/webhook', async (req, res) => {
                 const from = message.from; // Customer ka number
                 const msgType = message.type;
 
-                // Agar customer ne Text message bheja hai
                 if (msgType === 'text') {
                     const userText = message.text.body.trim().toLowerCase();
                     console.log(`Received message from ${from}: ${userText}`);
 
                     // Chatbot Logic
-                    let replyText = "Welcome to *Shahid Creatives*! 🙏 Aapke message ke liye shukriya. Hum jald hi aap se sampark karenge.";
+                    let replyText = "Welcome to *Shahid Creatives*! 🙏 Aapke message ke liye shukriya.";
 
                     if (userText === 'hi' || userText === 'hello') {
-                        replyText = "Hello! *Shahid Creatives* mein aapka swagat hai. ❤️\n\nAapko kis tarah ki service chahiye?\n1. Video Editing\n2. Graphic Design\n3. Price Inquiry\n\nKripya 1, 2 ya 3 likh kar reply karein.";
+                        replyText = "Hello! *Shahid Creatives* mein aapka swagat hai. ❤️\n\nAapko kis tarah ki service chahiye? Niche diye gaye number bhejien:\n\n1️⃣ *Video Editing*\n2️⃣ *Graphic Design*\n3️⃣ *Pricing Details*";
                     } else if (userText === '1') {
-                        replyText = "🎥 *Video Editing Services:*\nHum Cinematic Videos, Reels, aur YouTube content edit karte hain. Aapko kis type ki editing chahiye?";
+                        replyText = "🎬 *Video Editing Services:*\n\nHum Cinematic Videos, Reels, YouTube Videos aur Shorts edit karte hain. Aap apna raw data share kar sakte hain!";
                     } else if (userText === '2') {
-                        replyText = "🎨 *Graphic Design Services:*\nHum Thumbnails, Posters, aur Brand Logos design karte hain.";
+                        replyText = "🎨 *Graphic Design Services:*\n\nHum Thumbnails, Posters, Logos aur Social Media Graphics design karte hain.";
                     } else if (userText === '3') {
-                        replyText = "💰 *Pricing Details:*\nHamare charges service ke hisab se alag-alag hain. Hamari basic marketplace strategy ₹299 se shuru hoti hai. Aapko detailed quotation jald hi bhej di jayegi.";
+                        replyText = "💰 *Pricing Details:*\n\nHamare charges service ke hisab se hain. Aap apna project detail share kijiye, hum best rate batayenge!";
                     }
 
-                    // Meta API ke zariye reply bhejna
-                    const WHATSAPP_TOKEN = "const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
+                    // Render Dashboard ke Environment Variable se Token uthana (100% Secure)
+                    const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
                     const PHONE_NUMBER_ID = "1202984902891472";
 
                     await axios({

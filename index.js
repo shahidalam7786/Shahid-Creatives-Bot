@@ -59,8 +59,8 @@ app.post('/webhook', async (req, res) => {
                     }
 
                     // Meta API ke zariye reply bhejna
-                    const WHATSAPP_TOKEN = "YOUR_META_PERMANENT_ACCESS_TOKEN"; // Yeh hum baad mein daalenge
-                    const PHONE_NUMBER_ID = "YOUR_WHATSAPP_PHONE_NUMBER_ID";
+                    const WHATSAPP_TOKEN = "const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
+                    const PHONE_NUMBER_ID = "1202984902891472";
 
                     await axios({
                         method: "POST",

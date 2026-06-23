@@ -50,7 +50,8 @@ app.post('/webhook', async (req, res) => {
                         userSessions[from] = { 
                             step: 'welcome',
                             lang: (isInternationalNumber || isGlobalWebsiteTemplate) ? 'EN' : 'HINGLISH',
-                            clientName: "Valued Client" // Default fallback
+                            clientName: "Valued Client",
+                            projectScope: "Custom Project Development"
                         };
                     }
                     
@@ -71,21 +72,22 @@ app.post('/webhook', async (req, res) => {
                             const priceMatch = rawText.match(/Total Due \(incl\. GST\):\s*[\?₹\$]\s*([\d,]+)/i);
 
                             if (nameMatch) clientName = nameMatch[1].trim();
-                            if (scopeMatch) projectScope = "Website: " + scopeMatch[1].trim();
+                            if (scopeMatch) projectScope = scopeMatch[1].trim();
                             if (priceMatch) estimatedValue = priceMatch[1].replace(/,/g, '').trim();
                         } catch (parseError) {
                             console.error("Data extraction parsing failed:", parseError.message);
                         }
 
-                        // Save parsed name into session for dynamic payment links later
+                        // Session memory upgrade
                         userSessions[from].clientName = clientName;
+                        userSessions[from].projectScope = projectScope;
 
-                        // Sync to Custom Dashboard
+                        // Sync to Website Admin Dashboard API
                         try {
                             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
                                 client_name: clientName,
                                 whatsapp_number: from,
-                                project_scope: projectScope,
+                                project_scope: "Website: " + projectScope,
                                 value: estimatedValue
                             });
                         } catch (apiError) {
@@ -93,10 +95,10 @@ app.post('/webhook', async (req, res) => {
                         }
 
                         // Send Alert to Shahid Bhai's Personal Number
-                        const adminNotification = `🌟 *NEW ${userLang === 'EN' ? 'GLOBAL' : 'DOMESTIC'} LEAD ARRIVED!* 🌟\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n📝 *Plan:* ${projectScope}\n💰 *Value:* ${userLang === 'EN' ? '$' : '₹'}${estimatedValue}\n\n🤖 *Status:* Handled in ${userLang === 'EN' ? 'English' : 'Hinglish'} mode. Check Admin Panel!`;
+                        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n📝 *Plan:* ${projectScope}\n💰 *Value:* ${userLang === 'EN' ? '$' : '₹'}${estimatedValue}\n\n🤖 *Status:* Handled in ${userLang === 'EN' ? 'English' : 'Hinglish'} mode. Hooked to CRM!`;
                         await sendWhatsAppMessage("917529839762", adminNotification);
 
-                        // Dynamic Reply Based on Language Mode
+                        // Dynamic Reply
                         let clientReply = "";
                         if (userLang === 'EN') {
                             clientReply = `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved on our production server.\n\nShahid has received your project specifications and technical preferences.\n\n🚀 Would you like to confirm your deployment slot with a **Token Booking ($49)** or schedule a strategy kickoff call right away?\n\nPlease reply with the number of your choice:\n\n1️⃣ **Book Token (Confirm Slot)**\n2️⃣ **Discuss Requirements (Schedule Strategy Call)**`;
@@ -112,26 +114,27 @@ app.post('/webhook', async (req, res) => {
                     const currentStep = userSessions[from].step;
 
                     // =========================================================
-                    // 🚀 UPGRADED WORKFLOW: DYNAMIC GATEWAY GENERATION LINK
+                    // ⚙️ HANDLING ACTION AFTER WEBSITE REDIRECT
                     // =========================================================
                     if (currentStep === 'awaiting_website_action') {
                         if (userText === '1') {
                             userSessions[from].step = 'main_menu'; 
 
-                            // Generate Dynamic Parameters
-                            const uniqueProjectId = `SC-${Date.now().toString().slice(-6)}`; // Unique Short Project ID
-                            const encodedName = encodeURIComponent(userSessions[from].clientName || "Client");
+                            // Generate Dynamic Parameters according to your architecture layout
+                            const uniqueProjectId = `SC-${Date.now().toString().slice(-6)}`; 
+                            const encodedName = encodeURIComponent(userSessions[from].clientName);
+                            const encodedPlan = encodeURIComponent(userSessions[from].projectScope);
                             
                             if (userLang === 'EN') {
                                 const tokenAmountUSD = "49";
-                                const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountUSD}&name=${encodedName}&phone=${from}`;
+                                const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountUSD}&name=${encodedName}&phone=${from}&plan=${encodedPlan}`;
                                 
-                                replyText = `💳 *Excellent Choice!* I have generated your dynamic project invoice portal.\n\nClick the official checkout gateway link below to pay the **Token Booking fee ($49)** and instantly lock your deployment timeline:\n\n🔗 *Pay Securely Here:* ${dynamicPaymentLink}\n\n*Project Reference ID:* ${uniqueProjectId}\n\nOnce authorized, your infrastructure onboarding begins! 🚀`;
+                                replyText = `領 *Excellent Choice!* I have generated your dynamic project invoice portal.\n\nClick the official checkout gateway link below to pay the **Token Booking fee ($49)** via Razorpay and instantly lock your deployment timeline in Firestore:\n\n🔗 *Pay Securely Here:* ${dynamicPaymentLink}\n\n*Project Reference ID:* ${uniqueProjectId}\n\nOnce authorized, your infrastructure onboarding begins! 🚀`;
                             } else {
                                 const tokenAmountINR = "999";
-                                const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&name=${encodedName}&phone=${from}`;
+                                const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&name=${encodedName}&phone=${from}&plan=${encodedPlan}`;
                                 
-                                replyText = `💳 *Zabardast Choice!* Maine aapka dynamic client booking invoice link generate kar diya hai.\n\nNiche diye gaye official gateway par click karke apna **Token Booking (₹999)** secure karein aur development slot confirm karein:\n\n🔗 *Pay Securely Here:* ${dynamicPaymentLink}\n\n*Project Reference ID:* ${uniqueProjectId}\n\nPayment successfully trigger hote hi aapka system onboarding kickoff ho jayega! 🚀`;
+                                replyText = `💳 *Zabardast Choice!* Maine aapka dynamic client booking invoice link generate kar diya hai.\n\nNiche diye gaye official gateway par click karke apna **Token Booking (₹999)** secure karein. Yeh details auto-fill hokar Firestore Dashboard par 'Slot-Locked' save ho jayengi:\n\n🔗 *Pay Securely Here:* ${dynamicPaymentLink}\n\n*Project Reference ID:* ${uniqueProjectId}\n\nPayment successfully complete hote hi aapka system onboarding kickoff ho jayega! 🚀`;
                             }
                             return sendWhatsAppMessage(from, replyText);
                         } 
@@ -145,10 +148,10 @@ app.post('/webhook', async (req, res) => {
                     }
 
                     // =========================================================
-                    // 2. INBOUND CHAT LEAD CAPTURE FLOW (B2B FROM CHAT)
+                    // 2. 🌟 SELF LEAD CAPTURE FLOW (WHEN USER CHATS DIRECTLY WITH BOT)
                     // =========================================================
                     if (currentStep === 'collect_details') {
-                        userSessions[from].projectScope = rawText;
+                        userSessions[from].projectScope = rawText; // User types requirement
                         userSessions[from].step = 'ask_name_email';
                         
                         replyText = (userLang === 'EN') 
@@ -161,26 +164,40 @@ app.post('/webhook', async (req, res) => {
                         const contactDetails = rawText;
                         userSessions[from].step = 'completed';
 
-                        // Extract clean name for temporary usage
-                        userSessions[from].clientName = contactDetails.split(',')[0] || contactDetails;
+                        // Parsing clean name from incoming string
+                        const cleanName = contactDetails.split(',')[0] || contactDetails;
+                        userSessions[from].clientName = cleanName;
 
-                        if (userLang === 'EN') {
-                            replyText = `Thank you, your details have been received! 🤝\n\nI have successfully synchronized your requirements with our active delivery queue. Shahid is personally reviewing your project architecture.\n\nHere is your **Direct Booking Gateway Link** to explore plans and secure your slot:\n\n🔗 *Book/Pay Here:* https://shahidcreatives.com\n\n💡 You can choose custom add-ons (SEO, Cloud Hosting) and perform an instant **Token Booking ($49)** to secure your timeline! 🚀`;
-                        } else {
-                            replyText = `Thank you, details receive ho gayi hain! 🤝\n\nMaine aapka requirement dashboard par update kar diya hai. Shahid personally aapke requirements ko review kar rahe hain.\n\nHumne aapke liye ek **Direct Booking Gateway Link** activate kiya hai:\n\n🔗 *Book/Pay Here:* https://shahidcreatives.com\n\n💡 Aap website par ja kar **Token Booking (₹999)** se instant project entry karwa sakte hain! 🚀`;
-                        }
-                        
+                        // Sync to CRM Dashboard ledger
                         try {
                             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
-                                client_name: userSessions[from].clientName,
+                                client_name: cleanName,
                                 whatsapp_number: from,
-                                project_scope: userSessions[from].projectScope,
+                                project_scope: "ChatBot: " + userSessions[from].projectScope,
                                 value: (userLang === 'EN') ? "299" : "8713"
                             });
                         } catch (dbErr) { console.log("Dashboard sync failed"); }
 
-                        const adminNotification = `🌟 *NEW DIRECT CHAT LEAD!* 🌟\n\n📱 *Phone:* +${from}\n📝 *Scope:* ${userSessions[from].projectScope}\n👤 *Contact:* ${contactDetails}\n🌍 *Mode:* ${userLang}`;
+                        // Notify Shahid Bhai
+                        const adminNotification = `🌟 *NEW DIRECT CHAT LEAD CAPTURED!* 🌟\n\n📱 *Phone:* +${from}\n📝 *Scope:* ${userSessions[from].projectScope}\n👤 *Contact:* ${contactDetails}\n🌍 *Mode:* ${userLang}`;
                         await sendWhatsAppMessage("917529839762", adminNotification); 
+
+                        // 🌟 MAGIC TRIGGER: Generating Instant Direct Token Link inside Chat Bot directly!
+                        const uniqueProjectId = `SC-${Date.now().toString().slice(-6)}`;
+                        const encodedName = encodeURIComponent(cleanName);
+                        const encodedPlan = encodeURIComponent(userSessions[from].projectScope);
+                        
+                        if (userLang === 'EN') {
+                            const tokenAmountUSD = "49";
+                            const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountUSD}&name=${encodedName}&phone=${from}&plan=${encodedPlan}`;
+                            
+                            replyText = `Thank you, your profile has been secured! 🤝\n\nI have generated a **Direct Token Gateway Link** using your captured chat session parameters.\n\nYou can instantly pay the booking fee ($49) to lock this timeline in Firestore and route your profile to active production:\n\n🔗 *Pay Securely Here:* ${selfPayLink}\n\n*Reference ID:* ${uniqueProjectId}`;
+                        } else {
+                            const tokenAmountINR = "999";
+                            const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&name=${encodedName}&phone=${from}&plan=${encodedPlan}`;
+                            
+                            replyText = `Thank you, aapki details receive ho gayi hain! 🤝\n\nMaine aapke chat data ke aadhar par aapka **Direct Token Payment Link** generate kar diya hai.\n\nAap niche diye gaye secure path par click karke direct Razorpay se **₹999 Token Booking** complete kar sakte hain. Isse Firestore mein aapka slot automatic book ho jayega:\n\n🔗 *Direct Pay Gateway Link:* ${selfPayLink}\n\n*Project Reference ID:* ${uniqueProjectId}\n\n💡 Agar aap pehle details discuss karna chahte hain, toh bejhijhak yahan apna message type kijiye!`;
+                        }
 
                         return sendWhatsAppMessage(from, replyText);
                     }
@@ -199,7 +216,7 @@ app.post('/webhook', async (req, res) => {
                     } 
                     else if (userText === '1') {
                         if (userLang === 'EN') {
-                            replyText = "💻 *Shahid Creatives - Premium Web Tiers:*\n\n• 💼 *Starter Premium Business Hub* ($299 onwards) - 1-Yr Free Domain & Premium High-Speed Cloud Hosting included!\n• 🛒 *Global E-commerce Engine* ($599) - Multi-currency Store + Stripe/PayPal Integration + Automated Email Order Alerts.\n• 🚀 *Custom SaaS / Enterprise Portal* ($1,750+) - Tailored logic, secure databases, scalable architecture.\n\n👉 Please reply with your **Project Scope / Requirements** (e.g., 'I need an enterprise CRM or real estate SaaS portal') to proceed.";
+                            replyText = "💻 *Shahid Creatives - Premium Web Tiers:*\n\n• 💼 *Starter Premium Business Hub* ($299 onwards) - 1-Yr Free Domain & Premium High-Speed Cloud Hosting included!\n• 🛒 *Global E-commerce Engine* ($599) - Multi-currency Store + Stripe/PayPal Integration.\n• 🚀 *Custom SaaS / Enterprise Portal* ($1,750+) - Tailored logic, secure databases.\n\n👉 Please reply with your **Project Scope / Requirements** to proceed.";
                         } else {
                             replyText = "💻 *Shahid Creatives - Web Development Tiers:*\n\n• 📄 *Starter Site* (₹8,713)\n• 💼 *Basic Small Business* (₹12,300)\n• 🌟 *Starter Business Hub* (₹25,500) *(Best Choice)*\n• 🛒 *E-commerce Hub* (₹47,500)\n• 🚀 *Custom SaaS App* (₹1,45,000+)\n\n👉 Apna **Project Scope / Requirement** niche reply kijiye (e.g. 'Gym website banwani hai') taaki hum aage badhein.";
                         }
@@ -207,7 +224,7 @@ app.post('/webhook', async (req, res) => {
                     } 
                     else if (userText === '3') {
                         if (userLang === 'EN') {
-                            replyText = "🔥 *Exclusive Global Launch Offer!* 🔥\n\nGet a **Flat 20% Discount** on all advanced enterprise development tiers using code **LAUNCH20** at checkout. Valid for our next 5 global visionary brands.\n\n👉 Reply with your **Name and Project Goal** right now to lock in this discount!";
+                            replyText = "🔥 *Exclusive Global Launch Offer!* 🔥\n\nGet a **Flat 20% Discount** using code **LAUNCH20** at checkout.\n\n👉 Reply with your **Name and Project Goal** right now to lock in this discount!";
                         } else {
                             replyText = "🔥 *Exclusive Launch Offer!* 🔥\n\nHamare advanced plans par is waqt **Flat 20% Discount** active hai. Website checkout par coupon code **LAUNCH20** use kijiye!\n\n👉 Is discount ko secure karne ke liye niche apna **Name aur Project Type** likh kar bhejien.";
                         }
@@ -215,15 +232,15 @@ app.post('/webhook', async (req, res) => {
                     } 
                     else if (userText === '4') {
                         if (userLang === 'EN') {
-                            replyText = "💳 *Direct Project Booking Portal:*\n\nSkip the wait time! You can head straight to our live deployment environment, choose your tier, and wire a **$49 Token Booking** to instantly secure your delivery slot.\n\n🔗 **Direct Gateway Link:** https://shahidcreatives.com";
+                            replyText = "💳 *Direct Project Booking Portal:*\n\nSkip the wait time! Head straight to our portal and wire a **$49 Token Booking** to instantly secure your delivery slot.\n\n🔗 **Direct Gateway Link:** https://shahidcreatives.com";
                         } else {
-                            replyText = "💳 *Direct Project Booking System:*\n\nAap hamare portal par ja kar sirf **₹999 (Token Booking)** dekar apna slot instantly lock kar sakte hain taaki hum kaam shuru kar sakein!\n\n🔗 **Direct Gateway Link:** https://shahidcreatives.com";
+                            replyText = "💳 *Direct Project Booking System:*\n\nAap hamare portal par ja kar sirf **₹999 (Token Booking)** dekar apna slot instantly lock kar sakte hain:\n\n🔗 **Direct Gateway Link:** https://shahidcreatives.com";
                         }
                         userSessions[from].step = 'collect_details';
                     } 
                     else if (userText === '5') {
                         if (userLang === 'EN') {
-                            replyText = "👤 *Direct Consultation with Shahid:*\n\nYour premium session request is being routed. Shahid will personally connect with you to evaluate your software architecture and systems design.\n\n👉 Please reply with your **Name, Business Name, and Professional Email**.";
+                            replyText = "👤 *Direct Consultation with Shahid:*\n\nShahid will personally connect with you to evaluate your software architecture.\n\n👉 Please reply with your **Name, Business Name, and Professional Email**.";
                         } else {
                             replyText = "👤 *Direct Consultation with Shahid:*\n\nShahid personally aapke design layout aur core architecture par connect karenge.\n\n👉 Kindly niche apna **Name aur Contact Email** bhej dijiye.";
                         }

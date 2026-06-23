@@ -5,7 +5,7 @@ const axios = require('axios');
 const app = express();
 app.use(bodyParser.json());
 
-// In-Memory Session Storage to track lead steps
+// In-Memory Session Storage
 const userSessions = {};
 
 // Meta Webhook Verification
@@ -22,9 +22,9 @@ app.get('/webhook', (req, res) => {
     res.sendStatus(403);
 });
 
-// Main Webhook Logic for Handling Messages
+// Main Webhook Logic
 app.post('/webhook', async (req, res) => {
-    res.sendStatus(200); // Meta ko instant acknowledgement send karein
+    res.sendStatus(200); 
     const body = req.body;
 
     if (body.object === 'whatsapp_business_account' && body.entry) {
@@ -35,14 +35,62 @@ app.post('/webhook', async (req, res) => {
 
             if (value.messages) {
                 const message = value.messages[0];
-                const from = message.from; // Customer ka dynamic WhatsApp number
+                const from = message.from; 
                 const msgType = message.type;
 
                 if (msgType === 'text') {
-                    const userText = message.text.body.trim().toLowerCase();
-                    console.log(`Message from ${from}: ${userText}`);
+                    const rawText = message.text.body;
+                    const userText = rawText.trim().toLowerCase();
+                    console.log(`Incoming message from ${from}: ${userText.substring(0, 50)}...`);
 
-                    // Agar user ka session pehle se nahi hai toh create karein
+                    // =========================================================
+                    // 🔥 NEW UPGRADE: WEBSITE LEAD AUTO-DETECTION & CRM SYNC
+                    // =========================================================
+                    if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate")) {
+                        
+                        // 1. Data Parsing Logic (Extracting details from your exact template layout)
+                        let clientName = "Valued Client";
+                        let projectScope = "Website Custom Estimate";
+                        let estimatedValue = "8713"; // Default starter price fallback
+
+                        try {
+                            const nameMatch = rawText.match(/Client Name:\s*(.*)/i);
+                            const scopeMatch = rawText.match(/Category Model:\s*(.*)/i);
+                            const priceMatch = rawText.match(/Total Due \(incl\. GST\):\s*₹\s*([\d,]+)/i);
+
+                            if (nameMatch) clientName = nameMatch[1].trim();
+                            if (scopeMatch) projectScope = "Website: " + scopeMatch[1].trim();
+                            if (priceMatch) estimatedValue = priceMatch[1].replace(/,/g, '').trim();
+                        } catch (parseError) {
+                            console.error("Data extraction parsing failed:", parseError.message);
+                        }
+
+                        // 2. 🚀 Send data to your Custom Website Admin Dashboard Database API
+                        try {
+                            await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
+                                client_name: clientName,
+                                whatsapp_number: from,
+                                project_scope: projectScope,
+                                value: estimatedValue
+                            });
+                            console.log(`🚀 [SUCCESS] Lead data synced with Shahid Creatives Admin Dashboard for ${clientName}`);
+                        } catch (apiError) {
+                            console.error("❌ [API ERROR] Dashboard DB Sync Failed:", apiError.message);
+                        }
+
+                        // 3. 🌟 Send Instant Real-time Alert to your Personal WhatsApp Number
+                        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client Phone:* +${from}\n👤 *Client Name:* ${clientName}\n📝 *Plan Selected:* ${projectScope}\n💰 *Total Value:* ₹${estimatedValue}\n\n🤖 *Status:* Bot has engaged the client. Data successfully injected into Leads Control Log!`;
+                        await sendWhatsAppMessage("917529839762", adminNotification);
+
+                        // 4. Send a VIP conversion-focused welcome message to the client on the bot chat
+                        let clientReply = `Thank you *${clientName}*! 🙏 Aapka cost estimation data hamare production server par secure ho gaya hai.\n\nShahid bhai tak aapki saari specifications aur roadmap preferences pahunch chuki hain.\n\n🚀 Kya aap is project ka **Token Booking (₹999)** karke apna development slot instantly lock karna chahte hain, ya direct details discuss karna chahte hain?\n\nNiche diye gaye number se reply kijiye:\n\n1️⃣ **Token Book Karein (Slot Confirm)**\n2️⃣ **Discuss Requirements (Strategy Call)**`;
+                        
+                        // Reset session step for future navigation
+                        userSessions[from] = { step: 'main_menu' }; 
+                        return sendWhatsAppMessage(from, clientReply);
+                    }
+
+                    // Initialize User Session if not exists
                     if (!userSessions[from]) {
                         userSessions[from] = { step: 'welcome' };
                     }
@@ -51,83 +99,62 @@ app.post('/webhook', async (req, res) => {
                     const currentStep = userSessions[from].step;
 
                     // =========================================================
-                    // 1. LEAD CAPTURE FLOW (State Management)
+                    // 2. REGULAR INBOUND BOT LEAD CAPTURE FLOW (From WhatsApp directly)
                     // =========================================================
-                    
-                    // Step A: Jab user project scope bataye, tab Name/Email maangein
                     if (currentStep === 'collect_details') {
-                        userSessions[from].projectScope = message.text.body;
+                        userSessions[from].projectScope = rawText;
                         userSessions[from].step = 'ask_name_email';
                         
                         replyText = "Awesome! 📝 Mujhe aapke project ki thodi details mil gayi hain.\n\nKindly apna **Full Name** aur **Email ID** bhej lijiye taaki main aapka lead profile update kar sakoon.";
                         return sendWhatsAppMessage(from, replyText);
                     }
 
-                    // Step B: Jab user Name/Email de, tab flow complete karein aur Admin ko alert bhejen
                     if (currentStep === 'ask_name_email') {
-                        const contactDetails = message.text.body;
+                        const contactDetails = rawText;
                         userSessions[from].step = 'completed';
 
-                        // Client ke liye reply text
                         replyText = `Thank you, details receive ho gayi hain! 🤝\n\nMaine aapka requirement dashboard par update kar diya hai. Shahid personally aapke requirements ko review kar rahe hain.\n\nHumne aapke liye ek **Direct Booking Gateway Link** activate kiya hai jahan se aap apna slot instant lock kar sakte hain:\n\n🔗 *Book/Pay Here:* https://shahidcreatives.com\n\n💡 Aap website par ja kar apna favorite plan select kar sakte hain, add-ons jodd sakte hain, aur **Token Booking (₹999)** se instant project entry karwa sakte hain! 🚀`;
                         
-                        // 1. Render Dashboard Logs mein print karein
-                        console.log(`=== NEW LEAD CAPTURED ===\nPhone: ${from}\nScope: ${userSessions[from].projectScope}\nContact: ${contactDetails}\n=========================`);
-                        
-                        // 2. 🌟 Shahid Bhai ke Personal WhatsApp par Lead Alert Automatic Forward karein
-                        const adminNotification = `🌟 *NEW LEAD CAPTURED!* 🌟\n\n📱 *Client Phone:* +${from}\n📝 *Project Scope:* ${userSessions[from].projectScope}\n👤 *Contact Details:* ${contactDetails}`;
+                        // WhatsApp directly aayi lead ko bhi Website CRM dashboard par push karein
+                        try {
+                            await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
+                                client_name: contactDetails.split(',')[0] || contactDetails,
+                                whatsapp_number: from,
+                                project_scope: userSessions[from].projectScope,
+                                value: "8713" 
+                            });
+                        } catch (dbErr) { console.log("Direct bot lead dashboard sync skipped/failed"); }
+
+                        // Notify Shahid Bhai on Personal Number
+                        const adminNotification = `🌟 *NEW CHATBOT LEAD CAPTURED!* 🌟\n\n📱 *Client Phone:* +${from}\n📝 *Project Scope:* ${userSessions[from].projectScope}\n👤 *Contact Details:* ${contactDetails}`;
                         await sendWhatsAppMessage("917529839762", adminNotification); 
 
-                        // Client ko final link bhejien
                         return sendWhatsAppMessage(from, replyText);
                     }
 
                     // =========================================================
-                    // 2. MAIN CHATBOT NAVIGATION (Menu Rules)
+                    // 3. MAIN CHATBOT NAVIGATION MENU
                     // =========================================================
-                    if (userText === 'hi' || userText === 'hello' || userText === 'menu' || userText === 'start') {
+                    if (userText === 'hi' || userText === 'hello' || userText === 'menu' || userText === 'start' || userText === '2') {
                         userSessions[from].step = 'main_menu';
-                        replyText = "Hello! Welcome to *Shahid Creatives* (Ludhiana, India). 🚀\nHigh-performance web sales engines & AI automation systems banane mein hum global clients ki help karte hain.\n\nAapko kis service ke baare mein jaanna hai? Niche diya gaya number reply mein bhejien:\n\n1️⃣ **Web Development Tiers** (Custom Sites/E-commerce)\n2️⃣ **AI Business Automation** (Custom WhatsApp Bots/CRM Workflows)\n3️⃣ **🔥 Exclusive Launch Deal** (Flat 20% OFF)\n4️⃣ **💳 Direct Booking & Token System** (₹999 Slot Lock)\n5️⃣ **👤 Talk to Shahid** (Direct Consultation)";
+                        replyText = "Hello! Welcome to *Shahid Creatives* (Ludhiana, Punjab). 🚀\nHigh-performance web sales engines & AI automation systems banane mein hum global clients ki help karte hain.\n\nAapko kis service ke baare mein jaanna hai? Niche diya gaya number reply mein bhejien:\n\n1️⃣ **Web Development Tiers** (Custom Sites/E-commerce)\n2️⃣ **AI Business Automation** (Custom WhatsApp Bots/CRM Workflows)\n3️⃣ **🔥 Exclusive Launch Deal** (Flat 20% OFF)\n4️⃣ **💳 Direct Booking & Token System** (₹999 Slot Lock)\n5️⃣ **👤 Talk to Shahid** (Direct Consultation)";
                     } 
-                    
-                    // Option 1: Web Development Tiers
-                    else if (userText === '1' || userText.includes('web') || userText.includes('website')) {
-                        replyText = "💻 *Shahid Creatives - Web Development Tiers:*\n\n" +
-                                    "• 📄 *Starter Site* (₹8,713) - Small local businesses ke liye best.\n" +
-                                    "• 💼 *Basic Small Business* (₹12,300) - For CAs, Doctors, and Freelancers.\n" +
-                                    "• 🌟 *Starter Business Hub* (₹25,500) - 1-Yr Free Domain & Hosting included! *(Most Popular)*\n" +
-                                    "• 🛒 *E-commerce Hub* (₹47,500) - Full Online Store + UPI Gateway + Automated Orders Alert.\n" +
-                                    "• 🚀 *Custom SaaS/Enterprise App* (₹1,45,000+) - Advanced ERPs and secure portals.\n\n" +
-                                    "💡 *Raat ke 2 baje wali logic:* Sir, aap so jayenge par aapka website system 24/7 chalega, customer secure karega aur payments capture karega!\n\n" +
-                                    "👉 Apna **Project Scope / Requirement** niche reply kijiye (e.g. 'Mujhe online cloth store banana hai') taaki hum aage badhein.";
+                    else if (userText === '1') {
+                        replyText = "💻 *Shahid Creatives - Web Development Tiers:*\n\n• 📄 *Starter Site* (₹8,713)\n• 💼 *Basic Small Business* (₹12,300)\n• 🌟 *Starter Business Hub* (₹25,500) *(Best Choice)*\n• 🛒 *E-commerce Hub* (₹47,500)\n• 🚀 *Custom SaaS App* (₹1,45,000+)\n\n👉 Apna **Project Scope / Requirement** niche reply kijiye (e.g. 'Gym website banwani hai') taaki hum aage badhein.";
                         userSessions[from].step = 'collect_details';
                     } 
-                    
-                    // Option 2: AI Automation
-                    else if (userText === '2' || userText.includes('automation') || userText.includes('bot')) {
-                        replyText = "🤖 *AI Business Automation:* \n\nHum custom WhatsApp chatbots, business lead funnels aur automatic CRM integration workflows design karte hain jo aapki team ka daily **4+ hours** bacha sakta hai.\n\n👉 Apne business ke liye requirement share karne ke liye niche apna **Business Type** reply kijiye!";
+                    else if (userText === '3') {
+                        replyText = "🔥 *Exclusive Launch Offer!* 🔥\n\nHamare advanced plans par is waqt **Flat 20% Discount** active hai. Website checkout par coupon code **LAUNCH20** use kijiye!\n\n👉 Is discount ko secure karne ke liye niche apna **Name aur Project Type** likh kar bhejien.";
                         userSessions[from].step = 'collect_details';
                     } 
-                    
-                    // Option 3: Launch Deal
-                    else if (userText === '3' || userText.includes('deal') || userText.includes('offer')) {
-                        replyText = "🔥 *Exclusive Launch Offer!* 🔥\n\nHamare advanced plans par is waqt **Flat 20% Discount** active hai. \n\nWebsite checkout par coupon code **LAUNCH20** use kijiye aur flat discount paiye! Yeh sirf pehle 5 visionary brands ke liye valid hai.\n\n👉 Is discount ko secure karne ke liye niche apna **Name aur Project Type** likh kar bhejien.";
+                    else if (userText === '4') {
+                        replyText = "💳 *Direct Project Booking System:*\n\nAap hamare portal par ja kar sirf **₹999 (Token Booking)** dekar apna slot instantly lock kar sakte hain taaki hum kaam shuru kar sakein!\n\n🔗 **Direct Gateway Link:** https://shahidcreatives.com";
                         userSessions[from].step = 'collect_details';
                     } 
-                    
-                    // Option 4: Direct Booking & Token System
-                    else if (userText === '4' || userText.includes('booking') || userText.includes('pay') || userText.includes('token')) {
-                        replyText = "💳 *Direct Project Booking System:*\n\nAapko lambe verification ya wait karne ki koi zaroorat nahi hai. Aap hamare portal par ja kar:\n\n1. Apna custom package select kar sakte hain.\n2. Alag se features (SEO, Maintenance, Cloud Hosting) add kar sakte hain.\n3. Sirf **₹999 (Token Booking)** dekar apna slot instantly lock kar sakte hain taaki hum kaam shuru kar sakein!\n\n🔗 **Direct Gateway Link:** https://shahidcreatives.com\n\n👉 Agar aapne payment kar di hai ya koi issue aa raha hai, toh apna naam niche bhejien!";
+                    else if (userText === '5') {
+                        replyText = "👤 *Direct Consultation with Shahid:*\n\nShahid personally aapke design layout aur core architecture par connect karenge.\n\n👉 Kindly niche apna **Name aur Contact Email** bhej dijiye.";
                         userSessions[from].step = 'collect_details';
                     } 
-                    
-                    // Option 5: Direct Support
-                    else if (userText === '5' || userText.includes('shahid') || userText.includes('consultation')) {
-                        replyText = "👤 *Direct Consultation with Shahid:*\n\nAapka session request forward kiya ja raha hai. Shahid personally aapke design layout aur core architecture par connect karenge.\n\n👉 Kindly niche apna **Name, Business Name aur Contact Email** bhej dijiye.";
-                        userSessions[from].step = 'collect_details';
-                    } 
-                    
-                    // Fallback Default Reply
                     else {
                         replyText = "Main samajh nahi paya. 🤔 Dobara main menu dekhne ke liye ek baar *'Hi'* ya *'Hello'* bhejien!";
                     }

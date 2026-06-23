@@ -43,22 +43,21 @@ app.post('/webhook', async (req, res) => {
                     const userText = rawText.trim().toLowerCase();
 
                     // 🌍 LANGUAGE ROUTING LOGIC
-                    // Check if user is from India or International
                     const isInternationalNumber = !from.startsWith("91");
                     const isGlobalWebsiteTemplate = rawText.includes("Global USD") || rawText.includes("Worldwide");
                     
-                    // Initialize User Session and Language Preference
                     if (!userSessions[from]) {
                         userSessions[from] = { 
                             step: 'welcome',
-                            lang: (isInternationalNumber || isGlobalWebsiteTemplate) ? 'EN' : 'HINGLISH'
+                            lang: (isInternationalNumber || isGlobalWebsiteTemplate) ? 'EN' : 'HINGLISH',
+                            clientName: "Valued Client" // Default fallback
                         };
                     }
                     
                     const userLang = userSessions[from].lang;
 
                     // =========================================================
-                    // 1. WEBSITE LEAD AUTO-DETECTION & CRM SYNC (GLOBAL SAFE)
+                    // 1. WEBSITE LEAD AUTO-DETECTION & CRM SYNC
                     // =========================================================
                     if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate")) {
                         
@@ -77,6 +76,9 @@ app.post('/webhook', async (req, res) => {
                         } catch (parseError) {
                             console.error("Data extraction parsing failed:", parseError.message);
                         }
+
+                        // Save parsed name into session for dynamic payment links later
+                        userSessions[from].clientName = clientName;
 
                         // Sync to Custom Dashboard
                         try {
@@ -102,7 +104,7 @@ app.post('/webhook', async (req, res) => {
                             clientReply = `Thank you *${clientName}*! 🙏 Aapka cost estimation data hamare production server par secure ho gaya hai.\n\nShahid bhai tak aapki saari specifications pahunch chuki hain.\n\n🚀 Kya aap is project ka **Token Booking (₹999)** karke apna slot instantly lock karna chahte hain, ya direct details discuss karna chahte hain?\n\nNiche diye gaye number se reply kijiye:\n\n1️⃣ **Token Book Karein (Slot Confirm)**\n2️⃣ **Discuss Requirements (Strategy Call)**`;
                         }
                         
-                        userSessions[from].step = 'main_menu'; 
+                        userSessions[from].step = 'awaiting_website_action'; 
                         return sendWhatsAppMessage(from, clientReply);
                     }
 
@@ -110,7 +112,40 @@ app.post('/webhook', async (req, res) => {
                     const currentStep = userSessions[from].step;
 
                     // =========================================================
-                    // 2. INBOUND CHAT LEAD CAPTURE FLOW (MULTI-LANG)
+                    // 🚀 UPGRADED WORKFLOW: DYNAMIC GATEWAY GENERATION LINK
+                    // =========================================================
+                    if (currentStep === 'awaiting_website_action') {
+                        if (userText === '1') {
+                            userSessions[from].step = 'main_menu'; 
+
+                            // Generate Dynamic Parameters
+                            const uniqueProjectId = `SC-${Date.now().toString().slice(-6)}`; // Unique Short Project ID
+                            const encodedName = encodeURIComponent(userSessions[from].clientName || "Client");
+                            
+                            if (userLang === 'EN') {
+                                const tokenAmountUSD = "49";
+                                const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountUSD}&name=${encodedName}&phone=${from}`;
+                                
+                                replyText = `💳 *Excellent Choice!* I have generated your dynamic project invoice portal.\n\nClick the official checkout gateway link below to pay the **Token Booking fee ($49)** and instantly lock your deployment timeline:\n\n🔗 *Pay Securely Here:* ${dynamicPaymentLink}\n\n*Project Reference ID:* ${uniqueProjectId}\n\nOnce authorized, your infrastructure onboarding begins! 🚀`;
+                            } else {
+                                const tokenAmountINR = "999";
+                                const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&name=${encodedName}&phone=${from}`;
+                                
+                                replyText = `💳 *Zabardast Choice!* Maine aapka dynamic client booking invoice link generate kar diya hai.\n\nNiche diye gaye official gateway par click karke apna **Token Booking (₹999)** secure karein aur development slot confirm karein:\n\n🔗 *Pay Securely Here:* ${dynamicPaymentLink}\n\n*Project Reference ID:* ${uniqueProjectId}\n\nPayment successfully trigger hote hi aapka system onboarding kickoff ho jayega! 🚀`;
+                            }
+                            return sendWhatsAppMessage(from, replyText);
+                        } 
+                        else if (userText === '2') {
+                            userSessions[from].step = 'main_menu';
+                            replyText = (userLang === 'EN')
+                                ? "👤 Perfect! Shahid will connect with you shortly for a strategy sync call to freeze the specifications. Get ready to launch!"
+                                : "👤 Perfect! Shahid bhai bohot jald aapke sath strategy call par connect karenge taaki specifications ko finalize kiya ja sake. Get ready to launch! 🚀";
+                            return sendWhatsAppMessage(from, replyText);
+                        }
+                    }
+
+                    // =========================================================
+                    // 2. INBOUND CHAT LEAD CAPTURE FLOW (B2B FROM CHAT)
                     // =========================================================
                     if (currentStep === 'collect_details') {
                         userSessions[from].projectScope = rawText;
@@ -126,23 +161,24 @@ app.post('/webhook', async (req, res) => {
                         const contactDetails = rawText;
                         userSessions[from].step = 'completed';
 
+                        // Extract clean name for temporary usage
+                        userSessions[from].clientName = contactDetails.split(',')[0] || contactDetails;
+
                         if (userLang === 'EN') {
                             replyText = `Thank you, your details have been received! 🤝\n\nI have successfully synchronized your requirements with our active delivery queue. Shahid is personally reviewing your project architecture.\n\nHere is your **Direct Booking Gateway Link** to explore plans and secure your slot:\n\n🔗 *Book/Pay Here:* https://shahidcreatives.com\n\n💡 You can choose custom add-ons (SEO, Cloud Hosting) and perform an instant **Token Booking ($49)** to secure your timeline! 🚀`;
                         } else {
                             replyText = `Thank you, details receive ho gayi hain! 🤝\n\nMaine aapka requirement dashboard par update kar diya hai. Shahid personally aapke requirements ko review kar rahe hain.\n\nHumne aapke liye ek **Direct Booking Gateway Link** activate kiya hai:\n\n🔗 *Book/Pay Here:* https://shahidcreatives.com\n\n💡 Aap website par ja kar **Token Booking (₹999)** se instant project entry karwa sakte hain! 🚀`;
                         }
                         
-                        // Push to CRM Dashboard
                         try {
                             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
-                                client_name: contactDetails.split(',')[0] || contactDetails,
+                                client_name: userSessions[from].clientName,
                                 whatsapp_number: from,
                                 project_scope: userSessions[from].projectScope,
                                 value: (userLang === 'EN') ? "299" : "8713"
                             });
                         } catch (dbErr) { console.log("Dashboard sync failed"); }
 
-                        // Notify Shahid Bhai
                         const adminNotification = `🌟 *NEW DIRECT CHAT LEAD!* 🌟\n\n📱 *Phone:* +${from}\n📝 *Scope:* ${userSessions[from].projectScope}\n👤 *Contact:* ${contactDetails}\n🌍 *Mode:* ${userLang}`;
                         await sendWhatsAppMessage("917529839762", adminNotification); 
 
@@ -150,7 +186,7 @@ app.post('/webhook', async (req, res) => {
                     }
 
                     // =========================================================
-                    // 3. MAIN CHATBOT NAVIGATION MENU (MULTI-LANG)
+                    // 3. MAIN CHATBOT NAVIGATION MENU
                     // =========================================================
                     if (userText === 'hi' || userText === 'hello' || userText === 'menu' || userText === 'start') {
                         userSessions[from].step = 'main_menu';
@@ -208,7 +244,6 @@ app.post('/webhook', async (req, res) => {
     }
 });
 
-// Helper Function for Meta Message API
 async function sendWhatsAppMessage(to, text) {
     const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
     const PHONE_NUMBER_ID = "1202984902891472";

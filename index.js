@@ -61,10 +61,11 @@ app.post('/webhook', async (req, res) => {
                     const userLang = userSessions[from].lang;
 
                     // =========================================================
-                    // 1. WEBSITE LEAD AUTO-DETECTION & CRM SYNC (WITH IN-MEMORY THROTTLE LOCK)
+                    // 1. WEBSITE LEAD AUTO-DETECTION & CRM SYNC (FIRST HOOK MESSAGE)
                     // =========================================================
                     if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate")) {
                         
+                        // Request Throttle Check to prevent immediate double triggers
                         if (userSessions[from].lastSubmitedTime && (Date.now() - userSessions[from].lastSubmitedTime < 5000)) {
                             console.log(`[THROTTLE INTERCEPT] Duplicate webhook trigger blocked for user: ${from}`);
                             return; 
@@ -110,10 +111,12 @@ app.post('/webhook', async (req, res) => {
                             console.error("Advanced template parsing engine failed:", parseError.message);
                         }
 
+                        // Save parsed data in session memory
                         userSessions[from].clientName = clientName;
                         userSessions[from].clientEmail = clientEmail;
                         userSessions[from].projectScope = projectScope;
 
+                        // Sync to Custom Dashboard Backend CRM
                         try {
                             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
                                 client_name: clientName,
@@ -126,14 +129,16 @@ app.post('/webhook', async (req, res) => {
                             console.error("Dashboard DB Sync Failed:", apiError.message);
                         }
 
+                        // Admin personal notification update alert
                         const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail || 'Not Provided'}\n📝 *Plan:* ${projectScope}\n💰 *Value:* ${estimatedValue}\n\n🤖 *Status:* Throttle locked & synced. Check Admin Panel!`;
                         await sendWhatsAppMessage("917529839762", adminNotification);
 
+                        // 🌟 UPGRADE: FIRST MESSAGE WITH 20% DISCOUNT HOOK ACTIVATED INSTANTLY
                         let clientReply = "";
                         if (userLang === 'EN') {
-                            clientReply = `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved on our production server.\n\nShahid has received your project specifications and technical preferences.\n\n🚀 Would you like to confirm your deployment slot with a **Token Booking ($49)** or schedule a strategy kickoff call right away?\n\nPlease reply with the number of your choice:\n\n1️⃣ **Book Token (Confirm Slot)**\n2️⃣ **Discuss Requirements (Schedule Strategy Call)**`;
+                            clientReply = `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved on our production server.\n\n🔥 *Exclusive Reward Activated:* We have successfully mapped the launch coupon code **LAUNCH20** with your session. This secures a **Flat 20% OFF** discount on your final project bill balance!\n\n🚀 Would you like to confirm your design deployment slot with a **Token Booking ($49)** or schedule a strategy kickoff call first?\n\nPlease reply with the number of your choice:\n\n1️⃣ **Book Token (Confirm Slot & Claim 20% OFF)**\n2️⃣ **Discuss Requirements (Schedule Strategy Call)**`;
                         } else {
-                            clientReply = `Thank you *${clientName}*! 🙏 Aapka cost estimation data hamare production server par secure ho gaya hai.\n\nShahid bhai tak aapki saari specifications pahunch chuki hain.\n\n🚀 Kya aap is project ka **Token Booking (₹999)** karke apna slot instantly lock karna chahte hain, ya direct details discuss karna chahte hain?\n\nNiche diye gaye number se reply kijiye:\n\n1️⃣ **Token Book Karein (Slot Confirm)**\n2️⃣ **Discuss Requirements (Strategy Call)**`;
+                            clientReply = `Thank you *${clientName}*! 🙏 Aapka cost estimation data hamare production server par secure ho gaya hai.\n\n🔥 *Exclusive Offer Activated:* Maine aapke project profile ke sath launch coupon code **LAUNCH20** को टैग कर दिया है! Isse payment complete hone ke baad aapke main project price par **Flat 20% OFF (Discount)** apply ho jayega.\n\n🚀 Kya aap apna development slot instantly lock karke discount secure karna chahte hain, ya direct details discuss karna chahte hain?\n\nNiche diye gaye number se reply kijiye:\n\n1️⃣ **Token Book Karein (Slot Confirm & Claim 20% OFF)**\n2️⃣ **Discuss Requirements (Strategy Call)**`;
                         }
                         
                         userSessions[from].step = 'awaiting_website_action'; 
@@ -144,7 +149,7 @@ app.post('/webhook', async (req, res) => {
                     const currentStep = userSessions[from].step;
 
                     // =========================================================
-                    // ⚙️ HANDLING ACTION LINKS GENERATION (WITH UPGRADED 20% DISCOUNT TEXT)
+                    // ⚙️ HANDLING ACTION: SEND TOKEN LINK ONLY WHEN CLIENT PRESSES 1
                     // =========================================================
                     if (currentStep === 'awaiting_website_action') {
                         if (userText === '1') {
@@ -159,12 +164,12 @@ app.post('/webhook', async (req, res) => {
                                 const tokenAmountUSD = "49";
                                 const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountUSD}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
                                 
-                                replyText = `領 *Excellent Choice!* Your details have been received successfully! 🤝\n\n🔥 *Exclusive Reward Activated:* We have successfully mapped the launch coupon code **LAUNCH20** with your tracking ID. This secures a **Flat 20% OFF** on your final project invoice balance!\n\nYou can proceed via the secure link below to perform your **Token Booking ($49)** via Razorpay. This instantly locks your deployment slot in the *Shahid Creatives* automated production queue:\n\n🔗 *Direct Pay Gateway Link:* ${dynamicPaymentLink}\n\n*Project Reference ID:* ${uniqueProjectId}\n\n⏱️ Note: Slot holds are dynamic. Pay securely to trigger the automated onboarding kickoff system! 🚀`;
+                                replyText = `💳 *Perfect!* I have generated your unique secure payment gateway portal.\n\nClick the official link below to complete your **Token Booking ($49)** via Razorpay. This will instantly reserve your slot in *Shahid Creatives* automated production queue:\n\n🔗 *Pay Securely Here:* ${dynamicPaymentLink}\n\n*Project Reference ID:* ${uniqueProjectId}\n\nOnce authorized, your infrastructure onboarding process kicks off! 🚀`;
                             } else {
                                 const tokenAmountINR = "999";
                                 const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
                                 
-                                replyText = `Thank you, aapki details receive ho gayi hain! 🤝\n\n🔥 *Exclusive Offer Activated:* Maine aapke is project profile ke sath launch coupon code **LAUNCH20** को टैग कर दिया है! Isse payment complete hone ke baad aapke main project price par **Flat 20% OFF (Discount)** apply ho jayega.\n\nAap niche diye gaye secure path par click karke direct Razorpay se apna **₹999 Token Booking** complete kar sakte hain. Isse *Shahid Creatives* mein aapka slot automatic book ho jayega aur development kickoff schedule ho jayega:\n\n🔗 *Direct Pay Gateway Link:* ${dynamicPaymentLink}\n\n*Project Reference ID:* ${uniqueProjectId}\n\n💡 Slot configuration active hai. Payment complete hote hi hamara client onboarding automated system kickoff ho jayega! 🚀`;
+                                replyText = `Zabardast Choice! 👍 Maine aapka unique secure client booking invoice link generate kar diya hai.\n\nAap niche diye gaye secure path par click karke direct Razorpay se apna **₹999 Token Booking** complete kar sakte hain. Isse *Shahid Creatives* mein aapka slot automatic book ho jayega aur development process instantly active ho jayega:\n\n🔗 *Direct Pay Gateway Link:* ${dynamicPaymentLink}\n\n*Project Reference ID:* ${uniqueProjectId}\n\n💡 Note: Payment complete hote hi hamara client onboarding system kickoff message trigger kar dega! 🚀`;
                             }
                             return sendWhatsAppMessage(from, replyText);
                         } 
@@ -172,13 +177,13 @@ app.post('/webhook', async (req, res) => {
                             userSessions[from].step = 'main_menu';
                             replyText = (userLang === 'EN')
                                 ? "👤 Perfect! Shahid will connect with you shortly for a strategy sync call."
-                                : "👤 Perfect! Shahid bhai bohot jald aapke sath strategy call par connect karenge. Get ready to launch! 🚀";
+                                : "👤 Perfect! Shahid bhai bohot jald aapke sath strategy call par connect karenge taaki requirements ko finalize kiya ja sake. Get ready to launch! 🚀";
                             return sendWhatsAppMessage(from, replyText);
                         }
                     }
 
                     // =========================================================
-                    // 2. INBOUND CHAT LEAD CAPTURE FLOW (B2B DIRECT)
+                    // 2. INBOUND CHAT LEAD CAPTURE FLOW (B2B DIRECT FROM CHAT)
                     // =========================================================
                     if (currentStep === 'collect_details') {
                         userSessions[from].projectScope = rawText; 
@@ -233,7 +238,7 @@ app.post('/webhook', async (req, res) => {
                     }
 
                     // =========================================================
-                    // 3. MAIN MENU NAVIGATION (ROLE-BASED STRUCT RULES)
+                    // 3. MAIN MENU NAVIGATION
                     // =========================================================
                     if (userText === 'hi' || userText === 'hello' || userText === 'menu' || userText === 'start') {
                         userSessions[from].step = 'main_menu';

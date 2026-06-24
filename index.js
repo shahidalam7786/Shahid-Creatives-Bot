@@ -16,6 +16,22 @@ function calculateTotalPayable(basePrice) {
     return Math.round(totalPayable);
 }
 
+// 🌟 HELPER TO EXTRACT BASE PRICE DYNAMICALLY FROM PLAN SELECTION
+function getBasePriceByPlan(planScope) {
+    const text = String(planScope).toLowerCase();
+    if (text.includes("starter plan") || text.includes("starter/")) return "8713";
+    if (text.includes("basic small business")) return "12300";
+    if (text.includes("starter business hub") || text.includes("starter business")) return "25500";
+    if (text.includes("e-commerce hub") || text.includes("e-commerce")) return "47500";
+    if (text.includes("custom saas app") || text.includes("saas")) return "145000";
+    
+    // AI Automation Plans Mapping
+    if (text.includes("whatsapp bot & lead sync")) return "8713";
+    if (text.includes("custom crm workflow")) return "18000";
+    
+    return "8713"; // Safe fallback
+}
+
 // Meta Webhook Verification
 app.get('/webhook', (req, res) => {
     const VERIFY_TOKEN = "shahid_creatives_secret_token_123";
@@ -30,7 +46,7 @@ app.get('/webhook', (req, res) => {
 
 // Main Webhook Logic for Processing Messages
 app.post('/webhook', async (req, res) => {
-    res.sendStatus(200); // Meta instant 200 OK delivery handshake
+    res.sendStatus(200); 
     const body = req.body;
     
     if (body.object === 'whatsapp_business_account' && body.entry) {
@@ -66,11 +82,22 @@ app.post('/webhook', async (req, res) => {
                     const currentStep = userSessions[from].step;
 
                     // =========================================================
-                    // ⚙️ STATE RULE 1: CAPTURING REPLIES FOR BOOKING (DIFERENT CHOICES CHANNELS)
+                    // 🛡️ STATE RESET GUARD
+                    // =========================================================
+                    const resetTriggers = ['hi', 'hello', 'menu', 'start', 'hey'];
+                    if (currentStep === 'completed' && !resetTriggers.includes(userText)) {
+                        let fallbackNotice = (userLang === 'EN')
+                            ? "💡 Your booking profile is already active! Please reply with *'Menu'* to go back or click the checkout gateway link above to proceed."
+                            : "💡 Aapka booking invoice link generate ho chuka hai! Main menu par wapas jaane ke liye *'Menu'* type kijiye ya upar diye gaye secure link par click karke checkout complete kijiye.";
+                        return sendWhatsAppMessage(from, fallbackNotice);
+                    }
+
+                    // =========================================================
+                    // ⚙️ STATE RULE 1: CAPTURING REPLIES AFTER WEBSITE REDIRECT
                     // =========================================================
                     if (currentStep === 'awaiting_website_action') {
                         if (userText === '1') {
-                            userSessions[from].step = 'main_menu';
+                            userSessions[from].step = 'completed'; 
                             const uniqueProjectId = `SC-${Math.floor(10000 + Math.random() * 90000)}`;
                             const encodedName = encodeURIComponent(userSessions[from].clientName);
                             const encodedEmail = encodeURIComponent(userSessions[from].clientEmail || "");
@@ -80,22 +107,22 @@ app.post('/webhook', async (req, res) => {
                             if (userLang === 'EN') {
                                 const tokenAmountUSD = "49";
                                 const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountUSD}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
-                                replyText = `💳 *Excellent Choice!* Your session data is validated. 🤝\n\nClick the official link below to pay your **Token Booking fee ($49)** via Razorpay. This will instantly reserve your delivery slot in *Shahid Creatives* automated production queue:\n\n🔗 *Pay Securely Here:* ${dynamicPaymentLink}\n\n*Project Reference ID:* ${uniqueProjectId}`;
+                                replyText = `領 *Excellent Choice!* Your session data is validated. 🤝\n\nClick the official link below to pay your **Token Booking fee ($49)** via Razorpay. This will instantly reserve your delivery slot in *Shahid Creatives* automated production queue:\n\n🔗 *Pay Securely Here:* ${dynamicPaymentLink}\n\n*Project Reference ID:* ${uniqueProjectId}`;
                             } else {
                                 const tokenAmountINR = "999";
                                 const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
-                                replyText = `Zabardast Choice! 👍 Maine aapka unique secure client booking invoice link generate kar diya hai.\n\nAap niche diye gaye secure path par click karke direct Razorpay se apna **₹999 Token Booking** complete kar sakte hain. Isse *Shahid Creatives* mein aapka slot automatic book ho jayega aur development process instantly active ho jayega:\n\n🔗 *Direct Pay Gateway Link:* ${dynamicPaymentLink}\n\n*Project Reference ID:* ${uniqueProjectId}\n\n💡 Note: Payment complete hote hi hamara automated client onboarding system kickoff message trigger kar dega! 🚀`;
+                                replyText = `Thank you, aapki details receive ho gayi hain! 🤝\n\nMaine aapke chat data ke aadhar par aapka **Direct Token Payment Link** generate kar diya hai. Aap Razorpay se **₹999 Token Booking** complete karke apna slot instantly lock kar sakte hain:\n\n🔗 *Direct Pay Gateway Link:* ${dynamicPaymentLink}\n\n*Project Reference ID:* ${uniqueProjectId}`;
                             }
                             return sendWhatsAppMessage(from, replyText);
                         } else if (userText === '2') {
                             userSessions[from].step = 'main_menu';
-                            let replyText = (userLang === 'EN') ? "👤 Perfect! Shahid will connect with you shortly for a strategy sync call to freeze parameters." : "👤 Perfect! Shahid bhai bohot jald aapke sath strategy call par connect karenge taaki requirements ko finalize kiya ja sake. Get ready to launch! 🚀";
+                            let replyText = (userLang === 'EN') ? "👤 Perfect! Shahid will connect with you shortly for a strategy sync call." : "👤 Perfect! Shahid bhai bohot jald aapke sath strategy call par connect karenge. Get ready to launch! 🚀";
                             return sendWhatsAppMessage(from, replyText);
                         }
                     }
 
                     // =========================================================
-                    // 🛡️ STATE RULE 2: LEAD DETECTION PARSING ENGINE (60s THROTTLE OVERLAP SAFE)
+                    // 🛡️ STATE RULE 2: LEAD DETECTION PARSING ENGINE (60s THROTTLE)
                     // =========================================================
                     if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate")) {
                         
@@ -119,29 +146,31 @@ app.post('/webhook', async (req, res) => {
                             if (scopeMatch) projectScope = scopeMatch[1].replace(/[\*•\-]/g, '').trim();
                             if (priceMatch) parsedBasePrice = priceMatch[1].replace(/[^0-9.]/g, '').trim();
                             
-                            const globalEmailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]\.[a-zA-Z0-9_-]+)/i; // - Modified parsing context bounds slightly to improve stability matching input patterns.
+                            const globalEmailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/i;
                             const emailMatch = rawText.match(globalEmailRegex);
                             if (emailMatch) clientEmail = emailMatch[1].trim();
                         } catch (parseError) {
                             console.error("Advanced custom parsing system exception:", parseError.message);
                         }
 
-                        const finalCalculatedValue = calculateTotalPayable(parsedBasePrice);
-
+                        // Save parsed context parameters safely inside active user session mapping
                         userSessions[from].clientName = clientName;
                         userSessions[from].clientEmail = clientEmail;
                         userSessions[from].projectScope = projectScope;
 
                         try {
                             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
-                                client_name: clientName, email: clientEmail, whatsapp_number: from, project_scope: projectScope, value: finalCalculatedValue
+                                client_name: clientName, 
+                                email: clientEmail, 
+                                whatsapp_number: from, 
+                                project_scope: projectScope, 
+                                value: parsedBasePrice // Directly pass the original price parsed from website
                             });
                         } catch (apiError) { console.error("API Sync Failed"); }
 
-                        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail || 'Not Provided'}\n📝 *Plan:* ${projectScope}\n💰 *Value:* ₹${finalCalculatedValue}\n\n🤖 *Status:* Locked & logged. Check Admin Panel!`;
+                        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail || 'Not Provided'}\n📝 *Plan:* ${projectScope}\n💰 *Value:* ${parsedBasePrice}\n\n🤖 *Status:* Locked & logged. Check Admin Panel!`;
                         await sendWhatsAppMessage("917529839762", adminNotification);
 
-                        // 🌟 SINGLE MESSAGE PITCH: SHOW HOOK IMMEDIATELY
                         let clientReply = "";
                         if (userLang === 'EN') {
                             clientReply = `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved on our production server.\n\n🔥 *Exclusive Reward Activated:* We have successfully mapped the launch coupon code **LAUNCH20** with your tracking node. This secures a **Flat 20% OFF** discount on your final project invoice bill!\n\n🚀 Would you like to confirm your design deployment slot with a **Token Booking ($49)** or schedule a strategy kickoff call right away?\n\nPlease reply with the number of your choice:\n\n1️⃣ **Book Token (Confirm Slot & Claim 20% OFF)**\n2️⃣ **Discuss Requirements (Schedule Strategy Call)**`;
@@ -154,7 +183,7 @@ app.post('/webhook', async (req, res) => {
                     }
 
                     // =========================================================
-                    // 2. INBOUND CHAT LEAD CAPTURE FLOW (B2B DIRECT CHAT)
+                    // 3. INBOUND CHAT LEAD CAPTURE FLOW (B2B DIRECT CHAT)
                     // =========================================================
                     if (currentStep === 'collect_details') {
                         userSessions[from].projectScope = rawText; 
@@ -165,7 +194,7 @@ app.post('/webhook', async (req, res) => {
 
                     if (currentStep === 'ask_name_email') {
                         const contactDetails = rawText;
-                        userSessions[from].step = 'completed';
+                        userSessions[from].step = 'completed'; 
                         let cleanName = contactDetails.split('\n')[0].split(',')[0].trim();
                         let cleanEmail = "";
                         const globalEmailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/i;
@@ -175,9 +204,16 @@ app.post('/webhook', async (req, res) => {
                         userSessions[from].clientName = cleanName;
                         userSessions[from].clientEmail = cleanEmail;
 
+                        // 🌟 FIX: RESOLVE DYNAMIC BASE PRICE ACCORDING TO USER PLAN INPUT IN CHAT
+                        const matchedBasePrice = getBasePriceByPlan(userSessions[from].projectScope);
+
                         try {
                             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
-                                client_name: cleanName, email: cleanEmail, whatsapp_number: from, project_scope: "ChatBot: " + userSessions[from].projectScope, value: "8713"
+                                client_name: cleanName, 
+                                email: cleanEmail, 
+                                whatsapp_number: from, 
+                                project_scope: userSessions[from].projectScope, 
+                                value: matchedBasePrice // Dynamic allocation mapping active
                             });
                         } catch (dbErr) { console.log("CRM sync fail"); }
 
@@ -200,70 +236,45 @@ app.post('/webhook', async (req, res) => {
                     }
 
                     // =========================================================
-                    // 3. MAIN NAVIGATION MENU (SHOWING ALL PLANS SIMULTANEOUSLY)
+                    // 4. MAIN NAVIGATION MENU 
                     // =========================================================
-                    if (userText === 'hi' || userText === 'hello' || userText === 'menu' || userText === 'start') {
+                    if (resetTriggers.includes(userText)) {
                         userSessions[from].step = 'main_menu';
                         if (userLang === 'EN') {
-                            replyText = "Hello! Welcome to *Shahid Creatives*. 🚀\nWe design premium agile web ecosystems and high-converting automation workflows.\n\nSelect a professional stack tier via number:\n\n1️⃣ **Web Development Tiers** (All Standard Custom Packages)\n2️⃣ **AI Business Automation** (WhatsApp Bots & Active Workflows)\n3️⃣ **🔥 Exclusive Launch Deal** (Flat 20% OFF Status)\n4️⃣ **💳 Direct Booking & Token System** ($49 Slot Lock)\n5️⃣ **👤 Talk to Shahid** (Direct Consultation)";
+                            replyText = "Hello! Welcome to *Shahid Creatives*. 🚀\nWe design premium agile web ecosystems and high-converting automation workflows.\n\nSelect a professional stack tier via number:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI Business Automation**\n3️⃣ **🔥 Exclusive Launch Deal**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid**";
                         } else {
                             replyText = "Hello! Welcome to *Shahid Creatives* (Ludhiana, Punjab). 🚀\nHum engineer karte hain high-performance websites aur AI automation frameworks global and local brands ke liye.\n\nKoshish ko aage badhane ke liye niche se ek option reply kijiye:\n\n1️⃣ *Web Development Tiers* (Saare Standard Custom Packages)\n2️⃣ *AI Business Automation* (WhatsApp Bots & CRM Flows)\n3️⃣ *🔥 Exclusive Launch Deal* (Flat 20% OFF Status)\n4️⃣ *💳 Direct Booking & Token System* (₹999 Secure Path)\n5️⃣ *👤 Talk to Shahid* (Direct Consultation)";
                         }
-                    } 
-                    // 🌟 ALL AVAILABLE WEB DEVELOPMENT PLANS STRUCTURE SYNCED 
-                    else if (userText === '1') {
+                    } else if (userText === '1') {
                         if (userLang === 'EN') {
-                            replyText = "💻 *Shahid Creatives - Premium Web Tiers (All Available Packages):*\n\n" +
-                                        "• 💼 *Starter Premium Business Hub* ($299+) - Perfect for brand showcases. Includes 1-Yr Free Domain & Hosting.\n" +
-                                        "• 🛒 *Global E-commerce Engine* ($599) - Multi-currency Store + Stripe checkout automated integration.\n" +
-                                        "• 🚀 *Custom SaaS / Enterprise Portal* ($1,750+) - Tailored logic, secure multi-tenant databases & custom workflows.\n\n" +
-                                        "👉 Please reply with your preferred **Plan Name or Custom Specifications** to proceed!";
+                            replyText = "💻 *Shahid Creatives - Premium Web Tiers (All Available Packages):*\n\n• 💼 *Starter Premium Business Hub* ($299+) - Perfect for brand showcases. Includes 1-Yr Free Domain & Hosting.\n• 🛒 *Global E-commerce Engine* ($599) - Multi-currency Store + Stripe checkout automated integration.\n• 🚀 *Custom SaaS / Enterprise Portal* ($1,750+) - Tailored logic, secure multi-tenant databases & custom workflows.\n\n👉 Please reply with your preferred **Plan Name or Custom Specifications** to proceed!";
                         } else {
-                            replyText = "💻 *Shahid Creatives - Web Development Tiers (Saare Plans Available):*\n\n" +
-                                        "• 📄 *Starter Plan* (Base Price: ₹8,713) - Portfolio, Single Page Landing, ya Online Visiting Card sites ke liye best.\n" +
-                                        "• 💼 *Basic Small Business* (Base Price: ₹12,300) - Informational layout (3-5 pages) local shops aur businesses ke liye.\n" +
-                                        "• 🌟 *Starter Business Hub* (Base Price: ₹25,500) - Complete corporate systems, brand growth layouts & lead capture systems.\n" +
-                                        "• 🛒 *E-commerce Hub* (Base Price: ₹47,500) - Full-fledged Online Store with Product Listing, Cart, Coupons & Billing gateways.\n" +
-                                        "• 🚀 *Custom SaaS App* (Base Price: ₹1,45,000+) - Scalable web applications, admin dashboards, and custom business tools.\n\n" +
-                                        "💡 Note: All prices are subject to +18% GST and 2.5% transaction charges.\n\n" +
-                                        "👉 Aap kaun sa package choose karna chahte hain? Niche uska naam ya specifications reply mein share kijiye!";
+                            replyText = "💻 *Shahid Creatives - Web Development Tiers (Saare Plans Available):*\n\n• 📄 *Starter Plan* (Base Price: ₹8,713) - Portfolio, Single Page Landing, ya Online Visiting Card sites ke liye best.\n• 💼 *Basic Small Business* (Base Price: ₹12,300) - Informational layout (3-5 pages) local shops aur businesses ke liye.\n• 🌟 *Starter Business Hub* (Base Price: ₹25,500) - Complete corporate systems, brand growth layouts & lead capture systems.\n• 🛒 *E-commerce Hub* (Base Price: ₹47,500) - Full-fledged Online Store with Product Listing, Cart, Coupons & Billing gateways.\n• 🚀 *Custom SaaS App* (Base Price: ₹1,45,000+) - Scalable web applications, admin dashboards, and custom business tools.\n\n💡 Note: All prices are subject to +18% GST and 2.5% transaction charges.\n\n👉 Aap kaun sa package choose karna chahte hain? Niche uska naam ya specifications reply mein share kijiye!";
                         }
                         userSessions[from].step = 'collect_details';
-                    } 
-                    // 🌟 ALL AVAILABLE AI BUSINESS AUTOMATION PLANS STRUCTURE SYNCED
-                    else if (userText === '2') {
+                    } else if (userText === '2') {
                         if (userLang === 'EN') {
-                            replyText = "🤖 *AI Business Automation Hub (All Available Configurations):*\n\n" +
-                                        "• 🤖 *Enterprise Custom AI Hub* ($299 onwards) - Multi-currency receipt automation, dynamic parameters link injection, Stripe gateway sync, and enterprise native infrastructure.\n\n" +
-                                        "👉 Reply with your business workflow or automation goal to initiate development!";
+                            replyText = "🤖 *AI Business Automation Hub (All Available Configurations):*\n\n• 🤖 *Enterprise Custom AI Hub* ($299 onwards) - Multi-currency receipt automation, dynamic parameters link injection, Stripe gateway sync, and enterprise native infrastructure.\n\n👉 Reply with your business workflow or automation goal to initiate development!";
                         } else {
-                            replyText = "🤖 *AI Business Automation - Service Tiers (Saare Plans Available):*\n\n" +
-                                        "• 🤖 *WhatsApp Bot & Lead Sync* (Base Price: ₹8,713) - Basic conversational bot, text parsing engine, dashboard real-time CRM synchronization.\n" +
-                                        "• 🏢 *Custom CRM Workflow Hub* (Base Price: ₹18,000) - Complete internal sheet database connectivity, automated tasks, priority alert paths.\n" +
-                                        "• 🚀 *Enterprise AI Automation Suite* (Tailored Pricing) - Multi-channel bots (WhatsApp + Web Widgets), complex webhooks handler, automated dynamic workflows.\n\n" +
-                                        "👉 Apne automation requirement or operation goals niche reply mein batayein!";
+                            replyText = "🤖 *AI Business Automation - Service Tiers (Saare Plans Available):*\n\n• 🤖 *WhatsApp Bot & Lead Sync* (Base Price: ₹8,713) - Basic conversational bot, text parsing engine, dashboard real-time CRM synchronization.\n• 🏢 *Custom CRM Workflow Hub* (Base Price: ₹18,000) - Complete internal sheet database connectivity, automated tasks, priority alert paths.\n• 🚀 *Enterprise AI Automation Suite* (Tailored Pricing) - Multi-channel bots (WhatsApp + Web Widgets), complex webhooks handler, automated dynamic workflows.\n\n👉 Apne automation requirement or operation goals niche reply mein batayein!";
                         }
                         userSessions[from].step = 'collect_details';
-                    } 
-                    else if (userText === '3') {
+                    } else if (userText === '3') {
                         replyText = (userLang === 'EN')
-                            ? "🔥 *Exclusive Global Launch Offer!* 🔥\n\nCongratulations! You are eligible for a **Flat 20% Discount** on all configurations.\n\n👉 Reply with your **Name and Project Goal** right now to tag your discount code!"
-                            : "🔥 *Exclusive Launch Offer!* 🔥\n\nMubarak ho! Aap premium setup models par **Flat 20% Discount** ke liye eligible hain. \n\n👉 Is discount code ko apne session ke sath tag karne ke liye niche apna **Name aur Project Type** likh kar bhejien.";
+                            ? "🔥 *Exclusive Global Launch Offer!* 🔥\n\nWe have successfully mapped the launch coupon code **LAUNCH20** with your tracking node. This secures a **Flat 20% OFF** discount on your final project invoice bill!\n\n👉 Reply with your **Name and Project Goal** right now to tag your discount code!"
+                            : "🔥 *Exclusive Launch Offer!* 🔥\n\nMubarak ho! Aap premium setup models par **Flat 20% Discount** ke liye eligible hain. Maine aapke session ke sath coupon code **LAUNCH20** active kar diya hai.\n\n👉 Is discount code ko secure karne ke liye niche apna **Name aur Project Type** likh kar bhejien.";
                         userSessions[from].step = 'collect_details';
-                    } 
-                    else if (userText === '4') {
+                    } else if (userText === '4') {
                         replyText = (userLang === 'EN')
                             ? "💳 *Direct Booking & Token System ($49):*\n\nTo construct your dynamic link invoice panel, please provide your **Full Name, Contact Number, and Project/Plan Name**."
                             : "💳 *Direct Booking & Token System (₹999 Slot Lock):*\n\nYour custom live checkout portal status configure karne ke liye, kripya apna **Name, Phone Number, aur Project Name/Plan** reply mein bhejien.";
                         userSessions[from].step = 'collect_details';
-                    } 
-                    else if (userText === '5') {
+                    } else if (userText === '5') {
                         replyText = (userLang === 'EN')
                             ? "👤 *Direct Consultation with Shahid:*\n\nShahid Alam will connect with you directly on this chat thread. What time slot should I schedule an alignment call for you?"
                             : "👤 *Direct Consultation with Shahid:*\n\nShahid Alam aapke sath is thread par directly connect karenge. Aapko main kis time schedule par priority consultation slot book karu? Kindly niche batayein.";
                         userSessions[from].step = 'collect_details';
-                    } 
-                    else {
+                    } else {
                         replyText = (userLang === 'EN')
                             ? "I didn't quite catch that. 🤔 Please reply with *'Hi'* or *'Hello'* to open the main menu!"
                             : "Main samajh nahi paya. 🤔 Dobara structured menus dekhne ke liye ek baar *'Hi'* ya *'Hello'* bhejien!";

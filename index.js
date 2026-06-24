@@ -54,7 +54,7 @@ app.post('/webhook', async (req, res) => {
                             clientName: "Valued Client",
                             clientEmail: "",
                             projectScope: "Custom Project Development",
-                            lastSubmitedTime: 0 // Initialize tracking throttle timestamp
+                            lastSubmitedTime: 0 
                         };
                     }
                     
@@ -65,13 +65,11 @@ app.post('/webhook', async (req, res) => {
                     // =========================================================
                     if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate")) {
                         
-                        // 🌟 1. REQUEST THROTTLE CHECK (Solution 1: Prevents Duplicate Entries Internally)
                         if (userSessions[from].lastSubmitedTime && (Date.now() - userSessions[from].lastSubmitedTime < 5000)) {
                             console.log(`[THROTTLE INTERCEPT] Duplicate webhook trigger blocked for user: ${from}`);
-                            return; // Stop execution immediately without creating duplicate rows
+                            return; 
                         }
 
-                        // Mark transaction time instantly to lock concurrent triggers
                         userSessions[from].lastSubmitedTime = Date.now();
 
                         let clientName = "Valued Client";
@@ -112,12 +110,10 @@ app.post('/webhook', async (req, res) => {
                             console.error("Advanced template parsing engine failed:", parseError.message);
                         }
 
-                        // Save clean context properties inside memory storage parameters
                         userSessions[from].clientName = clientName;
                         userSessions[from].clientEmail = clientEmail;
                         userSessions[from].projectScope = projectScope;
 
-                        // Sync to Custom Dashboard Backend CRM
                         try {
                             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
                                 client_name: clientName,
@@ -126,16 +122,13 @@ app.post('/webhook', async (req, res) => {
                                 project_scope: "Website: " + projectScope,
                                 value: estimatedValue
                             });
-                            console.log(`[CRM SYNC] Lead synced successfully for ${clientName}`);
                         } catch (apiError) {
                             console.error("Dashboard DB Sync Failed:", apiError.message);
                         }
 
-                        // Dispatch admin notification channel update alert
                         const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail || 'Not Provided'}\n📝 *Plan:* ${projectScope}\n💰 *Value:* ${estimatedValue}\n\n🤖 *Status:* Throttle locked & synced. Check Admin Panel!`;
                         await sendWhatsAppMessage("917529839762", adminNotification);
 
-                        // Dispatch dynamic template interface reply configuration
                         let clientReply = "";
                         if (userLang === 'EN') {
                             clientReply = `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved on our production server.\n\nShahid has received your project specifications and technical preferences.\n\n🚀 Would you like to confirm your deployment slot with a **Token Booking ($49)** or schedule a strategy kickoff call right away?\n\nPlease reply with the number of your choice:\n\n1️⃣ **Book Token (Confirm Slot)**\n2️⃣ **Discuss Requirements (Schedule Strategy Call)**`;
@@ -151,7 +144,7 @@ app.post('/webhook', async (req, res) => {
                     const currentStep = userSessions[from].step;
 
                     // =========================================================
-                    // ⚙️ HANDLING ACTION LINKS GENERATION (WITH BRANDED PHRASE)
+                    // ⚙️ HANDLING ACTION LINKS GENERATION (WITH UPGRADED 20% DISCOUNT TEXT)
                     // =========================================================
                     if (currentStep === 'awaiting_website_action') {
                         if (userText === '1') {
@@ -164,12 +157,14 @@ app.post('/webhook', async (req, res) => {
                             
                             if (userLang === 'EN') {
                                 const tokenAmountUSD = "49";
-                                const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountUSD}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}`;
-                                replyText = `領 *Excellent Choice!* I have generated your dynamic project invoice portal.\n\nClick the official checkout gateway link below to pay the **Token Booking fee ($49)** via Razorpay. Your slot will be secured automatically inside Shahid Creatives system workflow:\n\n🔗 *Pay Securely Here:* ${dynamicPaymentLink}\n\n*Project Reference ID:* ${uniqueProjectId}`;
+                                const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountUSD}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
+                                
+                                replyText = `領 *Excellent Choice!* Your details have been received successfully! 🤝\n\n🔥 *Exclusive Reward Activated:* We have successfully mapped the launch coupon code **LAUNCH20** with your tracking ID. This secures a **Flat 20% OFF** on your final project invoice balance!\n\nYou can proceed via the secure link below to perform your **Token Booking ($49)** via Razorpay. This instantly locks your deployment slot in the *Shahid Creatives* automated production queue:\n\n🔗 *Direct Pay Gateway Link:* ${dynamicPaymentLink}\n\n*Project Reference ID:* ${uniqueProjectId}\n\n⏱️ Note: Slot holds are dynamic. Pay securely to trigger the automated onboarding kickoff system! 🚀`;
                             } else {
                                 const tokenAmountINR = "999";
-                                const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}`;
-                                replyText = `Thank you, aapki details receive ho gayi hain! 🤝\n\nMaine aapke chat data ke aadhar par aapka **Direct Token Payment Link** generate kar diya hai.\n\nAap niche diye gaye secure path par click karke direct Razorpay se **₹999 Token Booking** complete kar sakte hain. Isse *Shahid Creatives* mein aapka slot automatic book ho jayega:\n\n🔗 *Direct Pay Gateway Link:* ${dynamicPaymentLink}\n\n*Project Reference ID:* ${uniqueProjectId}\n\n💡 Agar aap pehle details discuss karna chahte hain, toh bejhijhak yahan apna message type kijiye!`;
+                                const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
+                                
+                                replyText = `Thank you, aapki details receive ho gayi hain! 🤝\n\n🔥 *Exclusive Offer Activated:* Maine aapke is project profile ke sath launch coupon code **LAUNCH20** को टैग कर दिया है! Isse payment complete hone ke baad aapke main project price par **Flat 20% OFF (Discount)** apply ho jayega.\n\nAap niche diye gaye secure path par click karke direct Razorpay se apna **₹999 Token Booking** complete kar sakte hain. Isse *Shahid Creatives* mein aapka slot automatic book ho jayega aur development kickoff schedule ho jayega:\n\n🔗 *Direct Pay Gateway Link:* ${dynamicPaymentLink}\n\n*Project Reference ID:* ${uniqueProjectId}\n\n💡 Slot configuration active hai. Payment complete hote hi hamara client onboarding automated system kickoff ho jayega! 🚀`;
                             }
                             return sendWhatsAppMessage(from, replyText);
                         } 
@@ -227,12 +222,12 @@ app.post('/webhook', async (req, res) => {
                         
                         if (userLang === 'EN') {
                             const tokenAmountUSD = "49";
-                            const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountUSD}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}`;
-                            replyText = `Thank you, your profile has been secured! 🤝\n\n🔗 *Pay Securely Here:* ${selfPayLink}\n\n*Reference ID:* ${uniqueProjectId}`;
+                            const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountUSD}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
+                            replyText = `Thank you, your profile has been secured! 🤝\n\n🔥 *Launch Discount Applied:* Your code **LAUNCH20** (Flat 20% OFF) is successfully linked.\n\n🔗 *Pay Securely Here:* ${selfPayLink}\n\n*Reference ID:* ${uniqueProjectId}`;
                         } else {
                             const tokenAmountINR = "999";
-                            const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}`;
-                            replyText = `Thank you, aapki details receive ho gayi hain! 🤝\n\nMaine aapke chat data ke aadhar par aapka **Direct Token Payment Link** generate kar diya hai. Aap direct Razorpay se **₹999 Token Booking** complete kar sakte hain. Isse *Shahid Creatives* mein aapka slot automatic book ho jayega:\n\n🔗 *Direct Pay Gateway Link:* ${selfPayLink}\n\n*Project Reference ID:* ${uniqueProjectId}\n\n💡 Agar aap pehle details discuss karna chahte hain, toh bejhijhak yahan apna message type kijiye!`;
+                            const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
+                            replyText = `Thank you, aapki details receive ho gayi hain! 🤝\n\n🔥 *Launch Discount Applied:* Maine aapke profile ke sath **LAUNCH20** (Flat 20% OFF) active kar diya hai.\n\nAap niche diye gaye path par click karke direct Razorpay se **₹999 Token Booking** complete kar sakte hain. Isse *Shahid Creatives* mein aapka slot automatic book ho jayega:\n\n🔗 *Direct Pay Gateway Link:* ${selfPayLink}\n\n*Project Reference ID:* ${uniqueProjectId}`;
                         }
                         return sendWhatsAppMessage(from, replyText);
                     }
@@ -294,25 +289,6 @@ app.post('/webhook', async (req, res) => {
         }
     }
 });
-
-// Helper Function for Media Transmissions (Optional Extension)
-async function sendWhatsAppMedia(to, mediaType, mediaUrl, fileName = "Brochure.pdf") {
-    const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
-    const PHONE_NUMBER_ID = "1202984902891472";
-    const mediaPayload = { messaging_product: "whatsapp", to: to, type: mediaType };
-
-    if (mediaType === 'image') mediaPayload.image = { url: mediaUrl };
-    else if (mediaType === 'document') mediaPayload.document = { url: mediaUrl, filename: fileName };
-
-    try {
-        await axios({
-            method: "POST",
-            url: `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`,
-            data: mediaPayload,
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${WHATSAPP_TOKEN}` }
-        });
-    } catch (err) { console.error("Media send failure:", err.message); }
-}
 
 // Standard Helper Function for Meta Message API
 async function sendWhatsAppMessage(to, text) {

@@ -46,6 +46,7 @@ app.post('/webhook', async (req, res) => {
                             step: 'welcome',
                             lang: (isInternationalNumber || isGlobalWebsiteTemplate) ? 'EN' : 'HINGLISH',
                             clientName: "Valued Client",
+                            clientEmail: "", // Added to session object
                             projectScope: "Custom Project Development"
                         };
                     }
@@ -53,42 +54,55 @@ app.post('/webhook', async (req, res) => {
                     const userLang = userSessions[from].lang;
 
                     // =========================================================
-                    // 1. WEBSITE LEAD AUTO-DETECTION & CRM SYNC (ANTI-DUPLICATE)
+                    // 1. WEBSITE LEAD AUTO-DETECTION & CRM SYNC (BULLETPROOF PARSER)
                     // =========================================================
                     if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate")) {
                         
                         let clientName = "Valued Client";
+                        let clientEmail = "";
                         let projectScope = "Website Custom Estimate";
                         let estimatedValue = "8713"; 
 
                         try {
-                            const nameMatch = rawText.match(/Client Name:\s*(.*)/i);
-                            const scopeMatch = rawText.match(/Category Model:\s*(.*)/i);
-                            const priceMatch = rawText.match(/(?:Estimated Price|Total Due[^:]*):\s*([^\n]+)/i);
+                            // 🌟 ADVANCED REGEX PARSER: Emojis, Spaces, and Special Characters safe lines
+                            const nameMatch = rawText.match(/(?:Client Name|👤[^:]*):\s*([^\n\r]+)/i);
+                            const emailMatch = rawText.match(/(?:Email Address|✉️[^:]*):\s*([^\n\r\s]+)/i);
+                            const scopeMatch = rawText.match(/(?:Category Model|Model|Specifications[^:]*):\s*([^\n\r]+)/i);
+                            const priceMatch = rawText.match(/(?:Estimated Price|Total Due[^:]*):\s*([^\n\r]+)/i);
 
-                            if (nameMatch) clientName = nameMatch[1].split('\n')[0].split(',')[0].trim();
-                            if (scopeMatch) projectScope = scopeMatch[1].trim();
+                            if (nameMatch) {
+                                clientName = nameMatch[1].split(',')[0].trim();
+                            }
+                            if (emailMatch) {
+                                // Clean up mailto links or anchor markup if injected by browser engine wrappers
+                                clientEmail = emailMatch[1].replace(/[<>]/g, '').trim();
+                            }
+                            if (scopeMatch) {
+                                projectScope = scopeMatch[1].replace(/[\*•\-]/g, '').trim();
+                            }
                             if (priceMatch) {
                                 let priceStr = priceMatch[1].trim();
-                                // Clean up value and retain currency indicator context if available
                                 if (priceStr.includes("$") || isGlobalWebsiteTemplate) {
                                     estimatedValue = priceStr.replace(/[^0-9]/g, '');
-                                    estimatedValue = `$${estimatedValue}`; // Pass explicit currency string to backend
+                                    estimatedValue = `$${estimatedValue}`;
                                 } else {
                                     estimatedValue = priceStr.replace(/[^0-9]/g, '');
                                 }
                             }
                         } catch (parseError) {
-                            console.error("Data extraction parsing failed:", parseError.message);
+                            console.error("Advanced template parsing engine failed:", parseError.message);
                         }
 
+                        // Save clean context mapping properties inside memory storage session
                         userSessions[from].clientName = clientName;
+                        userSessions[from].clientEmail = clientEmail;
                         userSessions[from].projectScope = projectScope;
 
-                        // Sync to Dashboard - Server route matching handles duplication upserts internally
+                        // Sync to Custom Dashboard Backend CRM
                         try {
                             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
                                 client_name: clientName,
+                                email: clientEmail, // Added email metadata layer to backend pipeline
                                 whatsapp_number: from,
                                 project_scope: "Website: " + projectScope,
                                 value: estimatedValue
@@ -97,7 +111,8 @@ app.post('/webhook', async (req, res) => {
                             console.error("Dashboard DB Sync Failed:", apiError.message);
                         }
 
-                        const adminNotification = `🌟 *NEW ${userLang === 'EN' ? 'GLOBAL' : 'DOMESTIC'} LEAD ARRIVED!* 🌟\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n📝 *Plan:* ${projectScope}\n💰 *Value:* ${estimatedValue}\n\n🤖 *Status:* System synced. Check Admin Panel!`;
+                        // Notification alert route dispatched to Shahid Bhai's profile channel
+                        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail || 'Not Provided'}\n📝 *Plan:* ${projectScope}\n💰 *Value:* ${estimatedValue}\n\n🤖 *Status:* System synced. Check Admin Panel!`;
                         await sendWhatsAppMessage("917529839762", adminNotification);
 
                         let clientReply = "";
@@ -120,15 +135,18 @@ app.post('/webhook', async (req, res) => {
 
                             const uniqueProjectId = `SC-${Math.floor(10000 + Math.random() * 90000)}`; 
                             const encodedName = encodeURIComponent(userSessions[from].clientName);
+                            const encodedEmail = encodeURIComponent(userSessions[from].clientEmail || "");
                             const encodedPlan = encodeURIComponent(userSessions[from].projectScope);
                             
                             if (userLang === 'EN') {
                                 const tokenAmountUSD = "49";
-                                const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountUSD}&name=${encodedName}&phone=${from}&plan=${encodedPlan}`;
+                                // 🌟 UPGRADED LINK: Passing email parameter explicitly into web interface hash template routing
+                                const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountUSD}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}`;
                                 replyText = `💳 *Excellent Choice!* Click the official checkout gateway link below to pay the **Token Booking fee ($49)** via Razorpay:\n\n🔗 *Pay Securely Here:* ${dynamicPaymentLink}\n\n*Project Reference ID:* ${uniqueProjectId}`;
                             } else {
                                 const tokenAmountINR = "999";
-                                const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&name=${encodedName}&phone=${from}&plan=${encodedPlan}`;
+                                // 🌟 UPGRADED LINK: Passing email parameter explicitly into web interface hash template routing
+                                const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}`;
                                 replyText = `Thank you, aapki details receive ho gayi hain! 🤝\n\nMaine aapke chat data ke aadhar par aapka **Direct Token Payment Link** generate kar diya hai. Aap direct Razorpay se **₹999 Token Booking** complete kar sakte hain. Isse *Shahid Creatives* mein aapka slot automatic book ho jayega:\n\n🔗 *Direct Pay Gateway Link:* ${dynamicPaymentLink}\n\n*Project Reference ID:* ${uniqueProjectId}`;
                             }
                             return sendWhatsAppMessage(from, replyText);
@@ -155,12 +173,23 @@ app.post('/webhook', async (req, res) => {
                     if (currentStep === 'ask_name_email') {
                         const contactDetails = rawText;
                         userSessions[from].step = 'completed';
-                        const cleanName = contactDetails.split('\n')[0].split(',')[0].trim();
+                        
+                        let cleanName = contactDetails.split('\n')[0].split(',')[0].trim();
+                        let cleanEmail = "";
+                        
+                        // Fallback parsing inline inputs for direct chatbot flows
+                        if(contactDetails.includes("@")) {
+                            const emailArr = contactDetails.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/gi);
+                            if(emailArr) cleanEmail = emailArr[0].trim();
+                        }
+
                         userSessions[from].clientName = cleanName;
+                        userSessions[from].clientEmail = cleanEmail;
 
                         try {
                             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
                                 client_name: cleanName,
+                                email: cleanEmail,
                                 whatsapp_number: from,
                                 project_scope: "ChatBot: " + userSessions[from].projectScope,
                                 value: (userLang === 'EN') ? "$299" : "8713"
@@ -169,15 +198,16 @@ app.post('/webhook', async (req, res) => {
 
                         const uniqueProjectId = `SC-${Math.floor(10000 + Math.random() * 90000)}`;
                         const encodedName = encodeURIComponent(cleanName);
+                        const encodedEmail = encodeURIComponent(cleanEmail);
                         const encodedPlan = encodeURIComponent(userSessions[from].projectScope);
                         
                         if (userLang === 'EN') {
                             const tokenAmountUSD = "49";
-                            const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountUSD}&name=${encodedName}&phone=${from}&plan=${encodedPlan}`;
+                            const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountUSD}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}`;
                             replyText = `Thank you, your profile has been secured! 🤝\n\n🔗 *Pay Securely Here:* ${selfPayLink}\n\n*Reference ID:* ${uniqueProjectId}`;
                         } else {
                             const tokenAmountINR = "999";
-                            const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&name=${encodedName}&phone=${from}&plan=${encodedPlan}`;
+                            const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}`;
                             replyText = `Thank you, aapki details receive ho gayi hain! 🤝\n\n🔗 *Direct Pay Gateway Link:* ${selfPayLink}\n\n*Project Reference ID:* ${uniqueProjectId}`;
                         }
                         return sendWhatsAppMessage(from, replyText);

@@ -53,17 +53,27 @@ app.post('/webhook', async (req, res) => {
                             lang: (isInternationalNumber || isGlobalWebsiteTemplate) ? 'EN' : 'HINGLISH',
                             clientName: "Valued Client",
                             clientEmail: "",
-                            projectScope: "Custom Project Development"
+                            projectScope: "Custom Project Development",
+                            lastSubmitedTime: 0 // Initialize tracking throttle timestamp
                         };
                     }
                     
                     const userLang = userSessions[from].lang;
 
                     // =========================================================
-                    // 1. WEBSITE LEAD AUTO-DETECTION & CRM SYNC (BULLETPROOF PARSER)
+                    // 1. WEBSITE LEAD AUTO-DETECTION & CRM SYNC (WITH IN-MEMORY THROTTLE LOCK)
                     // =========================================================
                     if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate")) {
                         
+                        // 🌟 1. REQUEST THROTTLE CHECK (Solution 1: Prevents Duplicate Entries Internally)
+                        if (userSessions[from].lastSubmitedTime && (Date.now() - userSessions[from].lastSubmitedTime < 5000)) {
+                            console.log(`[THROTTLE INTERCEPT] Duplicate webhook trigger blocked for user: ${from}`);
+                            return; // Stop execution immediately without creating duplicate rows
+                        }
+
+                        // Mark transaction time instantly to lock concurrent triggers
+                        userSessions[from].lastSubmitedTime = Date.now();
+
                         let clientName = "Valued Client";
                         let clientEmail = "";
                         let projectScope = "Website Custom Estimate";
@@ -91,7 +101,7 @@ app.post('/webhook', async (req, res) => {
                                 }
                             }
 
-                            // 🌟 ULTIMATE BULLETPROOF EMAIL EXTRACTOR (Fixes image_6ffa3e empty value glitch)
+                            // Bulletproof Global Email Extractor 
                             const globalEmailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/i;
                             const emailMatch = rawText.match(globalEmailRegex);
                             if (emailMatch) {
@@ -102,7 +112,7 @@ app.post('/webhook', async (req, res) => {
                             console.error("Advanced template parsing engine failed:", parseError.message);
                         }
 
-                        // Save parsed metadata securely in current session
+                        // Save clean context properties inside memory storage parameters
                         userSessions[from].clientName = clientName;
                         userSessions[from].clientEmail = clientEmail;
                         userSessions[from].projectScope = projectScope;
@@ -116,15 +126,16 @@ app.post('/webhook', async (req, res) => {
                                 project_scope: "Website: " + projectScope,
                                 value: estimatedValue
                             });
+                            console.log(`[CRM SYNC] Lead synced successfully for ${clientName}`);
                         } catch (apiError) {
                             console.error("Dashboard DB Sync Failed:", apiError.message);
                         }
 
-                        // Notification alert route dispatched to Shahid Bhai's personal phone channel
-                        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail || 'Not Provided'}\n📝 *Plan:* ${projectScope}\n💰 *Value:* ${estimatedValue}\n\n🤖 *Status:* System synced. Check Admin Panel!`;
+                        // Dispatch admin notification channel update alert
+                        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail || 'Not Provided'}\n📝 *Plan:* ${projectScope}\n💰 *Value:* ${estimatedValue}\n\n🤖 *Status:* Throttle locked & synced. Check Admin Panel!`;
                         await sendWhatsAppMessage("917529839762", adminNotification);
 
-                        // Dynamic Reply Based on Language Mode
+                        // Dispatch dynamic template interface reply configuration
                         let clientReply = "";
                         if (userLang === 'EN') {
                             clientReply = `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved on our production server.\n\nShahid has received your project specifications and technical preferences.\n\n🚀 Would you like to confirm your deployment slot with a **Token Booking ($49)** or schedule a strategy kickoff call right away?\n\nPlease reply with the number of your choice:\n\n1️⃣ **Book Token (Confirm Slot)**\n2️⃣ **Discuss Requirements (Schedule Strategy Call)**`;
@@ -221,7 +232,7 @@ app.post('/webhook', async (req, res) => {
                         } else {
                             const tokenAmountINR = "999";
                             const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}`;
-                            replyText = `Thank you, aapki details receive ho gayi hain! 🤝\n\nMaine aapke chat data ke aadhar par aapka **Direct Token Payment Link** generate kar diya hai.\n\nAap niche diye gaye secure path par click karke direct Razorpay se **₹999 Token Booking** complete kar sakte hain. Isse *Shahid Creatives* mein aapka slot automatic book ho jayega:\n\n🔗 *Direct Pay Gateway Link:* ${selfPayLink}\n\n*Project Reference ID:* ${uniqueProjectId}\n\n💡 Agar aap pehle details discuss karna chahte hain, toh bejhijhak yahan apna message type kijiye!`;
+                            replyText = `Thank you, aapki details receive ho gayi hain! 🤝\n\nMaine aapke chat data ke aadhar par aapka **Direct Token Payment Link** generate kar diya hai. Aap direct Razorpay se **₹999 Token Booking** complete kar sakte hain. Isse *Shahid Creatives* mein aapka slot automatic book ho jayega:\n\n🔗 *Direct Pay Gateway Link:* ${selfPayLink}\n\n*Project Reference ID:* ${uniqueProjectId}\n\n💡 Agar aap pehle details discuss karna chahte hain, toh bejhijhak yahan apna message type kijiye!`;
                         }
                         return sendWhatsAppMessage(from, replyText);
                     }

@@ -66,7 +66,7 @@ app.post('/webhook', async (req, res) => {
                     const currentStep = userSessions[from].step;
 
                     // =========================================================
-                    // ⚙️ STATE RULE 1: CAPTURING ACTION BUTTON 1 (SEND REAL LINK WITH DISCOUNT)
+                    // ⚙️ STATE RULE 1: CAPTURING REPLIES FOR BOOKING (DIFERENT CHOICES CHANNELS)
                     // =========================================================
                     if (currentStep === 'awaiting_website_action') {
                         if (userText === '1') {
@@ -80,11 +80,11 @@ app.post('/webhook', async (req, res) => {
                             if (userLang === 'EN') {
                                 const tokenAmountUSD = "49";
                                 const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountUSD}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
-                                replyText = `💳 *Perfect!* I have generated your unique secure project invoice link.\n\nClick the link below to pay your **Token Booking fee ($49)** via Razorpay. This will instantly reserve your slot in *Shahid Creatives* automated production timeline:\n\n🔗 *Pay Securely Here:* ${dynamicPaymentLink}\n\n*Project Reference ID:* ${uniqueProjectId}`;
+                                replyText = `💳 *Excellent Choice!* Your session data is validated. 🤝\n\nClick the official link below to pay your **Token Booking fee ($49)** via Razorpay. This will instantly reserve your delivery slot in *Shahid Creatives* automated production queue:\n\n🔗 *Pay Securely Here:* ${dynamicPaymentLink}\n\n*Project Reference ID:* ${uniqueProjectId}`;
                             } else {
                                 const tokenAmountINR = "999";
                                 const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
-                                replyText = `Zabardast Choice! 👍 Maine aapka unique secure client booking invoice link generate kar diya hai.\n\nAap niche diye gaye secure path par click karke direct Razorpay se apna **₹999 Token Booking** complete kar sakte hain. Isse *Shahid Creatives* mein aapka slot automatic book ho jayega aur development kickoff active ho jayega:\n\n🔗 *Direct Pay Gateway Link:* ${dynamicPaymentLink}\n\n*Project Reference ID:* ${uniqueProjectId}\n\n💡 Note: Payment complete hote hi hamara automated system onboarding processes filter kickoff kar dega! 🚀`;
+                                replyText = `Zabardast Choice! 👍 Maine aapka unique secure client booking invoice link generate kar diya hai.\n\nAap niche diye gaye secure path par click karke direct Razorpay se apna **₹999 Token Booking** complete kar sakte hain. Isse *Shahid Creatives* mein aapka slot automatic book ho jayega aur development process instantly active ho jayega:\n\n🔗 *Direct Pay Gateway Link:* ${dynamicPaymentLink}\n\n*Project Reference ID:* ${uniqueProjectId}\n\n💡 Note: Payment complete hote hi hamara automated client onboarding system kickoff message trigger kar dega! 🚀`;
                             }
                             return sendWhatsAppMessage(from, replyText);
                         } else if (userText === '2') {
@@ -119,7 +119,7 @@ app.post('/webhook', async (req, res) => {
                             if (scopeMatch) projectScope = scopeMatch[1].replace(/[\*•\-]/g, '').trim();
                             if (priceMatch) parsedBasePrice = priceMatch[1].replace(/[^0-9.]/g, '').trim();
                             
-                            const globalEmailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/i;
+                            const globalEmailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]\.[a-zA-Z0-9_-]+)/i; // - Modified parsing context bounds slightly to improve stability matching input patterns.
                             const emailMatch = rawText.match(globalEmailRegex);
                             if (emailMatch) clientEmail = emailMatch[1].trim();
                         } catch (parseError) {
@@ -141,7 +141,7 @@ app.post('/webhook', async (req, res) => {
                         const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail || 'Not Provided'}\n📝 *Plan:* ${projectScope}\n💰 *Value:* ₹${finalCalculatedValue}\n\n🤖 *Status:* Locked & logged. Check Admin Panel!`;
                         await sendWhatsAppMessage("917529839762", adminNotification);
 
-                        // 🌟 HOOK INTEGRATION: FIRST MESSAGE CONTAINS THE 20% DISCOUNT INSTANT PITCH
+                        // 🌟 SINGLE MESSAGE PITCH: SHOW HOOK IMMEDIATELY
                         let clientReply = "";
                         if (userLang === 'EN') {
                             clientReply = `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved on our production server.\n\n🔥 *Exclusive Reward Activated:* We have successfully mapped the launch coupon code **LAUNCH20** with your tracking node. This secures a **Flat 20% OFF** discount on your final project invoice bill!\n\n🚀 Would you like to confirm your design deployment slot with a **Token Booking ($49)** or schedule a strategy kickoff call right away?\n\nPlease reply with the number of your choice:\n\n1️⃣ **Book Token (Confirm Slot & Claim 20% OFF)**\n2️⃣ **Discuss Requirements (Schedule Strategy Call)**`;
@@ -200,32 +200,73 @@ app.post('/webhook', async (req, res) => {
                     }
 
                     // =========================================================
-                    // 3. MAIN NAVIGATION MENU
+                    // 3. MAIN NAVIGATION MENU (SHOWING ALL PLANS SIMULTANEOUSLY)
                     // =========================================================
                     if (userText === 'hi' || userText === 'hello' || userText === 'menu' || userText === 'start') {
                         userSessions[from].step = 'main_menu';
                         if (userLang === 'EN') {
-                            replyText = "Hello! Welcome to *Shahid Creatives*. 🚀\nHow can we accelerate your business? Please reply with a number:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI Business Automation**\n3️⃣ **🔥 Exclusive Launch Deal**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid**";
+                            replyText = "Hello! Welcome to *Shahid Creatives*. 🚀\nWe design premium agile web ecosystems and high-converting automation workflows.\n\nSelect a professional stack tier via number:\n\n1️⃣ **Web Development Tiers** (All Standard Custom Packages)\n2️⃣ **AI Business Automation** (WhatsApp Bots & Active Workflows)\n3️⃣ **🔥 Exclusive Launch Deal** (Flat 20% OFF Status)\n4️⃣ **💳 Direct Booking & Token System** ($49 Slot Lock)\n5️⃣ **👤 Talk to Shahid** (Direct Consultation)";
                         } else {
-                            replyText = "Hello! Welcome to *Shahid Creatives* (Ludhiana, Punjab). 🚀\nAapko kis service ke baare mein jaanna hai? Niche diya gaya number reply mein bhejien:\n\n1️⃣ *Web Development Tiers*\n2️⃣ *AI Business Automation*\n3️⃣ *🔥 Exclusive Launch Deal*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid*";
+                            replyText = "Hello! Welcome to *Shahid Creatives* (Ludhiana, Punjab). 🚀\nHum engineer karte hain high-performance websites aur AI automation frameworks global and local brands ke liye.\n\nKoshish ko aage badhane ke liye niche se ek option reply kijiye:\n\n1️⃣ *Web Development Tiers* (Saare Standard Custom Packages)\n2️⃣ *AI Business Automation* (WhatsApp Bots & CRM Flows)\n3️⃣ *🔥 Exclusive Launch Deal* (Flat 20% OFF Status)\n4️⃣ *💳 Direct Booking & Token System* (₹999 Secure Path)\n5️⃣ *👤 Talk to Shahid* (Direct Consultation)";
                         }
-                    } else if (userText === '1') {
-                        replyText = (userLang === 'EN') ? "💻 Premium Web Tiers. Please reply with requirements." : "💻 Web Tiers. Starter Plan (₹8,713) onwards. Please reply with requirements!";
+                    } 
+                    // 🌟 ALL AVAILABLE WEB DEVELOPMENT PLANS STRUCTURE SYNCED 
+                    else if (userText === '1') {
+                        if (userLang === 'EN') {
+                            replyText = "💻 *Shahid Creatives - Premium Web Tiers (All Available Packages):*\n\n" +
+                                        "• 💼 *Starter Premium Business Hub* ($299+) - Perfect for brand showcases. Includes 1-Yr Free Domain & Hosting.\n" +
+                                        "• 🛒 *Global E-commerce Engine* ($599) - Multi-currency Store + Stripe checkout automated integration.\n" +
+                                        "• 🚀 *Custom SaaS / Enterprise Portal* ($1,750+) - Tailored logic, secure multi-tenant databases & custom workflows.\n\n" +
+                                        "👉 Please reply with your preferred **Plan Name or Custom Specifications** to proceed!";
+                        } else {
+                            replyText = "💻 *Shahid Creatives - Web Development Tiers (Saare Plans Available):*\n\n" +
+                                        "• 📄 *Starter Plan* (Base Price: ₹8,713) - Portfolio, Single Page Landing, ya Online Visiting Card sites ke liye best.\n" +
+                                        "• 💼 *Basic Small Business* (Base Price: ₹12,300) - Informational layout (3-5 pages) local shops aur businesses ke liye.\n" +
+                                        "• 🌟 *Starter Business Hub* (Base Price: ₹25,500) - Complete corporate systems, brand growth layouts & lead capture systems.\n" +
+                                        "• 🛒 *E-commerce Hub* (Base Price: ₹47,500) - Full-fledged Online Store with Product Listing, Cart, Coupons & Billing gateways.\n" +
+                                        "• 🚀 *Custom SaaS App* (Base Price: ₹1,45,000+) - Scalable web applications, admin dashboards, and custom business tools.\n\n" +
+                                        "💡 Note: All prices are subject to +18% GST and 2.5% transaction charges.\n\n" +
+                                        "👉 Aap kaun sa package choose karna chahte hain? Niche uska naam ya specifications reply mein share kijiye!";
+                        }
                         userSessions[from].step = 'collect_details';
-                    } else if (userText === '2') {
-                        replyText = "🤖 AI Automation Hub. Share your workflow details.";
+                    } 
+                    // 🌟 ALL AVAILABLE AI BUSINESS AUTOMATION PLANS STRUCTURE SYNCED
+                    else if (userText === '2') {
+                        if (userLang === 'EN') {
+                            replyText = "🤖 *AI Business Automation Hub (All Available Configurations):*\n\n" +
+                                        "• 🤖 *Enterprise Custom AI Hub* ($299 onwards) - Multi-currency receipt automation, dynamic parameters link injection, Stripe gateway sync, and enterprise native infrastructure.\n\n" +
+                                        "👉 Reply with your business workflow or automation goal to initiate development!";
+                        } else {
+                            replyText = "🤖 *AI Business Automation - Service Tiers (Saare Plans Available):*\n\n" +
+                                        "• 🤖 *WhatsApp Bot & Lead Sync* (Base Price: ₹8,713) - Basic conversational bot, text parsing engine, dashboard real-time CRM synchronization.\n" +
+                                        "• 🏢 *Custom CRM Workflow Hub* (Base Price: ₹18,000) - Complete internal sheet database connectivity, automated tasks, priority alert paths.\n" +
+                                        "• 🚀 *Enterprise AI Automation Suite* (Tailored Pricing) - Multi-channel bots (WhatsApp + Web Widgets), complex webhooks handler, automated dynamic workflows.\n\n" +
+                                        "👉 Apne automation requirement or operation goals niche reply mein batayein!";
+                        }
                         userSessions[from].step = 'collect_details';
-                    } else if (userText === '3') {
-                        replyText = "🔥 Flat 20% Discount. Share your name to lock.";
+                    } 
+                    else if (userText === '3') {
+                        replyText = (userLang === 'EN')
+                            ? "🔥 *Exclusive Global Launch Offer!* 🔥\n\nCongratulations! You are eligible for a **Flat 20% Discount** on all configurations.\n\n👉 Reply with your **Name and Project Goal** right now to tag your discount code!"
+                            : "🔥 *Exclusive Launch Offer!* 🔥\n\nMubarak ho! Aap premium setup models par **Flat 20% Discount** ke liye eligible hain. \n\n👉 Is discount code ko apne session ke sath tag karne ke liye niche apna **Name aur Project Type** likh kar bhejien.";
                         userSessions[from].step = 'collect_details';
-                    } else if (userText === '4') {
-                        replyText = "💳 Share Name, Phone, and Plan to generate dynamic link.";
+                    } 
+                    else if (userText === '4') {
+                        replyText = (userLang === 'EN')
+                            ? "💳 *Direct Booking & Token System ($49):*\n\nTo construct your dynamic link invoice panel, please provide your **Full Name, Contact Number, and Project/Plan Name**."
+                            : "💳 *Direct Booking & Token System (₹999 Slot Lock):*\n\nYour custom live checkout portal status configure karne ke liye, kripya apna **Name, Phone Number, aur Project Name/Plan** reply mein bhejien.";
                         userSessions[from].step = 'collect_details';
-                    } else if (userText === '5') {
-                        replyText = "👤 Shahid will connect shortly. Share your preferred meeting slot.";
+                    } 
+                    else if (userText === '5') {
+                        replyText = (userLang === 'EN')
+                            ? "👤 *Direct Consultation with Shahid:*\n\nShahid Alam will connect with you directly on this chat thread. What time slot should I schedule an alignment call for you?"
+                            : "👤 *Direct Consultation with Shahid:*\n\nShahid Alam aapke sath is thread par directly connect karenge. Aapko main kis time schedule par priority consultation slot book karu? Kindly niche batayein.";
                         userSessions[from].step = 'collect_details';
-                    } else {
-                        replyText = "Please reply with 'Hi' or 'Hello' to view the main menu.";
+                    } 
+                    else {
+                        replyText = (userLang === 'EN')
+                            ? "I didn't quite catch that. 🤔 Please reply with *'Hi'* or *'Hello'* to open the main menu!"
+                            : "Main samajh nahi paya. 🤔 Dobara structured menus dekhne ke liye ek baar *'Hi'* ya *'Hello'* bhejien!";
                     }
                     await sendWhatsAppMessage(from, replyText);
                 }

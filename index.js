@@ -2,7 +2,10 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const axios = require('axios');
 const app = express();
-app.use(bodyParser.json());
+
+// Render and Meta optimized body limit parsing
+app.use(bodyParser.json({ limit: '10mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 
 // In-Memory Session Storage for Control Handshaking
 const userSessions = {};
@@ -389,18 +392,17 @@ app.post('/api/send-client-credentials', async (req, res) => {
 
 // Standard Message Dispatch Helper
 async function sendWhatsAppMessage(to, text) {
-    // Hardcoded highly-tested Live Token validation pipeline sequence
     const WHATSAPP_TOKEN = "EAAOT5XBXyVwBR7v5XwYnbITF4zF3xWzQXikBjAH1w2qu0sQTbVkyqpNvmRAqhkmU7BqCEcthw5CHelfzr3fmDF2C3la6lw28iYLPI3EmZAZC6vDQoHQyiZAKz7QmfuiZBh0TKhusnrH6CeJZBJLdwU30MOzyr7Vkn26w5dE4md74Bu4OwoLzqfmCCtFDZA9AZDZD";
-    
-    // 🛡️ CRITICAL DUAL SYNCHRONIZATION: Updated to use the correct ID matching bot 7508132846
-    const PHONE_NUMBER_ID = "104117025774577"; 
+    const PHONE_NUMBER_ID = "1202984902891472"; 
 
     await axios({
-        method: "POST", url: `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`,
+        method: "POST", 
+        url: `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`,
         data: { messaging_product: "whatsapp", to: to, type: "text", text: { body: text } },
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${WHATSAPP_TOKEN}` }
     });
 }
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`ChatBot engine live on port ${PORT}`));
+// Fixed Port Dynamic Initialization Layer
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, '0.0.0.0', () => console.log(`ChatBot engine live on port ${PORT}`));

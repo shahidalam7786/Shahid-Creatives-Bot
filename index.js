@@ -16,36 +16,29 @@ function calculateTotalPayable(basePrice) {
     return Math.round(totalPayable);
 }
 
-// 🌟 UPGRADED SMART PLAN PRICE MAPPER (Fixes exact match & lowercase/uppercase mismatch bugs)
+// UPGRADED SMART PLAN PRICE MAPPER
 function getBasePriceByPlan(planScope) {
     const text = String(planScope).toLowerCase().trim();
     
-    // 🛒 E-Commerce Tiers Validation
     if (text.includes("e-commerce") || text.includes("ecommerce") || text.includes("store") || text.includes("shop") || text.includes("retail")) {
         return "47500";
     }
-    // 🌟 Starter Business Hub Tiers Validation
     if (text.includes("starter business") || text.includes("business hub") || text.includes("corporate") || text.includes("brand growth")) {
         return "25500";
     }
-    // 💼 Basic Small Business Tiers Validation
     if (text.includes("basic small") || text.includes("small business") || text.includes("informational layout")) {
         return "12300";
-    }
-    // 🚀 Custom SaaS App / Enterprise Portals Validation
+  }
     if (text.includes("saas") || text.includes("app") || text.includes("software") || text.includes("enterprise") || text.includes("portal")) {
         return "145000";
     }
-    // 🏢 Custom CRM Workflow Hub Validation
     if (text.includes("crm") || text.includes("workflow") || text.includes("sheet database")) {
         return "18000";
     }
-    // 🤖 WhatsApp Bot & Lead Sync Validation
     if (text.includes("whatsapp bot") || text.includes("lead sync") || text.includes("conversational bot")) {
         return "8713";
     }
-    
-    return "8713"; // Safe ultimate fallback (Starter Plan)
+    return "8713"; 
 }
 
 // Meta Webhook Verification
@@ -62,7 +55,7 @@ app.get('/webhook', (req, res) => {
 
 // Main Webhook Logic for Processing Messages
 app.post('/webhook', async (req, res) => {
-    res.sendStatus(200); // Meta instant 200 OK delivery handshake
+    res.sendStatus(200); 
     const body = req.body;
     
     if (body.object === 'whatsapp_business_account' && body.entry) {
@@ -179,11 +172,12 @@ app.post('/webhook', async (req, res) => {
                                 email: clientEmail, 
                                 whatsapp_number: from, 
                                 project_scope: projectScope, 
-                                value: parsedBasePrice // Directly mapping real calculator output values
+                                value: parsedBasePrice 
                             });
                         } catch (apiError) { console.error("API Sync Failed"); }
 
-                        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail || 'Not Provided'}\n📝 *Plan:* ${projectScope}\n💰 *Value:* ₹${parsedBasePrice}\n\n🤖 *Status:* Locked & logged. Check Admin Panel!`;
+                        // 🌟 FIXED ALERT ENGINE FOR WEBSITE FORM FLOW
+                        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail || 'Not Provided'}\n📝 *Plan Chosen:* ${projectScope}\n💰 *Base Valuation:* ${isGlobalWebsiteTemplate ? '$' : '₹'}${parsedBasePrice}\n\n🤖 *Status:* Synced with Cloud Ledger. Check Admin Panel!`;
                         await sendWhatsAppMessage("917529839762", adminNotification);
 
                         let clientReply = "";
@@ -219,7 +213,6 @@ app.post('/webhook', async (req, res) => {
                         userSessions[from].clientName = cleanName;
                         userSessions[from].clientEmail = cleanEmail;
 
-                        // 🌟 DYNAMIC MATRIX RUNNER ACTIVE: Matches string and gets correct base price
                         const matchedBasePrice = getBasePriceByPlan(userSessions[from].projectScope);
 
                         try {
@@ -231,6 +224,10 @@ app.post('/webhook', async (req, res) => {
                                 value: matchedBasePrice 
                             });
                         } catch (dbErr) { console.log("CRM sync fail"); }
+
+                        // 🌟 FIXED DETECTOR: DISPATCHES INSTANT NOTIFICATION ON INBOUND DIRECT CHAT FLOWS TOO
+                        const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${cleanEmail || 'Not Provided'}\n📝 *Plan Scope:* ${userSessions[from].projectScope}\n💰 *Allocated Base:* ₹${matchedBasePrice}\n\n🤖 *Status:* Inbound state synced. Generate invoice keys!`;
+                        await sendWhatsAppMessage("917529839762", chatAdminNotification);
 
                         const uniqueProjectId = `SC-${Math.floor(10000 + Math.random() * 90000)}`;
                         const encodedName = encodeURIComponent(cleanName);

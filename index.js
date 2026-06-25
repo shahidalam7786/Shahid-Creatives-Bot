@@ -323,14 +323,22 @@ app.post('/api/send-payment-reminder', async (req, res) => {
 });
 
 // =========================================================================
-// 🔐 🌟 NEW: AUTOMATED CREDENTIALS TRIGGER PIPELINE FOR CLIENT PORTAL
+// 🔐 🌟 AUTOMATED CREDENTIALS TRIGGER PIPELINE (MULTIPLE PROPERTY COMPATIBLE FIX)
 // =========================================================================
 app.post('/api/send-client-credentials', async (req, res) => {
     const { 
-        whatsapp_number, client_name, project_scope, portal_id, password, login_link 
+        whatsapp_number, 
+        client_name, 
+        project_scope, 
+        portal_id, 
+        password, 
+        plain_password, // Fixed compatibility mapping layer
+        login_link 
     } = req.body;
 
-    if (!whatsapp_number || !portal_id || !password) {
+    const activePassword = password || plain_password;
+
+    if (!whatsapp_number || !portal_id || !activePassword) {
         return res.status(400).json({ success: false, error: "Missing required authentication parameters" });
     }
 
@@ -341,13 +349,13 @@ app.post('/api/send-client-credentials', async (req, res) => {
         formattedNumber = '91' + formattedNumber;
     }
 
-    // Professional onboarding credential template block
+    // Onboarding welcome layout template block
     const welcomeCredentialMessage = `🎉 *WELCOME TO SHAHID CREATIVES CLOUD HUB* 🎉\n\n` +
                                      `Hello *${client_name || 'Valued Client'}*! 🙏\n\n` +
                                      `Aapke project *${project_scope || 'Custom Web Development'}* ka work management layout deploy ho chuka hai! Aap niche diye gaye secure credentials se apna Client Dashboard open karke live updates track kar sakte hain.\n\n` +
                                      `🔐 *YOUR PORTAL CREDENTIALS:* \n` +
-                                     `📌 *Client Portal ID:* \`${portal_id}\` \n` +
-                                     `🔑 *Secure Password:* \`${password}\` \n\n` +
+                                     `📌 *Client Portal ID:* \` ${portal_id} \` \n` +
+                                     `🔑 *Secure Password:* \` ${activePassword} \` \n\n` +
                                      `🚀 *Direct Access Dashboard Path:* \n` +
                                      `🔗 ${targetLoginLink}\n\n` +
                                      `Dashboard ke andar aap milestones, current sprint tasks, aur outstanding accounting details poori transparently monitor kar sakte hain. Welcome aboard! 🤝✨`;

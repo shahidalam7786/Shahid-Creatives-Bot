@@ -16,20 +16,36 @@ function calculateTotalPayable(basePrice) {
     return Math.round(totalPayable);
 }
 
-// 🌟 HELPER TO EXTRACT BASE PRICE DYNAMICALLY FROM PLAN SELECTION
+// 🌟 UPGRADED SMART PLAN PRICE MAPPER (Fixes exact match & lowercase/uppercase mismatch bugs)
 function getBasePriceByPlan(planScope) {
-    const text = String(planScope).toLowerCase();
-    if (text.includes("starter plan") || text.includes("starter/")) return "8713";
-    if (text.includes("basic small business")) return "12300";
-    if (text.includes("starter business hub") || text.includes("starter business")) return "25500";
-    if (text.includes("e-commerce hub") || text.includes("e-commerce")) return "47500";
-    if (text.includes("custom saas app") || text.includes("saas")) return "145000";
+    const text = String(planScope).toLowerCase().trim();
     
-    // AI Automation Plans Mapping
-    if (text.includes("whatsapp bot & lead sync")) return "8713";
-    if (text.includes("custom crm workflow")) return "18000";
+    // 🛒 E-Commerce Tiers Validation
+    if (text.includes("e-commerce") || text.includes("ecommerce") || text.includes("store") || text.includes("shop") || text.includes("retail")) {
+        return "47500";
+    }
+    // 🌟 Starter Business Hub Tiers Validation
+    if (text.includes("starter business") || text.includes("business hub") || text.includes("corporate") || text.includes("brand growth")) {
+        return "25500";
+    }
+    // 💼 Basic Small Business Tiers Validation
+    if (text.includes("basic small") || text.includes("small business") || text.includes("informational layout")) {
+        return "12300";
+    }
+    // 🚀 Custom SaaS App / Enterprise Portals Validation
+    if (text.includes("saas") || text.includes("app") || text.includes("software") || text.includes("enterprise") || text.includes("portal")) {
+        return "145000";
+    }
+    // 🏢 Custom CRM Workflow Hub Validation
+    if (text.includes("crm") || text.includes("workflow") || text.includes("sheet database")) {
+        return "18000";
+    }
+    // 🤖 WhatsApp Bot & Lead Sync Validation
+    if (text.includes("whatsapp bot") || text.includes("lead sync") || text.includes("conversational bot")) {
+        return "8713";
+    }
     
-    return "8713"; // Safe fallback
+    return "8713"; // Safe ultimate fallback (Starter Plan)
 }
 
 // Meta Webhook Verification
@@ -46,7 +62,7 @@ app.get('/webhook', (req, res) => {
 
 // Main Webhook Logic for Processing Messages
 app.post('/webhook', async (req, res) => {
-    res.sendStatus(200); 
+    res.sendStatus(200); // Meta instant 200 OK delivery handshake
     const body = req.body;
     
     if (body.object === 'whatsapp_business_account' && body.entry) {
@@ -82,7 +98,7 @@ app.post('/webhook', async (req, res) => {
                     const currentStep = userSessions[from].step;
 
                     // =========================================================
-                    // 🛡️ STATE RESET GUARD
+                    // 🛡️ SECURITY STATE STEP: COMPLETED TRANSACTIONS PROTECTOR
                     // =========================================================
                     const resetTriggers = ['hi', 'hello', 'menu', 'start', 'hey'];
                     if (currentStep === 'completed' && !resetTriggers.includes(userText)) {
@@ -122,7 +138,7 @@ app.post('/webhook', async (req, res) => {
                     }
 
                     // =========================================================
-                    // 🛡️ STATE RULE 2: LEAD DETECTION PARSING ENGINE (60s THROTTLE)
+                    // 🛡️ STATE RULE 2: LEAD DETECTION PARSING ENGINE (60s THROTTLE OVERLAP SAFE)
                     // =========================================================
                     if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate")) {
                         
@@ -153,7 +169,6 @@ app.post('/webhook', async (req, res) => {
                             console.error("Advanced custom parsing system exception:", parseError.message);
                         }
 
-                        // Save parsed context parameters safely inside active user session mapping
                         userSessions[from].clientName = clientName;
                         userSessions[from].clientEmail = clientEmail;
                         userSessions[from].projectScope = projectScope;
@@ -164,11 +179,11 @@ app.post('/webhook', async (req, res) => {
                                 email: clientEmail, 
                                 whatsapp_number: from, 
                                 project_scope: projectScope, 
-                                value: parsedBasePrice // Directly pass the original price parsed from website
+                                value: parsedBasePrice // Directly mapping real calculator output values
                             });
                         } catch (apiError) { console.error("API Sync Failed"); }
 
-                        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail || 'Not Provided'}\n📝 *Plan:* ${projectScope}\n💰 *Value:* ${parsedBasePrice}\n\n🤖 *Status:* Locked & logged. Check Admin Panel!`;
+                        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail || 'Not Provided'}\n📝 *Plan:* ${projectScope}\n💰 *Value:* ₹${parsedBasePrice}\n\n🤖 *Status:* Locked & logged. Check Admin Panel!`;
                         await sendWhatsAppMessage("917529839762", adminNotification);
 
                         let clientReply = "";
@@ -204,7 +219,7 @@ app.post('/webhook', async (req, res) => {
                         userSessions[from].clientName = cleanName;
                         userSessions[from].clientEmail = cleanEmail;
 
-                        // 🌟 FIX: RESOLVE DYNAMIC BASE PRICE ACCORDING TO USER PLAN INPUT IN CHAT
+                        // 🌟 DYNAMIC MATRIX RUNNER ACTIVE: Matches string and gets correct base price
                         const matchedBasePrice = getBasePriceByPlan(userSessions[from].projectScope);
 
                         try {
@@ -213,7 +228,7 @@ app.post('/webhook', async (req, res) => {
                                 email: cleanEmail, 
                                 whatsapp_number: from, 
                                 project_scope: userSessions[from].projectScope, 
-                                value: matchedBasePrice // Dynamic allocation mapping active
+                                value: matchedBasePrice 
                             });
                         } catch (dbErr) { console.log("CRM sync fail"); }
 
@@ -236,7 +251,7 @@ app.post('/webhook', async (req, res) => {
                     }
 
                     // =========================================================
-                    // 4. MAIN NAVIGATION MENU 
+                    // 4. MAIN NAVIGATION MENU
                     // =========================================================
                     if (resetTriggers.includes(userText)) {
                         userSessions[from].step = 'main_menu';

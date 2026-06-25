@@ -112,7 +112,7 @@ app.post('/webhook', async (req, res) => {
                             if (userLang === 'EN') {
                                 const tokenAmountUSD = "49";
                                 const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountUSD}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
-                                replyText = `領 *Excellent Choice!* Your session data is validated. 🤝\n\nClick the official link below to pay your **Token Booking fee ($49)** via Razorpay. This will instantly reserve your delivery slot in *Shahid Creatives* automated production queue:\n\n🔗 *Pay Securely Here:* ${dynamicPaymentLink}\n\n*Project Reference ID:* ${uniqueProjectId}`;
+                                replyText = `領 *Excellent Choice!* Your session data is validated. 🤝\n\nClick the official link below to pay your **Token Booking fee ($49)** via Razorpay. This will instantly reserve your delivery slot in *Campfire Creatives* automated production queue:\n\n🔗 *Pay Securely Here:* ${dynamicPaymentLink}\n\n*Project Reference ID:* ${uniqueProjectId}`;
                             } else {
                                 const tokenAmountINR = "999";
                                 const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
@@ -232,7 +232,7 @@ app.post('/webhook', async (req, res) => {
                         } else {
                             const tokenAmountINR = "999";
                             const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
-                            replyText = `Thank you, aapki details receive ho gayi hain! 🤝\n\n🔥 *Launch Discount Applied:* Maine aapke profile ke sath **LAUNCH20** (Flat 20% OFF) active kar diya hai. Aap Razorpay se **₹999 Token Booking** complete karke slot lock kar sakte hain. Isse *Shahid Creatives* mein aapka slot automatic book ho jayega:\n\n🔗 *Direct Pay Gateway Link:* ${selfPayLink}\n\n*Project Reference ID:* ${uniqueProjectId}`;
+                            replyText = `Thank you, aapki details receive ho gayi hain! 🤝\n\n🔥 *Launch Discount Applied:* Maine aapke profile ke sath **LAUNCH20** (Flat 20% OFF) active kar diya hai. Aap Razorpay se **₹999 Token Booking** complete karke slot lock kar sakte hain. Isse *Campfire Creatives* mein aapka slot automatic book ho jayega:\n\n🔗 *Direct Pay Gateway Link:* ${selfPayLink}\n\n*Project Reference ID:* ${uniqueProjectId}`;
                         }
                         return sendWhatsAppMessage(from, replyText);
                     }
@@ -300,8 +300,12 @@ app.post('/api/send-payment-reminder', async (req, res) => {
     const targetLink = portal_link || payment_link || payment_url || link || url || "https://shahidcreatives.com/#portal";
 
     let formattedNumber = whatsapp_number.replace(/[^0-9]/g, '');
-    if (!formattedNumber.startsWith('91') && formattedNumber.length === 10) {
+    if (formattedNumber.length === 12 && formattedNumber.startsWith('91')) {
+        // perfect
+    } else if (formattedNumber.length === 10) {
         formattedNumber = '91' + formattedNumber;
+    } else if (formattedNumber.startsWith('91') && formattedNumber.length > 12) {
+        formattedNumber = formattedNumber.slice(-12);
     }
 
     const reminderMessage = `⚠️ *PAYMENT REMINDER | SHAHID CREATIVES* ⚠️\n\n` +
@@ -317,44 +321,54 @@ app.post('/api/send-payment-reminder', async (req, res) => {
         await sendWhatsAppMessage(formattedNumber, reminderMessage);
         return res.status(200).json({ success: true, message: "Reminder dispatched seamlessly with hyperlink!" });
     } catch (error) {
-        console.error("Error sending admin dashboard reminder:", error.message);
+        console.error("❌ META API REMINDER REJECTION:", error.response ? JSON.stringify(error.response.data) : error.message);
         return res.status(500).json({ success: false, error: "Meta API integration rejection" });
     }
 });
 
 // =========================================================================
-// 🔐 🌟 AUTOMATED CREDENTIALS TRIGGER PIPELINE (MULTIPLE PROPERTY COMPATIBLE FIX)
+// 🔐 🌟 AUTOMATED CREDENTIALS TRIGGER PIPELINE (PRODUCTION STRICT FORMAT PATCH)
 // =========================================================================
 app.post('/api/send-client-credentials', async (req, res) => {
     const { 
         whatsapp_number, 
         client_name, 
         project_scope, 
+        project_name,
         portal_id, 
+        client_id,
         password, 
-        plain_password, // Fixed compatibility mapping layer
-        login_link 
+        plain_password, 
+        login_link,
+        portal_link
     } = req.body;
 
     const activePassword = password || plain_password;
+    const activePortalId = portal_id || client_id;
+    const activeProject = project_scope || project_name || "Custom Web Development";
+    const targetLoginLink = login_link || portal_link || "https://shahidcreatives.com/#portal";
+    const rawNumber = whatsapp_number || req.body.phone;
 
-    if (!whatsapp_number || !portal_id || !activePassword) {
-        return res.status(400).json({ success: false, error: "Missing required authentication parameters" });
+    if (!rawNumber || !activePortalId || !activePassword) {
+        return res.status(400).json({ success: false, error: "Missing required authentication fields (Number/ID/Pass)" });
     }
 
-    const targetLoginLink = login_link || "https://shahidcreatives.com/#portal";
-
-    let formattedNumber = whatsapp_number.replace(/[^0-9]/g, '');
-    if (!formattedNumber.startsWith('91') && formattedNumber.length === 10) {
+    // 🔥 ULTRA-ROBUST NUMBER FORMATTING FOR META API
+    let formattedNumber = String(rawNumber).replace(/[^0-9]/g, '');
+    
+    if (formattedNumber.length === 12 && formattedNumber.startsWith('91')) {
+        // Format absolute correct
+    } else if (formattedNumber.length === 10) {
         formattedNumber = '91' + formattedNumber;
+    } else if (formattedNumber.startsWith('91') && formattedNumber.length > 12) {
+        formattedNumber = formattedNumber.slice(-12);
     }
 
-    // Onboarding welcome layout template block
     const welcomeCredentialMessage = `🎉 *WELCOME TO SHAHID CREATIVES CLOUD HUB* 🎉\n\n` +
                                      `Hello *${client_name || 'Valued Client'}*! 🙏\n\n` +
-                                     `Aapke project *${project_scope || 'Custom Web Development'}* ka work management layout deploy ho chuka hai! Aap niche diye gaye secure credentials se apna Client Dashboard open karke live updates track kar sakte hain.\n\n` +
+                                     `Aapke project *${activeProject}* ka work management layout deploy ho chuka hai! Aap niche diye gaye secure credentials se apna Client Dashboard open karke live updates track kar sakte hain.\n\n` +
                                      `🔐 *YOUR PORTAL CREDENTIALS:* \n` +
-                                     `📌 *Client Portal ID:* \` ${portal_id} \` \n` +
+                                     `📌 *Client Portal ID:* \` ${activePortalId} \` \n` +
                                      `🔑 *Secure Password:* \` ${activePassword} \` \n\n` +
                                      `🚀 *Direct Access Dashboard Path:* \n` +
                                      `🔗 ${targetLoginLink}\n\n` +
@@ -362,10 +376,14 @@ app.post('/api/send-client-credentials', async (req, res) => {
 
     try {
         await sendWhatsAppMessage(formattedNumber, welcomeCredentialMessage);
-        return res.status(200).json({ success: true, message: "Credentials successfully dispatched to client over WhatsApp!" });
+        return res.status(200).json({ success: true, message: "Credentials successfully dispatched over WhatsApp!" });
     } catch (error) {
-        console.error("Error sending client credential notification:", error.message);
-        return res.status(500).json({ success: false, error: "Meta API webhook dispatch execution breakdown" });
+        console.error("❌ META API CREDENTIALS REJECTION:", error.response ? JSON.stringify(error.response.data) : error.message);
+        return res.status(500).json({ 
+            success: false, 
+            error: "Meta API Rejection", 
+            details: error.response ? error.response.data : error.message 
+        });
     }
 });
 

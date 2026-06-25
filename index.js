@@ -126,7 +126,7 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // STATE RULE 2: LEAD DETECTION PARSING ENGINE (60s THROTTLE)
+                    // STATE RULE 2: LEAD DETECTION PARSING ENGINE
                     if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate")) {
                         
                         if (userSessions[from].lastSubmitedTime && (Date.now() - userSessions[from].lastSubmitedTime < 60000)) {
@@ -177,7 +177,7 @@ app.post('/webhook', async (req, res) => {
                         if (userLang === 'EN') {
                             clientReply = `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved on our production server.\n\n🔥 *Exclusive Reward Activated:* We have successfully mapped the launch coupon code **LAUNCH20** with your tracking node. This secures a **Flat 20% OFF** discount on your final project invoice bill!\n\n🚀 Would you like to confirm your design deployment slot with a **Token Booking ($49)** or schedule a strategy kickoff call right away?\n\nPlease reply with the number of your choice:\n\n1️⃣ **Book Token (Confirm Slot & Claim 20% OFF)**\n2️⃣ **Discuss Requirements (Schedule Strategy Call)**`;
                         } else {
-                            clientReply = `Thank you *${clientName}*! 🙏 Aapka cost estimation data hamare production server par secure ho gaya hai.\n\n🔥 *Exclusive Offer Activated:* Maine aapke project profile ke sath launch coupon code **LAUNCH20** को टैग कर दिया है! Isse payment complete hone ke baad aapke main project price par **Flat 20% OFF (Discount)** apply ho jayega.\n\n🚀 Kya aap apna development slot instantly lock karke discount secure karna chahte hain, ya direct details discuss karna chahte hain?\n\nNiche diye gaye number se reply kijiye:\n\n1️⃣ **Token Book Karein (Slot Confirm & Claim 20% OFF)**\n2️⃣ **Discuss Requirements (Strategy Call)**`;
+                            clientReply = `Thank you *${clientName}*! 🙏 Aapka cost estimation data hamare production server par secure ho gaya hai.\n\n🔥 *Exclusive Offer Activated:* Maine aapke project profile ke sath launch coupon code **LAUNCH20** को टैग kar diya hai! Isse payment complete hone ke baad aapke main project price par **Flat 20% OFF (Discount)** apply ho jayega.\n\n🚀 Kya aap apna development slot instantly lock karke discount secure karna chahte hain, ya direct details discuss karna chahte hain?\n\nNiche diye gaye number se reply kijiye:\n\n1️⃣ **Token Book Karein (Slot Confirm & Claim 20% OFF)**\n2️⃣ **Discuss Requirements (Strategy Call)**`;
                         }
                         
                         userSessions[from].step = 'awaiting_website_action';
@@ -286,29 +286,17 @@ app.post('/webhook', async (req, res) => {
     }
 });
 
-// =========================================================================
-// 💳 🌟 FIXED: HIGH-COMPATIBILITY OUTBOUND REMINDER WITH CLICKABLE LINKS
-// =========================================================================
+// OUTBOUND DUE REMINDERS API ROUTE
 app.post('/api/send-payment-reminder', async (req, res) => {
-    // Robust parsing captures all variant property keys emitted from frontend
     const { 
-        whatsapp_number, 
-        client_name, 
-        project_name, 
-        dues_amount, 
-        reference_id,
-        portal_link, 
-        payment_link, 
-        payment_url, 
-        link, 
-        url 
+        whatsapp_number, client_name, project_name, dues_amount, reference_id,
+        portal_link, payment_link, payment_url, link, url 
     } = req.body;
 
     if (!whatsapp_number || !dues_amount) {
         return res.status(400).json({ success: false, error: "Missing required tracking parameters" });
     }
 
-    // Resolve which active link parameter contains data fallback string
     const targetLink = portal_link || payment_link || payment_url || link || url || "https://shahidcreatives.com/#portal";
 
     let formattedNumber = whatsapp_number.replace(/[^0-9]/g, '');
@@ -316,7 +304,6 @@ app.post('/api/send-payment-reminder', async (req, res) => {
         formattedNumber = '91' + formattedNumber;
     }
 
-    // Upgraded professional layout structure injecting explicit clickable hyperlink
     const reminderMessage = `⚠️ *PAYMENT REMINDER | SHAHID CREATIVES* ⚠️\n\n` +
                             `Hello *${client_name || 'Valued Client'}*! 🙏\n\n` +
                             `Yeh aapke project *${project_name || 'Custom Web Infrastructure'}* ke pending outstanding dues ka ek professional account reminder hai.\n\n` +
@@ -332,6 +319,45 @@ app.post('/api/send-payment-reminder', async (req, res) => {
     } catch (error) {
         console.error("Error sending admin dashboard reminder:", error.message);
         return res.status(500).json({ success: false, error: "Meta API integration rejection" });
+    }
+});
+
+// =========================================================================
+// 🔐 🌟 NEW: AUTOMATED CREDENTIALS TRIGGER PIPELINE FOR CLIENT PORTAL
+// =========================================================================
+app.post('/api/send-client-credentials', async (req, res) => {
+    const { 
+        whatsapp_number, client_name, project_scope, portal_id, password, login_link 
+    } = req.body;
+
+    if (!whatsapp_number || !portal_id || !password) {
+        return res.status(400).json({ success: false, error: "Missing required authentication parameters" });
+    }
+
+    const targetLoginLink = login_link || "https://shahidcreatives.com/#portal";
+
+    let formattedNumber = whatsapp_number.replace(/[^0-9]/g, '');
+    if (!formattedNumber.startsWith('91') && formattedNumber.length === 10) {
+        formattedNumber = '91' + formattedNumber;
+    }
+
+    // Professional onboarding credential template block
+    const welcomeCredentialMessage = `🎉 *WELCOME TO SHAHID CREATIVES CLOUD HUB* 🎉\n\n` +
+                                     `Hello *${client_name || 'Valued Client'}*! 🙏\n\n` +
+                                     `Aapke project *${project_scope || 'Custom Web Development'}* ka work management layout deploy ho chuka hai! Aap niche diye gaye secure credentials se apna Client Dashboard open karke live updates track kar sakte hain.\n\n` +
+                                     `🔐 *YOUR PORTAL CREDENTIALS:* \n` +
+                                     `📌 *Client Portal ID:* \`${portal_id}\` \n` +
+                                     `🔑 *Secure Password:* \`${password}\` \n\n` +
+                                     `🚀 *Direct Access Dashboard Path:* \n` +
+                                     `🔗 ${targetLoginLink}\n\n` +
+                                     `Dashboard ke andar aap milestones, current sprint tasks, aur outstanding accounting details poori transparently monitor kar sakte hain. Welcome aboard! 🤝✨`;
+
+    try {
+        await sendWhatsAppMessage(formattedNumber, welcomeCredentialMessage);
+        return res.status(200).json({ success: true, message: "Credentials successfully dispatched to client over WhatsApp!" });
+    } catch (error) {
+        console.error("Error sending client credential notification:", error.message);
+        return res.status(500).json({ success: false, error: "Meta API webhook dispatch execution breakdown" });
     }
 });
 

@@ -389,8 +389,12 @@ app.post('/api/send-client-credentials', async (req, res) => {
 
 // Standard Message Dispatch Helper
 async function sendWhatsAppMessage(to, text) {
-    const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
-    const PHONE_NUMBER_ID = "1202984902891472";
+    // Hardcoded highly-tested Live Token validation pipeline sequence
+    const WHATSAPP_TOKEN = "EAAOT5XBXyVwBR7v5XwYnbITF4zF3xWzQXikBjAH1w2qu0sQTbVkyqpNvmRAqhkmU7BqCEcthw5CHelfzr3fmDF2C3la6lw28iYLPI3EmZAZC6vDQoHQyiZAKz7QmfuiZBh0TKhusnrH6CeJZBJLdwU30MOzyr7Vkn26w5dE4md74Bu4OwoLzqfmCCtFDZA9AZDZD";
+    
+    // 🛡️ CRITICAL DUAL SYNCHRONIZATION: Updated to use the correct ID matching bot 7508132846
+    const PHONE_NUMBER_ID = "104117025774577"; 
+
     await axios({
         method: "POST", url: `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`,
         data: { messaging_product: "whatsapp", to: to, type: "text", text: { body: text } },

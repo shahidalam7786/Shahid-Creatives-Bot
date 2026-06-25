@@ -16,36 +16,29 @@ function calculateTotalPayable(basePrice) {
     return Math.round(totalPayable);
 }
 
-// 🌟 UPGRADED ROBUST PLAN PRICE MAPPER (Eliminates Abdul Ajij Package Mismatch Bugs)
+// UPGRADED ROBUST PLAN PRICE MAPPER
 function getBasePriceByPlan(planScope) {
     const text = String(planScope).toLowerCase().trim();
     
-    // 🛒 E-Commerce Tiers Validation
     if (text.includes("e-commerce") || text.includes("ecommerce") || text.includes("store") || text.includes("shop") || text.includes("retail")) {
         return "47500";
     }
-    // 🌟 Starter Business Hub Tiers Validation
     if (text.includes("starter business") || text.includes("business hub") || text.includes("corporate") || text.includes("brand growth")) {
         return "25500";
     }
-    // 💼 Basic Small Business Tiers Validation
     if (text.includes("basic small") || text.includes("small business") || text.includes("informational layout")) {
         return "12300";
     }
-    // 🚀 Custom SaaS App / Enterprise Portals Validation
     if (text.includes("saas") || text.includes("app") || text.includes("software") || text.includes("enterprise") || text.includes("portal")) {
         return "145000";
     }
-    // 🏢 Custom CRM Workflow Hub Validation
     if (text.includes("crm") || text.includes("workflow") || text.includes("sheet database")) {
         return "18000";
     }
-    // 🤖 WhatsApp Bot & Lead Sync Validation
     if (text.includes("whatsapp bot") || text.includes("lead sync") || text.includes("conversational bot")) {
         return "8713";
     }
-    
-    return "8713"; // Safe Fallback Target (Starter Plan)
+    return "8713"; 
 }
 
 // Meta Webhook Verification
@@ -62,7 +55,7 @@ app.get('/webhook', (req, res) => {
 
 // Main Webhook Logic for Processing Messages
 app.post('/webhook', async (req, res) => {
-    res.sendStatus(200); // Meta instant 200 OK delivery handshake
+    res.sendStatus(200); 
     const body = req.body;
     
     if (body.object === 'whatsapp_business_account' && body.entry) {
@@ -97,9 +90,7 @@ app.post('/webhook', async (req, res) => {
                     const userLang = userSessions[from].lang;
                     const currentStep = userSessions[from].step;
 
-                    // =========================================================
-                    // 🛡️ SECURITY STATE STEP: COMPLETED TRANSACTIONS PROTECTOR
-                    // =========================================================
+                    // SECURITY STATE STEP: COMPLETED TRANSACTIONS PROTECTOR
                     const resetTriggers = ['hi', 'hello', 'menu', 'start', 'hey'];
                     if (currentStep === 'completed' && !resetTriggers.includes(userText)) {
                         let fallbackNotice = (userLang === 'EN')
@@ -108,9 +99,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, fallbackNotice);
                     }
 
-                    // =========================================================
-                    // ⚙️ STATE RULE 1: CAPTURING REPLIES AFTER WEBSITE REDIRECT
-                    // =========================================================
+                    // STATE RULE 1: CAPTURING REPLIES AFTER WEBSITE REDIRECT
                     if (currentStep === 'awaiting_website_action') {
                         if (userText === '1') {
                             userSessions[from].step = 'completed'; 
@@ -137,9 +126,7 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // =========================================================
-                    // 🛡️ STATE RULE 2: LEAD DETECTION PARSING ENGINE (60s THROTTLE OVERLAP SAFE)
-                    // =========================================================
+                    // STATE RULE 2: LEAD DETECTION PARSING ENGINE (60s THROTTLE)
                     if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate")) {
                         
                         if (userSessions[from].lastSubmitedTime && (Date.now() - userSessions[from].lastSubmitedTime < 60000)) {
@@ -183,7 +170,6 @@ app.post('/webhook', async (req, res) => {
                             });
                         } catch (apiError) { console.error("API Sync Failed"); }
 
-                        // 🌟 DYNAMIC ALERT GENERATION FOR ESTIMATOR LEADS
                         const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail || 'Not Provided'}\n📝 *Plan Chosen:* ${projectScope}\n💰 *Base Valuation:* ${isGlobalWebsiteTemplate ? '$' : '₹'}${parsedBasePrice}\n\n🤖 *Status:* Synced with Cloud Ledger. Check Admin Panel!`;
                         await sendWhatsAppMessage("917529839762", adminNotification);
 
@@ -198,9 +184,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, clientReply);
                     }
 
-                    // =========================================================
-                    // 3. INBOUND CHAT LEAD CAPTURE FLOW (B2B DIRECT CHAT)
-                    // =========================================================
+                    // INBOUND CHAT LEAD CAPTURE FLOW (B2B DIRECT CHAT)
                     if (currentStep === 'collect_details') {
                         userSessions[from].projectScope = rawText; 
                         userSessions[from].step = 'ask_name_email';
@@ -232,7 +216,6 @@ app.post('/webhook', async (req, res) => {
                             });
                         } catch (dbErr) { console.log("CRM sync fail"); }
 
-                        // 🌟 DYNAMIC ALERT GENERATION FOR INBOUND BOT LEADS
                         const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${cleanEmail || 'Not Provided'}\n📝 *Plan Scope:* ${userSessions[from].projectScope}\n💰 *Allocated Base:* ₹${matchedBasePrice}\n\n🤖 *Status:* Inbound state synced. Generate invoice keys!`;
                         await sendWhatsAppMessage("917529839762", chatAdminNotification);
 
@@ -254,9 +237,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, replyText);
                     }
 
-                    // =========================================================
-                    // 4. MAIN NAVIGATION MENU
-                    // =========================================================
+                    // MAIN NAVIGATION MENU
                     if (resetTriggers.includes(userText)) {
                         userSessions[from].step = 'main_menu';
                         if (userLang === 'EN') {
@@ -305,33 +286,52 @@ app.post('/webhook', async (req, res) => {
     }
 });
 
-// 🌟 NEW PIPELINE METHOD: DIRECTLY TRIGGER OUTBOUND DUE REMINDERS VIA ADMIN PANEL
+// =========================================================================
+// 💳 🌟 FIXED: HIGH-COMPATIBILITY OUTBOUND REMINDER WITH CLICKABLE LINKS
+// =========================================================================
 app.post('/api/send-payment-reminder', async (req, res) => {
-    const { whatsapp_number, client_name, project_name, dues_amount, reference_id } = req.body;
+    // Robust parsing captures all variant property keys emitted from frontend
+    const { 
+        whatsapp_number, 
+        client_name, 
+        project_name, 
+        dues_amount, 
+        reference_id,
+        portal_link, 
+        payment_link, 
+        payment_url, 
+        link, 
+        url 
+    } = req.body;
 
     if (!whatsapp_number || !dues_amount) {
-        return res.status(400).json({ success: false, error: "Missing required parameters" });
+        return res.status(400).json({ success: false, error: "Missing required tracking parameters" });
     }
+
+    // Resolve which active link parameter contains data fallback string
+    const targetLink = portal_link || payment_link || payment_url || link || url || "https://shahidcreatives.com/#portal";
 
     let formattedNumber = whatsapp_number.replace(/[^0-9]/g, '');
     if (!formattedNumber.startsWith('91') && formattedNumber.length === 10) {
         formattedNumber = '91' + formattedNumber;
     }
 
+    // Upgraded professional layout structure injecting explicit clickable hyperlink
     const reminderMessage = `⚠️ *PAYMENT REMINDER | SHAHID CREATIVES* ⚠️\n\n` +
                             `Hello *${client_name || 'Valued Client'}*! 🙏\n\n` +
-                            `Yeh aapke project *${project_name || 'Custom Website Development'}* ke pending outstanding dues ka ek professional account reminder hai.\n\n` +
+                            `Yeh aapke project *${project_name || 'Custom Web Infrastructure'}* ke pending outstanding dues ka ek professional account reminder hai.\n\n` +
                             `💰 *Outstanding Balance:* ₹${dues_amount}\n` +
                             `📌 *Project Tracking ID:* ${reference_id || 'SC-MAIN'}\n\n` +
-                            `Kripya hamare secure client portal panel ke secure link par click karke apna milestone payment settle kijiye taaki architecture configuration deployment queue non-disruptive chalti rahe.\n\n` +
-                            `Thank you for your business and partnership! 🚀`;
+                            `Kripya niche diye gaye official portal path secure link par click karke apna pending milestone amount clear kijiye taaki development & deployment cycle bina kisi interruption ke chalti rahe:\n\n` +
+                            `🔗 *Secure Payment Link:* ${targetLink}\n\n` +
+                            `Thank you for your continuous partnership! 🚀`;
 
     try {
         await sendWhatsAppMessage(formattedNumber, reminderMessage);
-        return res.status(200).json({ success: true, message: "Reminder dispatched successfully over WhatsApp!" });
+        return res.status(200).json({ success: true, message: "Reminder dispatched seamlessly with hyperlink!" });
     } catch (error) {
         console.error("Error sending admin dashboard reminder:", error.message);
-        return res.status(500).json({ success: false, error: "Meta API rejection or network breakdown" });
+        return res.status(500).json({ success: false, error: "Meta API integration rejection" });
     }
 });
 

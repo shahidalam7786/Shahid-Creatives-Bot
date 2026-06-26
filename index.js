@@ -76,21 +76,10 @@ app.post('/webhook', async (req, res) => {
                     const isInternationalNumber = !from.startsWith("91");
                     const isGlobalWebsiteTemplate = rawText.includes("Global USD") || rawText.includes("Worldwide") || rawText.includes("$");
                     
-                    // =========================================================================
-                    // STEP 4 UPGRADE: LIVE AGENT HANDOVER MANAGER (PAUSE BOT INTERFERENCE)
-                    // =========================================================================
-                    if (userSessions[from] && userSessions[from].isPaused) {
-                        // Agar admin khud "resume bot" likhe toh bot wapas chalu ho jaye
-                        if (userText === 'resume bot' || userText === 'activate bot') {
-                            userSessions[from].isPaused = false;
-                            userSessions[from].step = 'main_menu';
-                            await sendWhatsAppMessage(from, "🤖 *Shahid Creatives AI Hub:* Activated! Automation is back online.");
-                            return;
-                        }
-                        console.log(`[LIVE HANDOVER ACTIVE] Bot paused for user +${from}. Overridden for manual chat sync.`);
-                        return; // Bot silent rahega aur reply nahi karega
-                    }
+                    // Core Configuration Map
+                    const resetTriggers = ['hi', 'hello', 'menu', 'start', 'hey', 'resume', 'resume bot', 'activate bot'];
 
+                    // Initialize Session if not present
                     if (!userSessions[from]) {
                         userSessions[from] = { 
                             step: 'welcome', 
@@ -103,13 +92,33 @@ app.post('/webhook', async (req, res) => {
                             followupTriggered: false
                         };
                     }
+
+                    // CRITICAL PRIORITY FILTER: Global Reset Override
+                    if (resetTriggers.includes(userText)) {
+                        userSessions[from].isPaused = false;
+                        userSessions[from].step = 'main_menu';
+                        
+                        let menuText = "";
+                        if (userSessions[from].lang === 'EN') {
+                            menuText = "Hello! Welcome to *Shahid Creatives*. 🚀\nWe design premium agile web ecosystems and high-converting automation workflows.\n\nSelect a professional stack tier via number:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI Business Automation**\n3️⃣ **🔥 Exclusive Launch Deal**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid**";
+                        } else {
+                            menuText = "Hello! Welcome to *Shahid Creatives* (Ludhiana, Punjab). 🚀\nHum engineer karte hain high-performance websites aur AI automation frameworks global and local brands ke liye.\n\nKoshish ko aage badhane ke liye niche se ek option reply kijiye:\n\n1️⃣ *Web Development Tiers* (Saare Standard Custom Packages)\n2️⃣ *AI Business Automation* (WhatsApp Bots & CRM Flows)\n3️⃣ *🔥 Exclusive Launch Deal* (Flat 20% OFF Status)\n4️⃣ *💳 Direct Booking & Token System* (₹999 Secure Path)\n5️⃣ *👤 Talk to Shahid* (Direct Consultation)";
+                        }
+                        await sendWhatsAppMessage(from, menuText);
+                        return;
+                    }
+
+                    // If Live Agent Handover is active and not reset, keep bot silent
+                    if (userSessions[from].isPaused) {
+                        console.log(`[LIVE HANDOVER ACTIVE] Bot paused for user +${from}.`);
+                        return;
+                    }
                     
                     const userLang = userSessions[from].lang;
                     const currentStep = userSessions[from].step;
 
                     // SECURITY STATE STEP: COMPLETED TRANSACTIONS PROTECTOR
-                    const resetTriggers = ['hi', 'hello', 'menu', 'start', 'hey'];
-                    if (currentStep === 'completed' && !resetTriggers.includes(userText)) {
+                    if (currentStep === 'completed') {
                         let fallbackNotice = (userLang === 'EN')
                             ? "💡 Your booking profile is already active! Please reply with *'Menu'* to go back or click the checkout gateway link above to proceed."
                             : "💡 Aapka booking invoice link generate ho chuka hai! Main menu par wapas jaane ke liye *'Menu'* type kijiye ya upar diye gaye secure link par click karke checkout complete kijiye.";
@@ -136,12 +145,8 @@ app.post('/webhook', async (req, res) => {
                                 replyText = `Thank you, aapki details receive ho gayi hain! 🤝\n\nMaine aapke chat data ke aadhar par aapka **Direct Token Payment Link** generate kar diya hai. Aap Razorpay se **₹999 Token Booking** complete karke apna slot instantly lock kar sakte hain:\n\n🔗 *Direct Pay Gateway Link:* ${dynamicPaymentLink}\n\n*Project Reference ID:* ${uniqueProjectId}`;
                             }
 
-                            // =========================================================================
-                            // STEP 2 UPGRADE: SMART FOLLOW-UP TRIGGER LAUNCHPAD (2 HOURS DELAY TIMER)
-                            // =========================================================================
                             userSessions[from].followupTriggered = false;
                             setTimeout(async () => {
-                                // 2 ghante baad check karega ki kya user ne payment status complete kiya ya nahi
                                 if (userSessions[from] && userSessions[from].step === 'completed' && !userSessions[from].followupTriggered) {
                                     userSessions[from].followupTriggered = true;
                                     let followUpText = (userLang === 'EN')
@@ -149,27 +154,24 @@ app.post('/webhook', async (req, res) => {
                                         : `🔥 *EXCLUSIVE DISCOUNT WARNING | SHAHID CREATIVES* 🔥\n\nHey *${userSessions[from].clientName}*! Maine check kiya ki aapka token checkout abhi pending hai. 🤝\n\nAapka **Flat 20% OFF** discount coupon (**LAUNCH20**) block hone wala hai. Jaldi se upar diye gaye gateway link par click karke apna slot lock karein!`;
                                     await sendWhatsAppMessage(from, followUpText);
                                 }
-                            }, 2 * 60 * 60 * 1000); // 2 Hours in milliseconds (Testing ke liye aap time kam kar sakte hain)
+                            }, 2 * 60 * 60 * 1000); // 2 Hours Delay
 
                             return sendWhatsAppMessage(from, replyText);
                         } else if (userText === '2') {
-                            // Route directly to Step 4 Live Handover
                             userSessions[from].isPaused = true; 
                             let replyText = (userLang === 'EN') 
                                 ? "👤 *Live Connection Activated!* Shahid is reviewing your requirements. The AI bot is now paused." 
                                 : "👤 *Live Connection Activated!* Shahid bhai bohot jald aapke sath direct connect karenge. Bot ko temporary pause kar diya gaya hai.";
                             
-                            // Admin ko alert bhejien
                             await sendWhatsAppMessage("917529839762", `🚨 *ATTENTION SHAHID BHAI:* User +${from} is waiting for you. Bot has been paused for manual takeover.`);
                             return sendWhatsAppMessage(from, replyText);
                         }
                     }
 
-                    // STATE RULE 2: LEAD DETECTION PARSING ENGINE
+                    // STATE RULE 2: LEAD DETECTION PARSING ENGINE FROM WEBSITE LINK
                     if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate")) {
                         
                         if (userSessions[from].lastSubmitedTime && (Date.now() - userSessions[from].lastSubmitedTime < 60000)) {
-                            console.log(`[CRM INGESTION BLOCKED] Anti-duplicate protection locked for phone: ${from}`);
                             return;
                         }
                         userSessions[from].lastSubmitedTime = Date.now();
@@ -192,7 +194,7 @@ app.post('/webhook', async (req, res) => {
                             const emailMatch = rawText.match(globalEmailRegex);
                             if (emailMatch) clientEmail = emailMatch[1].trim();
                         } catch (parseError) {
-                            console.error("Advanced custom parsing system exception:", parseError.message);
+                            console.error("Parsing system exception:", parseError.message);
                         }
 
                         userSessions[from].clientName = clientName;
@@ -223,7 +225,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, clientReply);
                     }
 
-                    // INBOUND CHAT LEAD CAPTURE FLOW (B2B DIRECT CHAT)
+                    // INBOUND CHAT SEQUENCE (WHEN USER IS IN STEP 'COLLECT_DETAILS')
                     if (currentStep === 'collect_details') {
                         userSessions[from].projectScope = rawText; 
                         userSessions[from].step = 'ask_name_email';
@@ -276,40 +278,33 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, replyText);
                     }
 
-                    // MAIN NAVIGATION MENU
-                    if (resetTriggers.includes(userText)) {
-                        userSessions[from].step = 'main_menu';
+                    // ROUTING FROM MAIN MENU SELECTION
+                    let replyText = "";
+                    if (userText === '1') {
                         if (userLang === 'EN') {
-                            replyText = "Hello! Welcome to *Shahid Creatives*. 🚀\nWe design premium agile web ecosystems and high-converting automation workflows.\n\nSelect a professional stack tier via number:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI Business Automation**\n3️⃣ **🔥 Exclusive Launch Deal**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid**";
+                            replyText = "💻 *Shahid Creatives - Premium Web Tiers:*\n\n• 💼 *Starter Premium Business Hub* ($299+) - Perfect for brand showcases.\n• 🛒 *Global E-commerce Engine* ($599) - Multi-currency Store + Stripe checkout.\n• 🚀 *Custom SaaS / Enterprise Portal* ($1,750+) - Tailored logic.\n\n👉 Please reply with your preferred **Plan Name** to proceed!";
                         } else {
-                            replyText = "Hello! Welcome to *Shahid Creatives* (Ludhiana, Punjab). 🚀\nHum engineer karte hain high-performance websites aur AI automation frameworks global and local brands ke liye.\n\nKoshish ko aage badhane ke liye niche se ek option reply kijiye:\n\n1️⃣ *Web Development Tiers* (Saare Standard Custom Packages)\n2️⃣ *AI Business Automation* (WhatsApp Bots & CRM Flows)\n3️⃣ *🔥 Exclusive Launch Deal* (Flat 20% OFF Status)\n4️⃣ *💳 Direct Booking & Token System* (₹999 Secure Path)\n5️⃣ *👤 Talk to Shahid* (Direct Consultation)";
-                        }
-                    } else if (userText === '1') {
-                        if (userLang === 'EN') {
-                            replyText = "💻 *Shahid Creatives - Premium Web Tiers (All Available Packages):*\n\n• 💼 *Starter Premium Business Hub* ($299+) - Perfect for brand showcases. Includes 1-Yr Free Domain & Hosting.\n• 🛒 *Global E-commerce Engine* ($599) - Multi-currency Store + Stripe checkout automated integration.\n• 🚀 *Custom SaaS / Enterprise Portal* ($1,750+) - Tailored logic, secure multi-tenant databases & custom workflows.\n\n👉 Please reply with your preferred **Plan Name or Custom Specifications** to proceed!";
-                        } else {
-                            replyText = "💻 *Shahid Creatives - Web Development Tiers (Saare Plans Available):*\n\n• 📄 *Starter Plan* (Base Price: ₹8,713) - Portfolio, Single Page Landing, ya Online Visiting Card sites ke liye best.\n• 💼 *Basic Small Business* (Base Price: ₹12,300) - Informational layout (3-5 pages) local shops aur businesses ke liye.\n• 🌟 *Starter Business Hub* (Base Price: ₹25,500) - Complete corporate systems, brand growth layouts & lead capture systems.\n• 🛒 *E-commerce Hub* (Base Price: ₹47,500) - Full-fledged Online Store with Product Listing, Cart, Coupons & Billing gateways.\n• 🚀 *Custom SaaS App* (Base Price: ₹1,45,000+) - Scalable web applications, admin dashboards, and custom business tools.\n\n💡 Note: All prices are subject to +18% GST and 2.5% transaction charges.\n\n👉 Aap kaun sa package choose karna chahte hain? Niche uska naam ya specifications reply mein share kijiye!";
+                            replyText = "💻 *Shahid Creatives - Web Development Tiers:*\n\n• 📄 *Starter Plan* (Base Price: ₹8,713) - Portfolio, Landing Pages.\n• 💼 *Basic Small Business* (Base Price: ₹12,300) - Informational layout.\n• 🌟 *Starter Business Hub* (Base Price: ₹25,500) - Corporate systems.\n• 🛒 *E-commerce Hub* (Base Price: ₹47,500) - Online Store.\n• 🚀 *Custom SaaS App* (Base Price: ₹1,45,000+) - Scalable applications.\n\n👉 Aap kaun sa package choose karna chahte hain? Niche uska naam reply mein share kijiye!";
                         }
                         userSessions[from].step = 'collect_details';
                     } else if (userText === '2') {
                         if (userLang === 'EN') {
-                            replyText = "🤖 *AI Business Automation Hub (All Available Configurations):*\n\n• 🤖 *Enterprise Custom AI Hub* ($299 onwards) - Multi-currency receipt automation, dynamic parameters link injection, Stripe gateway sync, and enterprise native infrastructure.\n\n👉 Reply with your business workflow or automation goal to initiate development!";
+                            replyText = "🤖 *AI Business Automation Hub:*\n\n• 🤖 *Enterprise Custom AI Hub* ($299 onwards) - WhatsApp Bots, CRM Flows.\n\n👉 Reply with your business automation goal to initiate development!";
                         } else {
-                            replyText = "🤖 *AI Business Automation - Service Tiers (Saare Plans Available):*\n\n• 🤖 *WhatsApp Bot & Lead Sync* (Base Price: ₹8,713) - Basic conversational bot, text parsing engine, dashboard real-time CRM synchronization.\n• 🏢 *Custom CRM Workflow Hub* (Base Price: ₹18,000) - Complete internal sheet database connectivity, automated tasks, priority alert paths.\n• 🚀 *Enterprise AI Automation Suite* (Tailored Pricing) - Multi-channel bots (WhatsApp + Web Widgets), complex webhooks handler, automated dynamic workflows.\n\n👉 Apne automation requirement or operation goals niche reply mein batayein!";
+                            replyText = "🤖 *AI Business Automation - Service Tiers:*\n\n• 🤖 *WhatsApp Bot & Lead Sync* (Base Price: ₹8,713) - Basic bot & CRM synchronization.\n• 🏢 *Custom CRM Workflow Hub* (Base Price: ₹18,000) - Sheet connectivity & priority alert paths.\n\n👉 Apne automation requirement or operation goals niche reply mein batayein!";
                         }
                         userSessions[from].step = 'collect_details';
                     } else if (userText === '3') {
                         replyText = (userLang === 'EN')
-                            ? "🔥 *Exclusive Global Launch Offer!* 🔥\n\nWe have successfully mapped the launch coupon code **LAUNCH20** with your tracking node. This secures a **Flat 20% OFF** discount on your final project invoice bill!\n\n👉 Reply with your **Name and Project Goal** right now to tag your discount code!"
-                            : "🔥 *Exclusive Launch Offer!* 🔥\n\nMubarak ho! Aap premium setup models par **Flat 20% Discount** ke liye eligible hain. Maine aapke session ke sath coupon code **LAUNCH20** active kar diya hai.\n\n👉 Is discount code ko secure karne ke liye niche apna **Name aur Project Type** likh kar bhejien.";
+                            ? "🔥 *Exclusive Global Launch Offer!* 🔥\n\nWe have mapped coupon code **LAUNCH20** with your profile. This secures a **Flat 20% OFF** discount!\n\n👉 Reply with your **Name and Project Goal** right now to claim!"
+                            : "🔥 *Exclusive Launch Offer!* 🔥\n\nMubarak ho! Aap premium setup models par **Flat 20% Discount** ke liye eligible hain. Coupon code **LAUNCH20** active hai.\n\n👉 Is discount code ko secure karne ke liye niche apna **Name aur Project Type** likh kar bhejien.";
                         userSessions[from].step = 'collect_details';
                     } else if (userText === '4') {
                         replyText = (userLang === 'EN')
-                            ? "💳 *Direct Booking & Token System ($49):*\n\nTo construct your dynamic link invoice panel, please provide your **Full Name, Contact Number, and Project/Plan Name**."
-                            : "💳 *Direct Booking & Token System (₹999 Slot Lock):*\n\nYour custom live checkout portal status configure karne ke liye, kripya apna **Name, Phone Number, aur Project Name/Plan** reply mein bhejien.";
+                            ? "💳 *Direct Booking & Token System ($49):*\n\nPlease provide your **Full Name, Contact Number, and Project/Plan Name** to setup booking link."
+                            : "💳 *Direct Booking & Token System (₹999 Slot Lock):*\n\nYour custom checkout link setup karne ke liye, kripya apna **Name, Phone Number, aur Project Name/Plan** reply mein bhejien.";
                         userSessions[from].step = 'collect_details';
                     } else if (userText === '5') {
-                        // STEP 4 LIVE AGENT TRIGGER WITHIN MENU
                         userSessions[from].isPaused = true;
                         replyText = (userLang === 'EN')
                             ? "👤 *Direct Consultation Setup!* I have paused the AI Bot. Shahid will connect with you here shortly."
@@ -317,9 +312,10 @@ app.post('/webhook', async (req, res) => {
                         
                         await sendWhatsAppMessage("917529839762", `🚨 *ALERT:* User +${from} selected Option 5. Bot paused for manual chat.`);
                     } else {
+                        // Safe fallback message instead of silent freeze
                         replyText = (userLang === 'EN')
-                            ? "I didn't quite catch that. 🤔 Please reply with *'Hi'* or *'Hello'* to open the main menu!"
-                            : "Main samajh nahi paya. 🤔 Dobara structured menus dekhne ke liye ek baar *'Hi'* ya *'Hello'* bhejien!";
+                            ? "I didn't quite catch that. 🤔 Please reply with *'Hello'* or *'Menu'* to open the main dashboard!"
+                            : "Main samajh nahi paya. 🤔 Dobara saare package menus dekhne ke liye ek baar *'Hello'* ya *'Menu'* bhejien!";
                     }
                     await sendWhatsAppMessage(from, replyText);
                 }

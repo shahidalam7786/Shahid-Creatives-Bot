@@ -2,10 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const axios = require('axios');
 const app = express();
-
-// Render and Meta optimized body limit parsing
-app.use(bodyParser.json({ limit: '10mb' }));
-app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
+app.use(bodyParser.json());
 
 // In-Memory Session Storage for Control Handshaking
 const userSessions = {};
@@ -79,6 +76,21 @@ app.post('/webhook', async (req, res) => {
                     const isInternationalNumber = !from.startsWith("91");
                     const isGlobalWebsiteTemplate = rawText.includes("Global USD") || rawText.includes("Worldwide") || rawText.includes("$");
                     
+                    // =========================================================================
+                    // STEP 4 UPGRADE: LIVE AGENT HANDOVER MANAGER (PAUSE BOT INTERFERENCE)
+                    // =========================================================================
+                    if (userSessions[from] && userSessions[from].isPaused) {
+                        // Agar admin khud "resume bot" likhe toh bot wapas chalu ho jaye
+                        if (userText === 'resume bot' || userText === 'activate bot') {
+                            userSessions[from].isPaused = false;
+                            userSessions[from].step = 'main_menu';
+                            await sendWhatsAppMessage(from, "🤖 *Shahid Creatives AI Hub:* Activated! Automation is back online.");
+                            return;
+                        }
+                        console.log(`[LIVE HANDOVER ACTIVE] Bot paused for user +${from}. Overridden for manual chat sync.`);
+                        return; // Bot silent rahega aur reply nahi karega
+                    }
+
                     if (!userSessions[from]) {
                         userSessions[from] = { 
                             step: 'welcome', 
@@ -86,7 +98,9 @@ app.post('/webhook', async (req, res) => {
                             clientName: "Valued Client", 
                             clientEmail: "", 
                             projectScope: "Custom Project Development",
-                            lastSubmitedTime: 0 
+                            lastSubmitedTime: 0,
+                            isPaused: false,
+                            followupTriggered: false
                         };
                     }
                     
@@ -115,16 +129,38 @@ app.post('/webhook', async (req, res) => {
                             if (userLang === 'EN') {
                                 const tokenAmountUSD = "49";
                                 const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountUSD}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
-                                replyText = `領 *Excellent Choice!* Your session data is validated. 🤝\n\nClick the official link below to pay your **Token Booking fee ($49)** via Razorpay. This will instantly reserve your delivery slot in *Campfire Creatives* automated production queue:\n\n🔗 *Pay Securely Here:* ${dynamicPaymentLink}\n\n*Project Reference ID:* ${uniqueProjectId}`;
+                                replyText = `領 *Excellent Choice!* Your session data is validated. 🤝\n\nClick the official link below to pay your **Token Booking fee ($49)** via Razorpay. This will instantly reserve your delivery slot in *Shahid Creatives* automated production queue:\n\n🔗 *Pay Securely Here:* ${dynamicPaymentLink}\n\n*Project Reference ID:* ${uniqueProjectId}`;
                             } else {
                                 const tokenAmountINR = "999";
                                 const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
                                 replyText = `Thank you, aapki details receive ho gayi hain! 🤝\n\nMaine aapke chat data ke aadhar par aapka **Direct Token Payment Link** generate kar diya hai. Aap Razorpay se **₹999 Token Booking** complete karke apna slot instantly lock kar sakte hain:\n\n🔗 *Direct Pay Gateway Link:* ${dynamicPaymentLink}\n\n*Project Reference ID:* ${uniqueProjectId}`;
                             }
+
+                            // =========================================================================
+                            // STEP 2 UPGRADE: SMART FOLLOW-UP TRIGGER LAUNCHPAD (2 HOURS DELAY TIMER)
+                            // =========================================================================
+                            userSessions[from].followupTriggered = false;
+                            setTimeout(async () => {
+                                // 2 ghante baad check karega ki kya user ne payment status complete kiya ya nahi
+                                if (userSessions[from] && userSessions[from].step === 'completed' && !userSessions[from].followupTriggered) {
+                                    userSessions[from].followupTriggered = true;
+                                    let followUpText = (userLang === 'EN')
+                                        ? `🔥 *EXCLUSIVE REMINDER | SHAHID CREATIVES* 🔥\n\nHey *${userSessions[from].clientName}*! I noticed you haven't locked your design slot yet. 🚀\n\nYour 20% discount coupon code **LAUNCH20** is expiring soon. Click the dynamic link above to clear your secure token booking right away!`
+                                        : `🔥 *EXCLUSIVE DISCOUNT WARNING | SHAHID CREATIVES* 🔥\n\nHey *${userSessions[from].clientName}*! Maine check kiya ki aapka token checkout abhi pending hai. 🤝\n\nAapka **Flat 20% OFF** discount coupon (**LAUNCH20**) block hone wala hai. Jaldi se upar diye gaye gateway link par click karke apna slot lock karein!`;
+                                    await sendWhatsAppMessage(from, followUpText);
+                                }
+                            }, 2 * 60 * 60 * 1000); // 2 Hours in milliseconds (Testing ke liye aap time kam kar sakte hain)
+
                             return sendWhatsAppMessage(from, replyText);
                         } else if (userText === '2') {
-                            userSessions[from].step = 'main_menu';
-                            let replyText = (userLang === 'EN') ? "👤 Perfect! Shahid will connect with you shortly for a strategy sync call." : "👤 Perfect! Shahid bhai bohot jald aapke sath strategy call par connect karenge. Get ready to launch! 🚀";
+                            // Route directly to Step 4 Live Handover
+                            userSessions[from].isPaused = true; 
+                            let replyText = (userLang === 'EN') 
+                                ? "👤 *Live Connection Activated!* Shahid is reviewing your requirements. The AI bot is now paused." 
+                                : "👤 *Live Connection Activated!* Shahid bhai bohot jald aapke sath direct connect karenge. Bot ko temporary pause kar diya gaya hai.";
+                            
+                            // Admin ko alert bhejien
+                            await sendWhatsAppMessage("917529839762", `🚨 *ATTENTION SHAHID BHAI:* User +${from} is waiting for you. Bot has been paused for manual takeover.`);
                             return sendWhatsAppMessage(from, replyText);
                         }
                     }
@@ -235,7 +271,7 @@ app.post('/webhook', async (req, res) => {
                         } else {
                             const tokenAmountINR = "999";
                             const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
-                            replyText = `Thank you, aapki details receive ho gayi hain! 🤝\n\n🔥 *Launch Discount Applied:* Maine aapke profile ke sath **LAUNCH20** (Flat 20% OFF) active kar diya hai. Aap Razorpay se **₹999 Token Booking** complete karke slot lock kar sakte hain. Isse *Campfire Creatives* mein aapka slot automatic book ho jayega:\n\n🔗 *Direct Pay Gateway Link:* ${selfPayLink}\n\n*Project Reference ID:* ${uniqueProjectId}`;
+                            replyText = `Thank you, aapki details receive ho gayi hain! 🤝\n\n🔥 *Launch Discount Applied:* Maine aapke profile ke sath **LAUNCH20** (Flat 20% OFF) active kar diya hai. Aap Razorpay se **₹999 Token Booking** complete karke slot lock kar sakte hain. Isse *Shahid Creatives* mein aapka slot automatic book ho jayega:\n\n🔗 *Direct Pay Gateway Link:* ${selfPayLink}\n\n*Project Reference ID:* ${uniqueProjectId}`;
                         }
                         return sendWhatsAppMessage(from, replyText);
                     }
@@ -273,10 +309,13 @@ app.post('/webhook', async (req, res) => {
                             : "💳 *Direct Booking & Token System (₹999 Slot Lock):*\n\nYour custom live checkout portal status configure karne ke liye, kripya apna **Name, Phone Number, aur Project Name/Plan** reply mein bhejien.";
                         userSessions[from].step = 'collect_details';
                     } else if (userText === '5') {
+                        // STEP 4 LIVE AGENT TRIGGER WITHIN MENU
+                        userSessions[from].isPaused = true;
                         replyText = (userLang === 'EN')
-                            ? "👤 *Direct Consultation with Shahid:*\n\nShahid Alam will connect with you directly on this chat thread. What time slot should I schedule an alignment call for you?"
-                            : "👤 *Direct Consultation with Shahid:*\n\nShahid Alam aapke sath is thread par directly connect karenge. Aapko main kis time schedule par priority consultation slot book karu? Kindly niche batayein.";
-                        userSessions[from].step = 'collect_details';
+                            ? "👤 *Direct Consultation Setup!* I have paused the AI Bot. Shahid will connect with you here shortly."
+                            : "👤 *Direct Takeover Status!* Maine automation bot ko pause kar diya hai. Shahid bhai aapse isi thread par direct connect karenge.";
+                        
+                        await sendWhatsAppMessage("917529839762", `🚨 *ALERT:* User +${from} selected Option 5. Bot paused for manual chat.`);
                     } else {
                         replyText = (userLang === 'EN')
                             ? "I didn't quite catch that. 🤔 Please reply with *'Hi'* or *'Hello'* to open the main menu!"
@@ -303,12 +342,8 @@ app.post('/api/send-payment-reminder', async (req, res) => {
     const targetLink = portal_link || payment_link || payment_url || link || url || "https://shahidcreatives.com/#portal";
 
     let formattedNumber = whatsapp_number.replace(/[^0-9]/g, '');
-    if (formattedNumber.length === 12 && formattedNumber.startsWith('91')) {
-        // perfect
-    } else if (formattedNumber.length === 10) {
+    if (!formattedNumber.startsWith('91') && formattedNumber.length === 10) {
         formattedNumber = '91' + formattedNumber;
-    } else if (formattedNumber.startsWith('91') && formattedNumber.length > 12) {
-        formattedNumber = formattedNumber.slice(-12);
     }
 
     const reminderMessage = `⚠️ *PAYMENT REMINDER | SHAHID CREATIVES* ⚠️\n\n` +
@@ -324,14 +359,12 @@ app.post('/api/send-payment-reminder', async (req, res) => {
         await sendWhatsAppMessage(formattedNumber, reminderMessage);
         return res.status(200).json({ success: true, message: "Reminder dispatched seamlessly with hyperlink!" });
     } catch (error) {
-        console.error("❌ META API REMINDER REJECTION:", error.response ? JSON.stringify(error.response.data) : error.message);
+        console.error("Error sending admin dashboard reminder:", error.message);
         return res.status(500).json({ success: false, error: "Meta API integration rejection" });
     }
 });
 
-// =========================================================================
-// 🔐 🌟 AUTOMATED CREDENTIALS TRIGGER PIPELINE (FALLBACK RESILIENT RE-CODE)
-// =========================================================================
+// AUTOMATED CREDENTIALS TRIGGER PIPELINE
 app.post('/api/send-client-credentials', async (req, res) => {
     const { 
         whatsapp_number, phone, client_name, project_scope, project_name, 
@@ -343,29 +376,23 @@ app.post('/api/send-client-credentials', async (req, res) => {
     const activeProject = project_scope || project_name || "Custom Web Development";
     const targetLoginLink = login_link || portal_link || "https://shahidcreatives.com/#portal";
     
-    // Fallback detection logic if frontend component isolates raw inputs
-    let rawNumber = whatsapp_number || phone || req.body.phone;
+    let rawNumber = whatsapp_number || phone;
     
     if (!rawNumber && client_name) {
         if (client_name.includes("Abdul Ajij")) {
-            rawNumber = "919914073986"; 
+            rawNumber = "919914072700"; 
         } else if (client_name.includes("Alam")) {
             rawNumber = "917529839762";
         }
     }
 
     if (!rawNumber || !activePortalId || !activePassword) {
-        return res.status(400).json({ success: false, error: "Missing required authentication fields (Number/ID/Pass)" });
+        return res.status(400).json({ success: false, error: "Missing required authentication fields" });
     }
 
-    // ULTRA-ROBUST NUMBER FORMATTING FOR META API
     let formattedNumber = String(rawNumber).replace(/[^0-9]/g, '');
-    if (formattedNumber.length === 12 && formattedNumber.startsWith('91')) {
-        // Absolute valid format
-    } else if (formattedNumber.length === 10) {
+    if (formattedNumber.length === 10) {
         formattedNumber = '91' + formattedNumber;
-    } else if (formattedNumber.startsWith('91') && formattedNumber.length > 12) {
-        formattedNumber = formattedNumber.slice(-12);
     }
 
     const welcomeCredentialMessage = `🎉 *WELCOME TO SHAHID CREATIVES CLOUD HUB* 🎉\n\n` +
@@ -382,14 +409,14 @@ app.post('/api/send-client-credentials', async (req, res) => {
         await sendWhatsAppMessage(formattedNumber, welcomeCredentialMessage);
         return res.status(200).json({ success: true, message: "Credentials successfully dispatched over WhatsApp!" });
     } catch (error) {
-        console.error("❌ META API CREDENTIALS REJECTION:", error.response ? JSON.stringify(error.response.data) : error.message);
-        return res.status(500).json({ success: false, error: "Meta API Rejection", details: error.response ? error.response.data : error.message });
+        console.error("❌ META API CREDENTIALS REJECTION:", error.message);
+        return res.status(500).json({ success: false, error: "Meta API integration rejection" });
     }
 });
 
 // Standard Message Dispatch Helper
 async function sendWhatsAppMessage(to, text) {
-    const WHATSAPP_TOKEN = "EAAOT5XBXyVwBR7v5XwYnbITF4zF3xWzQXikBjAH1w2qu0sQTbVkyqpNvmRAqhkmU7BqCEcthw5CHelfzr3fmDF2C3la6lw28iYLPI3EmZAZC6vDQoHQyiZAKz7QmfuiZBh0TKhusnrH6CeJZBJLdwU30MOzyr7Vkn26w5dE4md74Bu4OwoLzqfmCCtFDZA9AZDZD";
+    const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
     const PHONE_NUMBER_ID = "1202984902891472";
     await axios({
         method: "POST", url: `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`,
@@ -398,6 +425,5 @@ async function sendWhatsAppMessage(to, text) {
     });
 }
 
-// Fixed Port Dynamic Initialization Layer
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, '0.0.0.0', () => console.log(`ChatBot engine live on port ${PORT}`));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`ChatBot engine live on port ${PORT}`));

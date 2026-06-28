@@ -41,6 +41,13 @@ function getBasePriceByPlan(planScope) {
     return "8713"; 
 }
 
+// =========================================================================
+// 🟢 SERVER HEALTH CHECK ROUTE (FOR UPTIMEROBOT NO-SLEEP PING)
+// =========================================================================
+app.get('/', (req, res) => {
+    res.status(200).send("Shahid Creatives Bot Server is Live and Active! 🚀");
+});
+
 // Meta Webhook Verification
 app.get('/webhook', (req, res) => {
     const VERIFY_TOKEN = "shahid_creatives_secret_token_123";

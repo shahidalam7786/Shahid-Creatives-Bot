@@ -135,15 +135,15 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // 🎯 STATE LAYER: PROCESSING CONSULTATION SLOT & CUSTOM QUERY TRIGGER
+                    // 🎯 STATE LAYER: PROCESSING CONSULTATION SLOT (ROBUST CAPTURING)
                     if (currentStep === 'awaiting_consultation_slot') {
                         let confirmationText = "";
                         
-                        if (userText === 'a' || userText === 'b') {
-                            let selectedSlot = (userText === 'a') ? "Aaj hi Shaam 5:00 Baje (Today 5 PM)" : "Kal Dopahar 12:00 Baje (Tomorrow 12 PM)";
+                        if (userText === 'a' || userText.startsWith('a ') || userText.startsWith('a,')) {
+                            let selectedSlot = "Aaj hi Shaam 5:00 Baje (Today 5 PM)";
                             userSessions[from].step = 'main_menu';
                             
-                            // Send Priority Alert to Admin
+                            // Send Priority Alert to Admin strictly
                             const slotAdminAlert = `🚨 *LIVE CONSULTATION SLOT SELECTED!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${userSessions[from].clientName || 'Valued Client'}\n⏰ *Chosen Slot:* ${selectedSlot}\n\n🤖 *Status:* Takeover chat thread instantly to confirm details!`;
                             await sendWhatsAppMessage("917529839762", slotAdminAlert);
 
@@ -155,12 +155,27 @@ app.post('/webhook', async (req, res) => {
                             return sendWhatsAppMessage(from, confirmationText);
                         } 
                         
-                        else if (userText === 'c') {
-                            // Route to capture custom query next
+                        else if (userText === 'b' || userText.startsWith('b ') || userText.startsWith('b,')) {
+                            let selectedSlot = "Kal Dopahar 12:00 Baje (Tomorrow 12 PM)";
+                            userSessions[from].step = 'main_menu';
+                            
+                            const slotAdminAlert = `🚨 *LIVE CONSULTATION SLOT SELECTED!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${userSessions[from].clientName || 'Valued Client'}\n⏰ *Chosen Slot:* ${selectedSlot}\n\n🤖 *Status:* Takeover chat thread instantly!`;
+                            await sendWhatsAppMessage("917529839762", slotAdminAlert);
+
+                            if (userLang === 'EN') {
+                                confirmationText = `✅ *Slot Request Received!* \n\nI have locked *"${selectedSlot}"* as your preferred consultation timing. Shahid Alam will personally ping you here shortly! 🚀`;
+                            } else {
+                                confirmationText = `✅ *Slot Request Received!* \n\nMaine aapke liye *"${selectedSlot}"* ka timing lock kar diya hai. Shahid bhai aapse bohot jald is chat par connect karenge! 🚀`;
+                            }
+                            return sendWhatsAppMessage(from, confirmationText);
+                        }
+                        
+                        // Smart Check for Option C variants like "C, 10 baje kal"
+                        else if (userText === 'c' || userText.startsWith('c ') || userText.startsWith('c,')) {
                             userSessions[from].step = 'collect_custom_query';
                             
                             if (userLang === 'EN') {
-                                confirmationText = `✍️ *Please share your requirement:* \n\nKindly type your business goal, project details, or query in the next message so Shahid can review it before scheduling your time!`;
+                                confirmationText = `✍️ *Please share your requirement:* \n\nKindly type your business goal, project details, or query in the next message so Shahid can review it before scheduling your custom session!`;
                             } else {
                                 confirmationText = `✍️ *Apni requirement share karein:* \n\nKripya agle message mein apna business goal, website/automation requirement ya jo bhi aapki query hai, short mein likh kar bhejien taaki Shahid bhai call se pehle use review kar sakein!`;
                             }
@@ -168,18 +183,18 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // 🎯 STATE LAYER: CAPTURE CUSTOM QUERY AND DESPATCH TO ADMIN
+                    // 🎯 STATE LAYER: CAPTURE CUSTOM PRE-QUALIFIED QUERY
                     if (currentStep === 'collect_custom_query') {
                         const userQuery = rawText; 
                         userSessions[from].step = 'main_menu'; 
                         
-                        // Admin Notification with both Custom Request and Pre-Qualified Query
+                        // Dispatched strictly to your personal number
                         const queryAdminAlert = `🚨 *CUSTOM CONSULTATION & QUERY RECEIVED!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${userSessions[from].clientName || 'Valued Client'}\n⏰ *Slot:* Custom Time Requested\n📝 *Client Query:* "${userQuery}"\n\n🤖 *Status:* Hot Lead! Review query and reply instantly.`;
                         await sendWhatsAppMessage("917529839762", queryAdminAlert);
 
                         let confirmationText = "";
                         if (userLang === 'EN') {
-                            confirmationText = `✅ *Query Saved Successfully!* \n\nThank you! Your project goals have been forwarded to Shahid. Our priority desk will connect with you shortly to anchor a custom session slot. 🚀`;
+                            confirmationText = `✅ *Query Saved Successfully!* \n\nThank you! Your project goals have been forwarded to Shahid. Our desk will connect with you shortly to anchor a custom session slot. 🚀`;
                         } else {
                             confirmationText = `✅ *Details Securely Saved!* \n\nThank you! Aapki requirement Shahid bhai tak pahunch gayi hai. Hamari team aapse custom time set karne ke liye jald hi is chat par connect karegi. 🚀`;
                         }
@@ -382,7 +397,7 @@ app.post('/api/send-payment-reminder', async (req, res) => {
                             `Yeh aapke project *${project_name || 'Custom Web Infrastructure'}* ke pending outstanding dues ka ek professional account reminder hai.\n\n` +
                             `💰 *Outstanding Balance:* ₹${dues_amount}\n` +
                             `📌 *Project Tracking ID:* ${reference_id || 'SC-MAIN'}\n\n` +
-                            `Kripya niche diye gaye official portal path secure link par click karke apna pending milestone amount clear kijiye taaki development & deployment cycle bina kisi interruption ke chalti rahe:\n\n` +
+                            `Kripya niche diye gaye official portal path secure link par click karke apna pending milestone amount clear kijiye:\n\n` +
                             `🔗 *Secure Payment Link:* ${targetLink}\n\n` +
                             `Thank you for your continuous partnership! 🚀`;
 

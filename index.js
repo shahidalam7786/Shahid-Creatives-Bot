@@ -135,6 +135,31 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
+                    // STATE LAYER: PROCESSING CONSULTATION SLOT SELECTION (A, B, C)
+                    if (currentStep === 'awaiting_consultation_slot') {
+                        let confirmationText = "";
+                        let selectedSlot = "";
+                        
+                        if (userText === 'a') selectedSlot = "Aaj hi Shaam 5:00 Baje (Today 5 PM)";
+                        else if (userText === 'b') selectedSlot = "Kal Dopahar 12:00 Baje (Tomorrow 12 PM)";
+                        else if (userText === 'c') selectedSlot = "Custom Time Request";
+
+                        if (selectedSlot !== "") {
+                            userSessions[from].step = 'main_menu';
+                            
+                            // Send Priority Alert to Admin
+                            const slotAdminAlert = `🚨 *LIVE CONSULTATION SLOT SELECTED!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${userSessions[from].clientName || 'Valued Client'}\n⏰ *Chosen Slot:* ${selectedSlot}\n\n🤖 *Status:* Takeover chat thread instantly to confirm details!`;
+                            await sendWhatsAppMessage("917529839762", slotAdminAlert);
+
+                            if (userLang === 'EN') {
+                                confirmationText = `✅ *Slot Request Received!* \n\nI have locked *"${selectedSlot}"* as your preferred consultation timing. Shahid Alam or our priority desk will personally ping you here to finalize the sync brief. Get ready! 🚀`;
+                            } else {
+                                confirmationText = `✅ *Slot Request Received!* \n\nMaine aapke liye *"${selectedSlot}"* ka timing lock kar diya hai. Shahid bhai ya hamari core team aapse bohot jald is chat thread par sync call confirm karne ke liye connect karegi! 🚀`;
+                            }
+                            return sendWhatsAppMessage(from, confirmationText);
+                        }
+                    }
+
                     // STATE RULE 2: LEAD DETECTION PARSING ENGINE
                     if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate")) {
                         
@@ -246,7 +271,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, replyText);
                     }
 
-                    // 🔥 UPGRADED NAVIGATION MENU ENGINE (NOW WITH LIVE B2B WHOLESALE AUTOMATION OPTION!)
+                    // 🔥 UNIFIED EMOJI ALIGNMENT NAVIGATION MENU ENGINE 
                     if (isAdOrMenuClick) {
                         userSessions[from].step = 'main_menu';
                         let replyText = "";
@@ -287,10 +312,15 @@ app.post('/webhook', async (req, res) => {
                         userSessions[from].step = 'collect_details';
                         return sendWhatsAppMessage(from, replyText);
                     } else if (userText === '5') {
-                        let replyText = (userLang === 'EN')
-                            ? "👤 *Direct Consultation with Shahid:*\n\nShahid Alam will connect with you directly on this chat thread. What time slot should I schedule an alignment call for you?"
-                            : "👤 *Direct Consultation with Shahid:*\n\nShahid Alam aapke sath is thread par directly connect karenge. Aapko main kis time schedule par priority consultation slot book karu? Kindly niche batayein.";
-                        userSessions[from].step = 'collect_details';
+                        // 🚀 ADVANCED TIME-SLOT INBOUND OVERRIDE FOR OPTION 5
+                        let replyText = "";
+                        userSessions[from].step = 'awaiting_consultation_slot';
+                        
+                        if (userLang === 'EN') {
+                            replyText = `👤 *Direct Consultation with Shahid:*\n\nShahid Alam will connect with you directly on this thread. To lock your free 15-minute priority growth strategy sync, select a slot option:\n\n🅰️ **Today at 5:00 PM**\n🅱️ **Tomorrow at 12:00 PM**\n🅲 **Custom Time (Type preferred time below)**\n\n👉 Kindly reply with *A, B, or C* to secure your slot!`;
+                        } else {
+                            replyText = `👤 *Direct Consultation with Shahid:*\n\nShahid Alam aapke sath is thread par directly connect karenge. Apna free 15-minute priority growth consultation slot instantly book karne ke liye ek option choose karein:\n\n🅰️ **Aaj hi Shaam 5:00 Baje**\n🅱️ **Kal Dopahar 12:00 Baje**\n🅲 **Custom Time (Apna secure timing niche type karein)**\n\n👉 Kripya **A, B, ya C** likh kar reply kijiye!`;
+                        }
                         return sendWhatsAppMessage(from, replyText);
                     } else {
                         let replyText = (userLang === 'EN')

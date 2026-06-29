@@ -97,6 +97,22 @@ app.post('/webhook', async (req, res) => {
                     const userLang = userSessions[from].lang;
                     const currentStep = userSessions[from].step;
 
+                    // 🎯 STATE LAYER INTERCEPTOR 0: CAPTURE COURTESY REPLIES (THANKS/OK) AFTER REGISTRATION
+                    if (currentStep === 'post_registration') {
+                        const courtesyTriggers = ['thanks', 'thank you', 'ok', 'okay', 'ty', 'ji', 'shukriya', 'thx'];
+                        
+                        if (courtesyTriggers.includes(userText)) {
+                            userSessions[from].step = 'main_menu'; // Reset back to baseline routing
+                            
+                            let courtesyReply = (userLang === 'EN')
+                                ? "You're most welcome! 👍 Glad to help. Talk to you very soon!"
+                                : "Aapka swagat hai! 👍 Milte hain aapse bohot jald sync call par. Have a great day ahead! ✨";
+                            return sendWhatsAppMessage(from, courtesyReply);
+                        }
+                        // If they type anything else, seamlessly pass them down after resetting state
+                        userSessions[from].step = 'main_menu';
+                    }
+
                     // 🎯 STATE LAYER INTERCEPTOR 1: CAPTURE CUSTOM QUERY TEXT FIRST
                     if (currentStep === 'collect_custom_query') {
                         userSessions[from].temporaryQuery = rawText; // Storing query temporarily
@@ -104,14 +120,14 @@ app.post('/webhook', async (req, res) => {
                         
                         let replyText = (userLang === 'EN') 
                             ? "Got it! 📝 To lock your custom priority slot, please reply with your *Full Name* and *Email Address*."
-                            : "Noted! 📝 Aapka priority slot block karne ke liye, kripya apna *Full Name* aur **Email ID** ek message mein bhejien.";
+                            : "Noted! 📝 Aapka priority slot block karne ke liye, kripya apna *Full Name* aur *Email ID* ek message mein bhejien.";
                         return sendWhatsAppMessage(from, replyText);
                     }
 
-                    // 🎯 STATE LAYER INTERCEPTOR 2: CAPTURE IDENTITY VECTORS, SYNC CRM & NOTIFY ADMIN
+                    // 🎯 STATE LAYER INTERCEPTOR 2: CAPTURE IDENTITY VECTORS, SYNC CRM & ROUTE TO POST-REGISTRATION
                     if (currentStep === 'collect_consultation_details') {
                         const contactDetails = rawText;
-                        userSessions[from].step = 'main_menu'; // Reset routing step back to loop base
+                        userSessions[from].step = 'post_registration'; // Routing to courtesy monitoring buffer
                         
                         let cleanName = "Valued Client";
                         let cleanEmail = "Not Provided";
@@ -148,7 +164,7 @@ app.post('/webhook', async (req, res) => {
 
                         let confirmationText = "";
                         if (userLang === 'EN') {
-                            confirmationText = `✅ *Consultation Profile Locked!* \n\nThank you *${cleanName}*! Your specifications and identity vectors have been routed to Shahid. Our core alignment team will message you shortly! 🚀`;
+                            confirmationText = `✅ *Booking Profile Complete!* \n\nThank you *${cleanName}*! Your specifications and identity vectors have been routed to Shahid. Our core alignment team will message you shortly! 🚀`;
                         } else {
                             confirmationText = `✅ *Booking Profile Complete!* \n\nThank you *${cleanName}*! Aapki requirement aur profile data Shahid bhai tak secure pahunch gaya hai. Hamari team custom time confirmation ke liye jald hi aapse raabta karegi! 🚀`;
                         }
@@ -227,7 +243,6 @@ app.post('/webhook', async (req, res) => {
                             return sendWhatsAppMessage(from, confirmationText);
                         }
                         
-                        // Smart Check for Option C variants like "C, 10 baje kal"
                         else if (userText === 'c' || userText.startsWith('c ') || userText.startsWith('c,')) {
                             userSessions[from].step = 'collect_custom_query';
                             

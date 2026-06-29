@@ -319,7 +319,7 @@ app.post('/webhook', async (req, res) => {
                             replyText = `Thank you, your profile is secure! 🤝\n\n🔥 *Launch Discount Applied:* Your code **LAUNCH20** (Flat 20% OFF) is successfully linked.\n\n🔗 *Pay Securely Here:* ${selfPayLink}`;
                         } else {
                             const tokenAmountINR = "999";
-                            const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&name=${encodedName}&email=${encodedEmail}&phone=${from}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
+                            const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
                             replyText = `Thank you, aapki details receive ho gayi hain! 🤝\n\n🔥 *Launch Discount Applied:* Coupon code **LAUNCH20** (Flat 20% OFF) active ho gaya hai. Aap Razorpay se **₹999 Token Booking** complete karke slot lock kar sakte hain:\n\n🔗 *Direct Pay Gateway Link:* ${selfPayLink}`;
                         }
                         return sendWhatsAppMessage(from, replyText);
@@ -362,7 +362,7 @@ app.post('/webhook', async (req, res) => {
                     } else if (userText === '5') {
                         userSessions[from].step = 'awaiting_consultation_slot';
                         let replyText = (userLang === 'EN')
-                            ? `👤 *Direct Consultation with Shahid:*\n\nTo lock your free 15-minute priority growth strategy sync, select a slot option:\n\n🅰️ **Today at 5:00 PM**\nⓑ **Tomorrow at 12:00 PM**\nⒸ **Custom Time (Type preferred time below)**\n\n👉 Kindly reply with *A, B, or C* to secure your slot!`
+                            ? `👤 *Direct Consultation with Shahid:*\n\nTo lock your free 15-minute priority growth strategy sync, select a slot option:\n\n🅰️ **Today at 5:00 PM**\nⓑ **Tomorrow at 12:00 PM**\n Answering **C) Custom Time (Type preferred time below)**\n\n👉 Kindly reply with *A, B, or C* to secure your slot!`
                             : `👤 *Direct Consultation with Shahid:*\n\nShahid Alam aapke sath is thread par directly connect karenge. Priority growth consultation slot book karne ke liye ek option choose karein:\n\n🅰️ **Aaj hi Shaam 5:00 Baje**\nⓑ **Kal Dopahar 12:00 Baje**\nⒸ **Custom Time (Apna secure timing niche type karein)**\n\n👉 Kripya **A, B, ya C** likh kar reply kijiye!`;
                         return sendWhatsAppMessage(from, replyText);
                     } else {
@@ -387,7 +387,7 @@ app.post('/api/send-client-credentials', async (req, res) => {
 
 async function sendWhatsAppMessage(to, text, customPhoneId = null, customToken = null) {
     const DEFAULT_TOKEN = process.env.WHATSAPP_TOKEN;
-    const DEFAULT_PHONE_NUMBER_ID = "1202984902891472";
+    const DEFAULT_PHONE_NUMBER_ID = "1138974165971937"; // Live verified ID
     await axios({
         method: "POST", 
         url: `https://graph.facebook.com/v18.0/${customPhoneId || DEFAULT_PHONE_NUMBER_ID}/messages`,

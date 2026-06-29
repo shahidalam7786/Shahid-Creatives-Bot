@@ -117,10 +117,10 @@ app.post('/webhook', async (req, res) => {
                             await userRef.delete();
                             let courtesyReply = (userLang === 'EN')
                                 ? "You're most welcome! 👍 Glad to help. Type 'Menu' anytime to restart."
-                                : "Aapka swagat hai! 👍 Milte hain aapse bohot jald sync call par. Dobara shuru karne ke liye 'Menu' bhejien.";
+                                : "Aapka swagat hai! 👍 Milte hain aapse bohot jald sync call par. Dobara shuru karne ke liye 'Menu' bheinje.";
                             return sendWhatsAppMessage(from, courtesyReply);
                         }
-                        await userRef.delete(); // Clear state to accept new menu flows
+                        await userRef.delete(); 
                     }
 
                     // 🎯 STATE 1: COLLECT IDENTITY (OPTION 5 -> C PIPELINE)
@@ -157,7 +157,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, confirmationText);
                     }
 
-                    // 🎯 STATE 3: INBOUND SEQUENCE - PROJECT SCOPE DETAILS DETAILS ACQUISITION
+                    // 🎯 STATE 3: INBOUND SEQUENCE - DETAILS ACQUISITION
                     if (currentStep === 'collect_details') {
                         await userRef.update({ projectScope: rawText, step: 'ask_name_email' });
                         let replyText = (userLang === 'EN') 
@@ -166,7 +166,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, replyText);
                     }
 
-                    // 🎯 STATE 4: INBOUND CHAT INTERFACE REGISTRATION COMPLETED
+                    // 🎯 STATE 4: INBOUND CHAT REGISTRATION COMPLETED
                     if (currentStep === 'ask_name_email') {
                         await userRef.update({ step: 'completed' });
                         let cleanName = rawText.split('\n')[0].split(',')[0].trim();
@@ -177,8 +177,9 @@ app.post('/webhook', async (req, res) => {
                         if (emailMatch) cleanEmail = emailMatch[1].trim();
 
                         const matchedBasePrice = getBasePriceByPlan(sessionData.projectScope);
+                        const finalPayable = calculateTotalPayable(matchedBasePrice);
                         
-                        const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n📝 *Plan Scope:* ${sessionData.projectScope}\n💰 *Allocated Base:* ₹${matchedBasePrice}`;
+                        const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n📝 *Plan Scope:* ${sessionData.projectScope}\n💰 *Calculated Price (incl GST):* ₹${finalPayable}`;
                         await sendWhatsAppMessage("917529839762", chatAdminNotification);
 
                         const uniqueProjectId = `SC-${Math.floor(10000 + Math.random() * 90000)}`;
@@ -199,7 +200,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, replyText);
                     }
 
-                    // 🎯 STATE 5: META ADS LEAD CAPTURE SYSTEM REDIRECT ROUTING (OPTIONS 1 OR 2)
+                    // 🎯 STATE 5: META ADS LEAD CAPTURE LINKS REDIRECTING (OPTIONS 1 OR 2)
                     if (currentStep === 'awaiting_website_action') {
                         if (userText === '1') {
                             await userRef.update({ step: 'completed' });
@@ -212,11 +213,11 @@ app.post('/webhook', async (req, res) => {
                             if (userLang === 'EN') {
                                 const tokenAmountUSD = "49";
                                 const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountUSD}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
-                                replyText = `🎉 *Excellent Choice!* Your session data is validated. 🤝\n\nClick the link below to pay your **Token Booking fee ($49)**:\n\n🔗 *Pay Securely Here:* ${dynamicPaymentLink}`;
+                                replyText = `🎉 *Excellent Choice!* Your data is validated. 🤝\n\nClick below to clear your **Token Booking ($49)**:\n\n🔗 *Pay Securely Here:* ${dynamicPaymentLink}`;
                             } else {
                                 const tokenAmountINR = "999";
                                 const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
-                                replyText = `Thank you, aapki details receive ho gayi hain! 🤝\n\n🔗 *Direct Pay Gateway Link:* ${dynamicPaymentLink}`;
+                                replyText = `Thank you, details received! 🤝\n\n🔗 *Direct Pay Gateway Link:* ${dynamicPaymentLink}`;
                             }
                             return sendWhatsAppMessage(from, replyText);
                         } else if (userText === '2') {
@@ -226,27 +227,23 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // 🎯 STATE 6: CONSULTATION FIXED SLOTS ROUTING MODULE (A, B, C)
+                    // 🎯 STATE 6: CONSULTATION FIXED SLOTS ROUTING (A, B, C)
                     if (currentStep === 'awaiting_consultation_slot') {
                         if (userText === 'a' || userText.startsWith('a ') || userText.startsWith('a,')) {
                             await userRef.update({ step: 'post_registration' });
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT SELECTED!* 🚨\n📱 +${from}\n⏰ Chosen Slot: Aaj hi Shaam 5:00 Baje`);
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "✅ *Slot Request Received!* Today 5 PM is locked." : "✅ *Slot Request Received!* Aaj Shaam 5 baje ka timing lock ho gaya hai.");
-                        } 
-                        else if (userText === 'b' || userText.startsWith('b ') || userText.startsWith('b,')) {
+                        } else if (userText === 'b' || userText.startsWith('b ') || userText.startsWith('b,')) {
                             await userRef.update({ step: 'post_registration' });
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT SELECTED!* 🚨\n📱 +${from}\n⏰ Chosen Slot: Kal Dopahar 12:00 Baje`);
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "✅ *Slot Request Received!* Tomorrow 12 PM is locked." : "✅ *Slot Request Received!* Kal dopahar 12 baje ka timing lock ho gaya hai.");
-                        }
-                        else if (userText === 'c' || userText.startsWith('c ') || userText.startsWith('c,')) {
+                        } else if (userText === 'c' || userText.startsWith('c ') || userText.startsWith('c,')) {
                             await userRef.update({ step: 'collect_consultation_identity' });
-                            return sendWhatsAppMessage(from, (userLang === 'EN')
-                                ? "✍️ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*."
-                                : "✍️ *Apna profile register karein:* Kripya apna *Full Name* aur *Email ID* reply mein bhejien.");
+                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍️ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍️ *Apna profile register karein:* Kripya apna *Full Name* aur *Email ID* reply mein bhejien.");
                         }
                     }
 
-                    // 🎯 STATE 7: META ADS PIPELINE INBOUND INTAKE LEAD ENGINE
+                    // 🎯 STATE 7: META ADS INTAKE AD-SET INTERCEPTOR
                     if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate")) {
                         if (sessionData.lastSubmitedTime && (Date.now() - sessionData.lastSubmitedTime < 60000)) { return; }
                         await userRef.update({ lastSubmitedTime: Date.now() });
@@ -268,7 +265,7 @@ app.post('/webhook', async (req, res) => {
                             const globalEmailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/i;
                             const emailMatch = rawText.match(globalEmailRegex);
                             if (emailMatch) clientEmail = emailMatch[1].trim();
-                        } catch (parseError) { console.error("Extraction matrix parser exception."); }
+                        } catch (parseError) { console.error("Parser failure exception."); }
 
                         await userRef.update({ clientName: clientName, clientEmail: clientEmail, projectScope: projectScope, step: 'awaiting_website_action' });
 
@@ -277,12 +274,12 @@ app.post('/webhook', async (req, res) => {
 
                         let clientReply = (userLang === 'EN')
                             ? `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved.\n\n🔥 *Exclusive Reward Activated:* Launch code **LAUNCH20** secures a **Flat 20% OFF** discount!\n\nPlease reply with your choice number:\n\n1️⃣ **Book Token (Confirm Slot & Claim 20% OFF)**\n2️⃣ **Discuss Requirements (Schedule Strategy Call)**`
-                            : `Thank you *${clientName}*! 🙏 Aapka data server par secure ho gaya hai.\n\n🔥 *Exclusive Offer Activated:* Coupon code **LAUNCH20** secures a **Flat 20% OFF (Discount)**!\n\nNiche diye gaye number se reply kijiye:\n\n1️⃣ **Token Book Karein (Slot Confirm & Claim 20% OFF)**\n2️⃣ **Discuss Requirements (Strategy Call)**`;
+                            : `Thank you *${clientName}*! 🙏 Aapka data server par secure ho gaya hai.\n\n🔥 *Exclusive Offer Activated:* Coupon code **LAUNCH20** (Flat 20% OFF) active ho gaya hai!\n\nNiche diye gaye number se reply kijiye:\n\n1️⃣ **Token Book Karein (Slot Confirm & Claim 20% OFF)**\n2️⃣ **Discuss Requirements (Strategy Call)**`;
                         
                         return sendWhatsAppMessage(from, clientReply);
                     }
 
-                    // 🎯 STATE 8: UNIFIED DYNAMIC MAIN CORE MENU NAVIGATION INTERFACE
+                    // 🎯 STATE 8: UNIFIED DYNAMIC CORE MENU ENGINE
                     await userRef.update({ step: 'main_menu' });
                     let replyText = "";
                     if (userLang === 'EN') {
@@ -294,34 +291,34 @@ app.post('/webhook', async (req, res) => {
                     if (userText === '1') {
                         await userRef.update({ step: 'collect_details' });
                         replyText = (userLang === 'EN')
-                            ? "💻 *Shahid Creatives - Premium Web Tiers:*\n\n• 💼 *Starter Business Hub* ($299+)\n• 🛒 *Global E-commerce Engine* ($599)\n• 🚀 *Custom SaaS Enterprise Portal* ($1,750+)\n\n👉 Please reply with your preferred **Plan Name or Custom Specifications**!"
-                            : "💻 *Shahid Creatives - Web Development Tiers:*\n\n• 📄 *Starter Plan* (Base Price: ₹8,713)\n• 💼 *Basic Small Business* (Base Price: ₹12,300)\n• 🌟 *Starter Business Hub* (Base Price: ₹25,500)\n• 🛒 *E-commerce Hub* (Base Price: ₹47,500)\n• 🚀 *Custom SaaS App* (Base Price: ₹1,45,000+)\n\n👉 Aap kaun sa package choose karna chahte hain? Niche specifications reply mein share kijiye!";
+                            ? "💻 *Shahid Creatives - Premium Web Tiers:*\n• 💼 *Starter Business Hub* ($299+)\n• 🛒 *Global E-commerce Engine* ($599)\n• 🚀 *Custom SaaS Enterprise Portal* ($1,750+)\n\n👉 Please reply with your preferred **Plan Name or Custom Specifications**!"
+                            : "💻 *Shahid Creatives - Web Development Tiers:*\n• 📄 *Starter Plan* (Base Price: ₹8,713)\n• 💼 *Basic Small Business* (Base Price: ₹12,300)\n• 🌟 *Starter Business Hub* (Base Price: ₹25,500)\n• 🛒 *E-commerce Hub* (Base Price: ₹47,500)\n• 🚀 *Custom SaaS App* (Base Price: ₹1,45,000+)\n\n👉 Aap kaun sa package choose karna chahte hain? Niche specifications reply mein share kijiye!";
                     } else if (userText === '2') {
                         await userRef.update({ step: 'collect_details' });
                         replyText = (userLang === 'EN')
-                            ? "🤖 *AI Business Automation Hub:*\n\n• 🤖 *Enterprise Custom AI Hub* ($299+)\n📲 *B2B Wholesale Live Automation Demo:*\n🔗 https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo\n\n👉 Reply with your business workflow or automation goal to initiate development!"
-                            : "🤖 *AI Business Automation & Live Demo:*\n\n• 🤖 *WhatsApp Bot & Lead Sync* (Base Price: ₹8,713)\n• 🏢 *Custom CRM Workflow Hub* (Base Price: ₹18,000)\n• 🚀 *Enterprise AI Suite* (Tailored Pricing)\n📲 *B2B Wholesale Live Automation Demo:*\n🔗 https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo\n\n👉 Apne automation requirements niche reply mein batayein!";
+                            ? "🤖 *AI Business Automation Hub:*\n• 🤖 *Enterprise Custom AI Hub* ($299+)\n📲 *B2B Wholesale Live Automation Demo:*\n🔗 https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo\n\n👉 Reply with your business workflow or automation goal to initiate development!"
+                            : "🤖 *AI Business Automation & Live Demo:*\n• 🤖 *WhatsApp Bot & Lead Sync* (Base Price: ₹8,713)\n• 🏢 *Custom CRM Workflow Hub* (Base Price: ₹18,000)\n• 🚀 *Enterprise AI Suite* (Tailored Pricing)\n📲 *B2B Wholesale Live Automation Demo:*\n🔗 https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo\n\n👉 Apne automation requirements niche reply mein batayein!";
                     } else if (userText === '3') {
                         await userRef.update({ step: 'collect_details' });
                         replyText = (userLang === 'EN')
-                            ? "🔥 *Exclusive Global Launch Offer!* 🔥\n\nCoupon code **LAUNCH20** linked! Secures a **Flat 20% OFF** discount on final project invoice bill.\n\n👉 Reply with your **Name and Project Goal** right now to tag your discount code!"
-                            : "🔥 *Exclusive Launch Offer!* 🔥\n\nMubarak ho! Coupon code **LAUNCH20** active kar diya hai. Secure a **Flat 20% Discount** on your project profile!\n\n👉 Is discount code ko lock karne ke liye niche apna **Name aur Project Type** likh kar bhejien.";
+                            ? "🔥 *Exclusive Global Launch Offer!* 🔥\nCoupon code **LAUNCH20** linked! Secures a **Flat 20% OFF** discount on final project invoice bill.\n\n👉 Reply with your **Name and Project Goal** right now to tag your discount code!"
+                            : "🔥 *Exclusive Launch Offer!* 🔥\nMubarak ho! Coupon code **LAUNCH20** active kar diya hai. Secure a **Flat 20% Discount** on your project profile!\n\n👉 Is discount code ko lock karne ke liye niche apna **Name aur Project Type** likh kar bhejien.";
                     } else if (userText === '4') {
                         await userRef.update({ step: 'collect_details' });
                         replyText = (userLang === 'EN')
-                            ? "💳 *Direct Booking & Token System ($49):*\n\nTo construct your gateway, please provide your **Full Name, Contact Number, and Project/Plan Name**."
-                            : "💳 *Direct Booking & Token System (₹999 Slot Lock):*\n\nYour custom live checkout status configure karne ke liye, kripya apna **Name, Phone Number, aur Project Name/Plan** reply mein bhejien.";
+                            ? "💳 *Direct Booking & Token System ($49):*\nTo construct your gateway, please provide your **Full Name, Contact Number, and Project/Plan Name**."
+                            : "💳 *Direct Booking & Token System (₹999 Slot Lock):*\nYour custom live checkout status configure karne ke liye, kripya apna **Name, Phone Number, aur Project Name/Plan** reply mein bhejien.";
                     } else if (userText === '5') {
                         await userRef.update({ step: 'awaiting_consultation_slot' });
                         replyText = (userLang === 'EN')
-                            ? `👤 *Direct Consultation with Shahid:*\n\nTo lock your free 15-minute priority growth strategy sync, select a slot option:\n\n🅰️ **Today at 5:00 PM**\nⓑ **Tomorrow at 12:00 PM**\nⒸ **Custom Time (Type preferred time below)**\n\n👉 Kindly reply with *A, B, or C* to secure your slot!`
-                            : `👤 *Direct Consultation with Shahid:*\n\nShahid Alam aapke sath is thread par directly connect karenge. Priority growth consultation slot book karne ke liye ek option choose karein:\n\n🅰️ **Aaj hi Shaam 5:00 Baje**\nⓑ **Kal Dopahar 12:00 Baje**\nⒸ **Custom Time (Apna secure timing niche type karein)**\n\n👉 Kripya **A, B, ya C** likh kar reply kijiye!`;
+                            ? `👤 *Direct Consultation with Shahid:*\nTo lock your free 15-minute growth strategy sync, select a slot:\n\n🅰️ **Today at 5:00 PM**\nⓑ **Tomorrow at 12:00 PM**\nⒸ **Custom Time (Type preferred time below)**\n\n👉 Kindly reply with *A, B, or C* to secure your slot!`
+                            : `👤 *Direct Consultation with Shahid:*\nShahid Alam aapke sath directly connect karenge. Priority growth consultation slot book karne ke liye ek option choose karein:\n\n🅰️ **Aaj hi Shaam 5:00 Baje**\nⓑ **Kal Dopahar 12:00 Baje**\nⒸ **Custom Time (Apna secure timing niche type karein)**\n\n👉 Kripya **A, B, ya C** likh kar reply kijiye!`;
                     }
                     
                     return sendWhatsAppMessage(from, replyText);
                 }
             }
-        } catch (error) { console.error("Webhook main routing critical exception bypassed."); }
+        } catch (error) { console.error("Webhook frame processing critical exception caught."); }
     }
 });
 

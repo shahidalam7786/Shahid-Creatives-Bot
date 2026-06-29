@@ -135,16 +135,12 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // STATE LAYER: PROCESSING CONSULTATION SLOT SELECTION (A, B, C)
+                    // 🎯 STATE LAYER: PROCESSING CONSULTATION SLOT & CUSTOM QUERY TRIGGER
                     if (currentStep === 'awaiting_consultation_slot') {
                         let confirmationText = "";
-                        let selectedSlot = "";
                         
-                        if (userText === 'a') selectedSlot = "Aaj hi Shaam 5:00 Baje (Today 5 PM)";
-                        else if (userText === 'b') selectedSlot = "Kal Dopahar 12:00 Baje (Tomorrow 12 PM)";
-                        else if (userText === 'c') selectedSlot = "Custom Time Request";
-
-                        if (selectedSlot !== "") {
+                        if (userText === 'a' || userText === 'b') {
+                            let selectedSlot = (userText === 'a') ? "Aaj hi Shaam 5:00 Baje (Today 5 PM)" : "Kal Dopahar 12:00 Baje (Tomorrow 12 PM)";
                             userSessions[from].step = 'main_menu';
                             
                             // Send Priority Alert to Admin
@@ -152,12 +148,42 @@ app.post('/webhook', async (req, res) => {
                             await sendWhatsAppMessage("917529839762", slotAdminAlert);
 
                             if (userLang === 'EN') {
-                                confirmationText = `✅ *Slot Request Received!* \n\nI have locked *"${selectedSlot}"* as your preferred consultation timing. Shahid Alam or our priority desk will personally ping you here to finalize the sync brief. Get ready! 🚀`;
+                                confirmationText = `✅ *Slot Request Received!* \n\nI have locked *"${selectedSlot}"* as your preferred consultation timing. Shahid Alam will personally ping you here shortly! 🚀`;
                             } else {
-                                confirmationText = `✅ *Slot Request Received!* \n\nMaine aapke liye *"${selectedSlot}"* ka timing lock kar diya hai. Shahid bhai ya hamari core team aapse bohot jald is chat thread par sync call confirm karne ke liye connect karegi! 🚀`;
+                                confirmationText = `✅ *Slot Request Received!* \n\nMaine aapke liye *"${selectedSlot}"* ka timing lock kar diya hai. Shahid bhai aapse bohot jald is chat par connect karenge! 🚀`;
+                            }
+                            return sendWhatsAppMessage(from, confirmationText);
+                        } 
+                        
+                        else if (userText === 'c') {
+                            // Route to capture custom query next
+                            userSessions[from].step = 'collect_custom_query';
+                            
+                            if (userLang === 'EN') {
+                                confirmationText = `✍️ *Please share your requirement:* \n\nKindly type your business goal, project details, or query in the next message so Shahid can review it before scheduling your time!`;
+                            } else {
+                                confirmationText = `✍️ *Apni requirement share karein:* \n\nKripya agle message mein apna business goal, website/automation requirement ya jo bhi aapki query hai, short mein likh kar bhejien taaki Shahid bhai call se pehle use review kar sakein!`;
                             }
                             return sendWhatsAppMessage(from, confirmationText);
                         }
+                    }
+
+                    // 🎯 STATE LAYER: CAPTURE CUSTOM QUERY AND DESPATCH TO ADMIN
+                    if (currentStep === 'collect_custom_query') {
+                        const userQuery = rawText; 
+                        userSessions[from].step = 'main_menu'; 
+                        
+                        // Admin Notification with both Custom Request and Pre-Qualified Query
+                        const queryAdminAlert = `🚨 *CUSTOM CONSULTATION & QUERY RECEIVED!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${userSessions[from].clientName || 'Valued Client'}\n⏰ *Slot:* Custom Time Requested\n📝 *Client Query:* "${userQuery}"\n\n🤖 *Status:* Hot Lead! Review query and reply instantly.`;
+                        await sendWhatsAppMessage("917529839762", queryAdminAlert);
+
+                        let confirmationText = "";
+                        if (userLang === 'EN') {
+                            confirmationText = `✅ *Query Saved Successfully!* \n\nThank you! Your project goals have been forwarded to Shahid. Our priority desk will connect with you shortly to anchor a custom session slot. 🚀`;
+                        } else {
+                            confirmationText = `✅ *Details Securely Saved!* \n\nThank you! Aapki requirement Shahid bhai tak pahunch gayi hai. Hamari team aapse custom time set karne ke liye jald hi is chat par connect karegi. 🚀`;
+                        }
+                        return sendWhatsAppMessage(from, confirmationText);
                     }
 
                     // STATE RULE 2: LEAD DETECTION PARSING ENGINE
@@ -271,7 +297,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, replyText);
                     }
 
-                    // 🔥 UNIFIED EMOJI ALIGNMENT NAVIGATION MENU ENGINE 
+                    // 🔥 UNIFIED NAVIGATION MENU ENGINE
                     if (isAdOrMenuClick) {
                         userSessions[from].step = 'main_menu';
                         let replyText = "";
@@ -312,7 +338,6 @@ app.post('/webhook', async (req, res) => {
                         userSessions[from].step = 'collect_details';
                         return sendWhatsAppMessage(from, replyText);
                     } else if (userText === '5') {
-                        // 🚀 ADVANCED TIME-SLOT INBOUND OVERRIDE FOR OPTION 5
                         let replyText = "";
                         userSessions[from].step = 'awaiting_consultation_slot';
                         
@@ -371,7 +396,7 @@ app.post('/api/send-payment-reminder', async (req, res) => {
 });
 
 // =========================================================================
-// 🔐 🌟 AUTOMATED CREDENTIALS TRIGGER PIPELINE (DYNAMIC OVERRIDE LAYER)
+// 🔐 🌟 AUTOMATED CREDENTIALS TRIGGER PIPELINE
 // =========================================================================
 app.post('/api/send-client-credentials', async (req, res) => {
     const { 
@@ -385,7 +410,6 @@ app.post('/api/send-client-credentials', async (req, res) => {
     const activeProject = project_scope || project_name || "Custom Web Development";
     const targetLoginLink = login_link || portal_link || "https://shahidcreatives.com/#portal";
     
-    // Fallback numbers engine
     let rawNumber = whatsapp_number || phone;
     
     if (!rawNumber && client_name) {
@@ -407,13 +431,13 @@ app.post('/api/send-client-credentials', async (req, res) => {
 
     const welcomeCredentialMessage = `🎉 *WELCOME TO SHAHID CREATIVES CLOUD HUB* 🎉\n\n` +
                                      `Hello *${client_name || 'Valued Client'}*! 🙏\n\n` +
-                                     `Aapke project *${activeProject}* ka work management layout deploy ho chuka hai! Aap niche diye gaye secure credentials se apna Client Dashboard open karke live updates track kar sakte hain.\n\n` +
+                                     `Aapke project *${activeProject}* ka work management layout deploy ho chuka hai! Secure credentials se Dashboard open karke live updates track karein.\n\n` +
                                      `🔐 *YOUR PORTAL CREDENTIALS:* \n` +
                                      `📌 *Client Portal ID:* \` ${activePortalId} \` \n` +
                                      `🔑 *Secure Password:* \` ${activePassword} \` \n\n` +
                                      `🚀 *Direct Access Dashboard Path:* \n` +
                                      `🔗 ${targetLoginLink}\n\n` +
-                                     `Dashboard ke andar aap milestones, current sprint tasks, aur outstanding accounting details poori transparently monitor kar sakte hain. Welcome aboard! 🤝✨`;
+                                     `Welcome aboard! 🤝✨`;
 
     try {
         await sendWhatsAppMessage(formattedNumber, welcomeCredentialMessage, custom_phone_id, custom_token);

@@ -97,6 +97,24 @@ app.post('/webhook', async (req, res) => {
                     const userLang = userSessions[from].lang;
                     const currentStep = userSessions[from].step;
 
+                    // 🌟 PRIORITY BLOCKER: INTERCEPT ACTIVE CUSTOM QUERY STATE AT TOP LEVEL
+                    if (currentStep === 'collect_custom_query') {
+                        const userQuery = rawText; 
+                        userSessions[from].step = 'main_menu'; // Success loop breakout reset
+                        
+                        // Admin Notification strictly to your dashboard
+                        const queryAdminAlert = `🚨 *CUSTOM CONSULTATION & QUERY RECEIVED!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${userSessions[from].clientName || 'Valued Client'}\n⏰ *Slot:* Custom Time Requested\n📝 *Client Query:* "${userQuery}"\n\n🤖 *Status:* Hot Lead! Review query and reply instantly.`;
+                        await sendWhatsAppMessage("917529839762", queryAdminAlert);
+
+                        let confirmationText = "";
+                        if (userLang === 'EN') {
+                            confirmationText = `✅ *Query Saved Successfully!* \n\nThank you! Your project goals have been forwarded to Shahid. Our desk will connect with you shortly to anchor a custom session slot. 🚀`;
+                        } else {
+                            confirmationText = `✅ *Details Securely Saved!* \n\nThank you! Aapki website/automation requirement Shahid bhai tak pahunch gayi hai. Hamari team aapse custom time set karne ke liye jald hi is chat par connect karegi. 🚀`;
+                        }
+                        return sendWhatsAppMessage(from, confirmationText);
+                    }
+
                     // SECURITY STATE STEP: COMPLETED TRANSACTIONS PROTECTOR
                     const resetTriggers = ['hi', 'hello', 'menu', 'start', 'hey'];
                     const isAdOrMenuClick = resetTriggers.includes(userText) || userText.includes("get more info") || userText.includes("interested") || userText.includes("info") || userText.includes("bot");
@@ -135,7 +153,7 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // 🎯 STATE LAYER: PROCESSING CONSULTATION SLOT (ROBUST CAPTURING)
+                    // 🎯 STATE LAYER: PROCESSING CONSULTATION SLOT SELECTION (A, B, C)
                     if (currentStep === 'awaiting_consultation_slot') {
                         let confirmationText = "";
                         
@@ -143,7 +161,6 @@ app.post('/webhook', async (req, res) => {
                             let selectedSlot = "Aaj hi Shaam 5:00 Baje (Today 5 PM)";
                             userSessions[from].step = 'main_menu';
                             
-                            // Send Priority Alert to Admin strictly
                             const slotAdminAlert = `🚨 *LIVE CONSULTATION SLOT SELECTED!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${userSessions[from].clientName || 'Valued Client'}\n⏰ *Chosen Slot:* ${selectedSlot}\n\n🤖 *Status:* Takeover chat thread instantly to confirm details!`;
                             await sendWhatsAppMessage("917529839762", slotAdminAlert);
 
@@ -170,7 +187,6 @@ app.post('/webhook', async (req, res) => {
                             return sendWhatsAppMessage(from, confirmationText);
                         }
                         
-                        // Smart Check for Option C variants like "C, 10 baje kal"
                         else if (userText === 'c' || userText.startsWith('c ') || userText.startsWith('c,')) {
                             userSessions[from].step = 'collect_custom_query';
                             
@@ -181,24 +197,6 @@ app.post('/webhook', async (req, res) => {
                             }
                             return sendWhatsAppMessage(from, confirmationText);
                         }
-                    }
-
-                    // 🎯 STATE LAYER: CAPTURE CUSTOM PRE-QUALIFIED QUERY
-                    if (currentStep === 'collect_custom_query') {
-                        const userQuery = rawText; 
-                        userSessions[from].step = 'main_menu'; 
-                        
-                        // Dispatched strictly to your personal number
-                        const queryAdminAlert = `🚨 *CUSTOM CONSULTATION & QUERY RECEIVED!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${userSessions[from].clientName || 'Valued Client'}\n⏰ *Slot:* Custom Time Requested\n📝 *Client Query:* "${userQuery}"\n\n🤖 *Status:* Hot Lead! Review query and reply instantly.`;
-                        await sendWhatsAppMessage("917529839762", queryAdminAlert);
-
-                        let confirmationText = "";
-                        if (userLang === 'EN') {
-                            confirmationText = `✅ *Query Saved Successfully!* \n\nThank you! Your project goals have been forwarded to Shahid. Our desk will connect with you shortly to anchor a custom session slot. 🚀`;
-                        } else {
-                            confirmationText = `✅ *Details Securely Saved!* \n\nThank you! Aapki requirement Shahid bhai tak pahunch gayi hai. Hamari team aapse custom time set karne ke liye jald hi is chat par connect karegi. 🚀`;
-                        }
-                        return sendWhatsAppMessage(from, confirmationText);
                     }
 
                     // STATE RULE 2: LEAD DETECTION PARSING ENGINE
@@ -307,7 +305,7 @@ app.post('/webhook', async (req, res) => {
                         } else {
                             const tokenAmountINR = "999";
                             const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
-                            replyText = `Thank you, aapki details receive ho gayi hain! 🤝\n\n🔥 *Launch Discount Applied:* Maine aapke profile ke sath **LAUNCH20** (Flat 20% OFF) active kar diya hai. Aap Razorpay से **₹999 Token Booking** complete karke slot lock kar sakte hain. Isse *Shahid Creatives* mein aapka slot automatic book ho jayega:\n\n🔗 *Direct Pay Gateway Link:* ${selfPayLink}\n\n*Project Reference ID:* ${uniqueProjectId}`;
+                            replyText = `Thank you, aapki details receive ho gayi hain! 🤝\n\n🔥 *Launch Discount Applied:* Maine aapke profile ke sath **LAUNCH20** (Flat 20% OFF) active kar diya hai. Aap Razorpay से **₹999 Token Booking** complete karke slot lock kar sakte hain:\n\n🔗 *Direct Pay Gateway Link:* ${selfPayLink}\n\n*Project Reference ID:* ${uniqueProjectId}`;
                         }
                         return sendWhatsAppMessage(from, replyText);
                     }

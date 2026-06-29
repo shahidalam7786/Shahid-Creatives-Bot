@@ -1,10 +1,11 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const axios = require('axios');
+
 const app = express();
 app.use(bodyParser.json());
 
-// 🟢 RENDER LIGHTWEIGHT IN-MEMORY STORAGE (No database credentials needed, zero crash!)
+// 🟢 LIGHTWEIGHT IN-MEMORY STORAGE (Render configuration ready, zero database dependency!)
 const userSessions = {};
 
 // 📈 DYNAMIC PRICING LEDGER MAPPING
@@ -40,7 +41,7 @@ function getBasePriceByPlan(planScope) {
     return "8713"; 
 }
 
-// 🤖 SERVER HEALTH CHECK (For 24/7 UptimeRobot Connection on Render)
+// 🤖 SERVER HEALTH CHECK (For 24/7 UptimeRobot Connection)
 app.get('/', (req, res) => {
     res.status(200).send("Shahid Creatives Bot Server is Live on Render! Complete and Active! 🚀");
 });
@@ -80,7 +81,7 @@ app.post('/webhook', async (req, res) => {
                     const isInternationalNumber = !from.startsWith("91");
                     const isGlobalWebsiteTemplate = rawText.includes("Global USD") || rawText.includes("Worldwide") || rawText.includes("$");
                     
-                    // ⚡ Reset state if welcome triggers are hit
+                    // ⚡ Reset mechanism for fallback restart
                     const resetTriggers = ['hi', 'hello', 'menu', 'start', 'hey'];
                     if (resetTriggers.includes(userText)) {
                         userSessions[from] = null;
@@ -100,7 +101,7 @@ app.post('/webhook', async (req, res) => {
                     const userLang = userSessions[from].lang;
                     const currentStep = userSessions[from].step;
 
-                    // 🎯 STATE 0: COURTESY REPLIES
+                    // 🎯 STATE 0: COURTESY REPLIES RESET BUFFER
                     if (currentStep === 'post_registration') {
                         const courtesyTriggers = ['thanks', 'thank you', 'ok', 'okay', 'ji', 'shukriya', 'thx'];
                         if (courtesyTriggers.includes(userText)) {
@@ -113,7 +114,7 @@ app.post('/webhook', async (req, res) => {
                         userSessions[from] = null;
                     }
 
-                    // 🎯 STATE 1: COLLECT IDENTITY (OPTION 5 -> C)
+                    // 🎯 STATE 1: COLLECT IDENTITY (OPTION 5 -> C PIPELINE)
                     if (currentStep === 'collect_consultation_identity') {
                         userSessions[from].step = 'collect_custom_query_and_time'; 
                         let cleanName = rawText.split('\n')[0].split(',')[0].trim();
@@ -124,12 +125,12 @@ app.post('/webhook', async (req, res) => {
                             : `Thank you *${cleanName}*! 🙏\n\nAb kripya agle message mein apni **Website/Automation Requirement** aur sath hi apna **Preferred Custom Time** (jab aap call par baat karna chahte hain) ek sath likh kar bhejien.`);
                     }
 
-                    // 🎯 STATE 2: DISPATCH CUSTOM TIME + REQUIREMENTS TO ADMIN
+                    // 🎯 STATE 2: DISPATCH CUSTOM QUERY & TIME TO ADMIN SHAHID
                     if (currentStep === 'collect_custom_query_and_time') {
                         userSessions[from].step = 'post_registration';
                         const cleanName = userSessions[from].clientName;
 
-                        const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n📝 *Custom Time & Query:* "${rawText}"\n\n🤖 *Status:* Live details routed instantly!`;
+                        const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n📝 *Custom Time & Query:* "${rawText}"\n\n🤖 *Status:* Live details captured securely!`;
                         await sendWhatsAppMessage("917529839762", comprehensiveAdminAlert);
 
                         let confirmationText = (userLang === 'EN')
@@ -148,7 +149,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, replyText);
                     }
 
-                    // 🎯 STATE 4: REGISTRATION COMPLETED (CALCULATOR SYSTEM ACTIVE)
+                    // 🎯 STATE 4: INBOUND CHAT REGISTRATION COMPLETED
                     if (currentStep === 'ask_name_email') {
                         userSessions[from].step = 'completed';
                         let cleanName = rawText.split('\n')[0].split(',')[0].trim();
@@ -185,7 +186,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, replyText);
                     }
 
-                    // 🎯 STATE 5: META ADS REDIRECT MODULE (1 OR 2)
+                    // 🎯 STATE 5: META ADS LEAD CAPTURE LINKS REDIRECTING (OPTIONS 1 OR 2)
                     if (currentStep === 'awaiting_website_action') {
                         if (userText === '1') {
                             userSessions[from].step = 'completed';
@@ -198,7 +199,7 @@ app.post('/webhook', async (req, res) => {
                             if (userLang === 'EN') {
                                 const tokenAmountUSD = "49";
                                 const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountUSD}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
-                                replyText = `🎉 *Excellent Choice!* Your data is validated. 🤝\n\nClick below to pay your **Token Booking fee ($49)**:\n\n🔗 *Pay Securely Here:* ${dynamicPaymentLink}`;
+                                replyText = `🎉 *Excellent Choice!* Your data is validated. 🤝\n\nClick below to clear your **Token Booking ($49)**:\n\n🔗 *Pay Securely Here:* ${dynamicPaymentLink}`;
                             } else {
                                 const tokenAmountINR = "999";
                                 const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
@@ -212,7 +213,7 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // 🎯 STATE 6: CONSULTATION TIMING INTERFACE (A, B, C)
+                    // 🎯 STATE 6: CONSULTATION FIXED SLOTS ROUTING (A, B, C)
                     if (currentStep === 'awaiting_consultation_slot') {
                         if (userText === 'a' || userText.startsWith('a ') || userText.startsWith('a,')) {
                             userSessions[from].step = 'post_registration';
@@ -224,11 +225,11 @@ app.post('/webhook', async (req, res) => {
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "✅ *Slot Request Received!* Tomorrow 12 PM is locked." : "✅ *Slot Request Received!* Kal dopahar 12 baje ka timing lock ho gaya hai.");
                         } else if (userText === 'c' || userText.startsWith('c ') || userText.startsWith('c,')) {
                             userSessions[from].step = 'collect_consultation_identity';
-                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍️ *Please complete your profile:* Kindly reply with your *Full Name*." : "✍️ *Apna profile register karein:* Kripya apna *Full Name* reply mein bhejien.");
+                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍️ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍️ *Apna profile register karein:* Kripya apna *Full Name* aur *Email ID* reply mein bhejien.");
                         }
                     }
 
-                    // 🎯 STATE 7: META ADS FB ENTRY POINT
+                    // 🎯 STATE 7: META ADS INTAKE AD-SET INTERCEPTOR
                     if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate")) {
                         if (userSessions[from].lastSubmitedTime && (Date.now() - userSessions[from].lastSubmitedTime < 60000)) { return; }
                         userSessions[from].lastSubmitedTime = Date.now();
@@ -267,7 +268,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, clientReply);
                     }
 
-                    // 🎯 STATE 8: ALL ACTIVE CORE 5 OPTIONS ENGINE
+                    // 🎯 STATE 8: UNIFIED DYNAMIC CORE MENU ENGINE
                     userSessions[from].step = 'main_menu';
                     let replyText = "";
                     if (userLang === 'EN') {

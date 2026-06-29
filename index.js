@@ -5,7 +5,7 @@ const axios = require('axios');
 const app = express();
 app.use(bodyParser.json());
 
-// 🟢 LIGHTWEIGHT IN-MEMORY STORAGE (Render configuration ready, zero database dependency!)
+// 🟢 LIGHTWEIGHT IN-MEMORY STORAGE (Render Safe)
 const userSessions = {};
 
 // 📈 DYNAMIC PRICING LEDGER MAPPING
@@ -43,7 +43,7 @@ function getBasePriceByPlan(planScope) {
 
 // 🤖 SERVER HEALTH CHECK (For 24/7 UptimeRobot Connection)
 app.get('/', (req, res) => {
-    res.status(200).send("Shahid Creatives Bot Server is Live on Render! Complete and Active! 🚀");
+    res.status(200).send("Shahid Creatives Bot Server is Live on Render with Direct Credentials! 🚀");
 });
 
 // Meta Webhook Verification
@@ -312,9 +312,9 @@ app.post('/webhook', async (req, res) => {
 });
 
 async function sendWhatsAppMessage(to, text) {
-    // 🔒 LIVE LONG-LIVED ACCESS TOKEN KEY HARDCODED FOR DIRECT HANDSHAKE
+    // 🔒 FIXED NEW PRODUCTION LOGS MAPPED DIRECTLY
     const FIXED_ACCESS_TOKEN = "EAAOT5XBXyVwBR7v5XwYnbITF4zF3xWzQXikBjAH1w2qu0sQTbVkyqpNvmRAqhkmU7BqCEcthw5CHelfzr3fmDF2C3la6lw28iYLPI3EmZAZC6vDQoHQyiZAKz7QmfuiZBh0TKhusnrH6CeJZBJLdwU30MOzyr7Vkn26w5dE4md74Bu4OwoLzqfmCCtFDZA9AZDZD"; 
-    const DEFAULT_PHONE_NUMBER_ID = "1138974165971937"; 
+    const DEFAULT_PHONE_NUMBER_ID = "1202984902891472"; // 🎯 UPDATED NEW CORRECT PHONE ID
     try {
         await axios({
             method: "POST", 

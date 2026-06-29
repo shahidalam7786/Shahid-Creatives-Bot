@@ -97,20 +97,60 @@ app.post('/webhook', async (req, res) => {
                     const userLang = userSessions[from].lang;
                     const currentStep = userSessions[from].step;
 
-                    // 🌟 PRIORITY BLOCKER: INTERCEPT ACTIVE CUSTOM QUERY STATE AT TOP LEVEL
+                    // 🎯 STATE LAYER INTERCEPTOR 1: CAPTURE CUSTOM QUERY TEXT FIRST
                     if (currentStep === 'collect_custom_query') {
-                        const userQuery = rawText; 
-                        userSessions[from].step = 'main_menu'; // Success loop breakout reset
+                        userSessions[from].temporaryQuery = rawText; // Storing query temporarily
+                        userSessions[from].step = 'collect_consultation_details'; // Forwarding to lock profile vectors
                         
-                        // Admin Notification strictly to your dashboard
-                        const queryAdminAlert = `🚨 *CUSTOM CONSULTATION & QUERY RECEIVED!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${userSessions[from].clientName || 'Valued Client'}\n⏰ *Slot:* Custom Time Requested\n📝 *Client Query:* "${userQuery}"\n\n🤖 *Status:* Hot Lead! Review query and reply instantly.`;
-                        await sendWhatsAppMessage("917529839762", queryAdminAlert);
+                        let replyText = (userLang === 'EN') 
+                            ? "Got it! 📝 To lock your custom priority slot, please reply with your *Full Name* and *Email Address*."
+                            : "Noted! 📝 Aapka priority slot block karne ke liye, kripya apna *Full Name* aur **Email ID** ek message mein bhejien.";
+                        return sendWhatsAppMessage(from, replyText);
+                    }
+
+                    // 🎯 STATE LAYER INTERCEPTOR 2: CAPTURE IDENTITY VECTORS, SYNC CRM & NOTIFY ADMIN
+                    if (currentStep === 'collect_consultation_details') {
+                        const contactDetails = rawText;
+                        userSessions[from].step = 'main_menu'; // Reset routing step back to loop base
+                        
+                        let cleanName = "Valued Client";
+                        let cleanEmail = "Not Provided";
+                        
+                        try {
+                            cleanName = contactDetails.split('\n')[0].split(',')[0].trim();
+                            const globalEmailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/i;
+                            const emailMatch = contactDetails.match(globalEmailRegex);
+                            if (emailMatch) cleanEmail = emailMatch[1].trim();
+                        } catch (err) {
+                            console.log("Error processing fallback data allocation structures.");
+                        }
+
+                        userSessions[from].clientName = cleanName;
+                        userSessions[from].clientEmail = cleanEmail;
+                        
+                        const userSavedQuery = userSessions[from].temporaryQuery || "Custom Consultation Request";
+                        const matchedBasePrice = "18000";
+
+                        // Syncing lead metrics to your live cloud matrix
+                        try {
+                            await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
+                                client_name: cleanName, 
+                                email: cleanEmail, 
+                                whatsapp_number: from, 
+                                project_scope: `Custom Slot: ${userSavedQuery}`, 
+                                value: matchedBasePrice 
+                            });
+                        } catch (dbErr) { console.error("CRM sync fail on priority interceptor framework"); }
+
+                        // Consolidated Rich Notification sent strictly to your personal mobile thread
+                        const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${cleanEmail}\n📝 *Client Query:* "${userSavedQuery}"\n\n🤖 *Status:* Verified Inbound Ingested. Takeover thread now!`;
+                        await sendWhatsAppMessage("917529839762", comprehensiveAdminAlert);
 
                         let confirmationText = "";
                         if (userLang === 'EN') {
-                            confirmationText = `✅ *Query Saved Successfully!* \n\nThank you! Your project goals have been forwarded to Shahid. Our desk will connect with you shortly to anchor a custom session slot. 🚀`;
+                            confirmationText = `✅ *Consultation Profile Locked!* \n\nThank you *${cleanName}*! Your specifications and identity vectors have been routed to Shahid. Our core alignment team will message you shortly! 🚀`;
                         } else {
-                            confirmationText = `✅ *Details Securely Saved!* \n\nThank you! Aapki website/automation requirement Shahid bhai tak pahunch gayi hai. Hamari team aapse custom time set karne ke liye jald hi is chat par connect karegi. 🚀`;
+                            confirmationText = `✅ *Booking Profile Complete!* \n\nThank you *${cleanName}*! Aapki requirement aur profile data Shahid bhai tak secure pahunch gaya hai. Hamari team custom time confirmation ke liye jald hi aapse raabta karegi! 🚀`;
                         }
                         return sendWhatsAppMessage(from, confirmationText);
                     }
@@ -187,6 +227,7 @@ app.post('/webhook', async (req, res) => {
                             return sendWhatsAppMessage(from, confirmationText);
                         }
                         
+                        // Smart Check for Option C variants like "C, 10 baje kal"
                         else if (userText === 'c' || userText.startsWith('c ') || userText.startsWith('c,')) {
                             userSessions[from].step = 'collect_custom_query';
                             

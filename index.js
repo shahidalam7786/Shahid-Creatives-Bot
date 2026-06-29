@@ -43,7 +43,7 @@ function getBasePriceByPlan(planScope) {
 
 // 🤖 SERVER HEALTH CHECK (For 24/7 UptimeRobot Connection)
 app.get('/', (req, res) => {
-    res.status(200).send("Shahid Creatives Bot Server is Live on Render with Direct Credentials! 🚀");
+    res.status(200).send("Shahid Creatives Bot Server is Live on Render with Secured Credentials! 🚀");
 });
 
 // Meta Webhook Verification
@@ -312,15 +312,15 @@ app.post('/webhook', async (req, res) => {
 });
 
 async function sendWhatsAppMessage(to, text) {
-    // 🔒 FIXED NEW PRODUCTION LOGS MAPPED DIRECTLY
-    const FIXED_ACCESS_TOKEN = "EAAOT5XBXyVwBR7v5XwYnbITF4zF3xWzQXikBjAH1w2qu0sQTbVkyqpNvmRAqhkmU7BqCEcthw5CHelfzr3fmDF2C3la6lw28iYLPI3EmZAZC6vDQoHQyiZAKz7QmfuiZBh0TKhusnrH6CeJZBJLdwU30MOzyr7Vkn26w5dE4md74Bu4OwoLzqfmCCtFDZA9AZDZD"; 
-    const DEFAULT_PHONE_NUMBER_ID = "1202984902891472"; // 🎯 UPDATED NEW CORRECT PHONE ID
+    // 🔒 TOKENS SECURED VIA RENDER ENVIRONMENT ENVIRONMENT VARIABLES
+    const SECURED_ACCESS_TOKEN = process.env.WHATSAPP_TOKEN; 
+    const DEFAULT_PHONE_NUMBER_ID = "1202984902891472"; 
     try {
         await axios({
             method: "POST", 
             url: `https://graph.facebook.com/v18.0/${DEFAULT_PHONE_NUMBER_ID}/messages`,
             data: { messaging_product: "whatsapp", to: to, type: "text", text: { body: text } },
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${FIXED_ACCESS_TOKEN}` }
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${SECURED_ACCESS_TOKEN}` }
         });
     } catch (e) { console.error("WhatsApp API dispatch error."); }
 }

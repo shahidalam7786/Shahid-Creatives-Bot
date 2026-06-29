@@ -312,14 +312,15 @@ app.post('/webhook', async (req, res) => {
 });
 
 async function sendWhatsAppMessage(to, text) {
-    const DEFAULT_TOKEN = process.env.WHATSAPP_TOKEN;
+    // 🔒 LIVE LONG-LIVED ACCESS TOKEN KEY HARDCODED FOR DIRECT HANDSHAKE
+    const FIXED_ACCESS_TOKEN = "EAAOT5XBXyVwBR7v5XwYnbITF4zF3xWzQXikBjAH1w2qu0sQTbVkyqpNvmRAqhkmU7BqCEcthw5CHelfzr3fmDF2C3la6lw28iYLPI3EmZAZC6vDQoHQyiZAKz7QmfuiZBh0TKhusnrH6CeJZBJLdwU30MOzyr7Vkn26w5dE4md74Bu4OwoLzqfmCCtFDZA9AZDZD"; 
     const DEFAULT_PHONE_NUMBER_ID = "1138974165971937"; 
     try {
         await axios({
             method: "POST", 
             url: `https://graph.facebook.com/v18.0/${DEFAULT_PHONE_NUMBER_ID}/messages`,
             data: { messaging_product: "whatsapp", to: to, type: "text", text: { body: text } },
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${DEFAULT_TOKEN}` }
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${FIXED_ACCESS_TOKEN}` }
         });
     } catch (e) { console.error("WhatsApp API dispatch error."); }
 }

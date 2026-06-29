@@ -1,18 +1,11 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const axios = require('axios');
-const admin = require('firebase-admin');
-
 const app = express();
 app.use(bodyParser.json());
 
-// Initialize Firebase Admin Component (Dynamic Database Connection)
-if (!admin.apps.length) {
-    admin.initializeApp({
-        projectId: "yachty-azimuth-8rtgb"
-    });
-}
-const db = admin.firestore();
+// 🟢 RENDER LIGHTWEIGHT IN-MEMORY STORAGE (No database credentials needed, zero crash!)
+const userSessions = {};
 
 // 📈 DYNAMIC PRICING LEDGER MAPPING
 function calculateTotalPayable(basePrice) {
@@ -47,9 +40,9 @@ function getBasePriceByPlan(planScope) {
     return "8713"; 
 }
 
-// 🤖 SERVER HEALTH CHECK (For 24/7 UptimeRobot Connection)
+// 🤖 SERVER HEALTH CHECK (For 24/7 UptimeRobot Connection on Render)
 app.get('/', (req, res) => {
-    res.status(200).send("Shahid Creatives Bot Server is Live, Complete and Active! 🚀");
+    res.status(200).send("Shahid Creatives Bot Server is Live on Render! Complete and Active! 🚀");
 });
 
 // Meta Webhook Verification
@@ -87,68 +80,56 @@ app.post('/webhook', async (req, res) => {
                     const isInternationalNumber = !from.startsWith("91");
                     const isGlobalWebsiteTemplate = rawText.includes("Global USD") || rawText.includes("Worldwide") || rawText.includes("$");
                     
-                    // Fetch or Create Live Database Session Reference
-                    const userRef = db.collection('userSessions').doc(from);
-                    const doc = await userRef.get().catch(() => ({ exists: false }));
-                    
-                    // ⚡ Reset mechanism for fallback restart on main triggers
+                    // ⚡ Reset state if welcome triggers are hit
                     const resetTriggers = ['hi', 'hello', 'menu', 'start', 'hey'];
-                    if (resetTriggers.includes(userText) || !doc.exists) {
-                        const initialData = {
-                            step: 'welcome',
-                            lang: (isInternationalNumber || isGlobalWebsiteTemplate) ? 'EN' : 'HINGLISH',
-                            clientName: "Valued Client",
-                            clientEmail: "",
+                    if (resetTriggers.includes(userText)) {
+                        userSessions[from] = null;
+                    }
+
+                    if (!userSessions[from]) {
+                        userSessions[from] = { 
+                            step: 'welcome', 
+                            lang: (isInternationalNumber || isGlobalWebsiteTemplate) ? 'EN' : 'HINGLISH', 
+                            clientName: "Valued Client", 
+                            clientEmail: "", 
                             projectScope: "Custom Project Development",
-                            lastSubmitedTime: 0
+                            lastSubmitedTime: 0 
                         };
-                        await userRef.set(initialData);
-                        doc.data = () => initialData;
                     }
                     
-                    const sessionData = doc.data();
-                    const userLang = sessionData.lang;
-                    const currentStep = sessionData.step;
+                    const userLang = userSessions[from].lang;
+                    const currentStep = userSessions[from].step;
 
-                    // 🎯 STATE 0: COURTESY REPLIES RESET BUFFER
+                    // 🎯 STATE 0: COURTESY REPLIES
                     if (currentStep === 'post_registration') {
                         const courtesyTriggers = ['thanks', 'thank you', 'ok', 'okay', 'ji', 'shukriya', 'thx'];
                         if (courtesyTriggers.includes(userText)) {
-                            await userRef.delete();
+                            userSessions[from] = null;
                             let courtesyReply = (userLang === 'EN')
                                 ? "You're most welcome! 👍 Glad to help. Type 'Menu' anytime to restart."
                                 : "Aapka swagat hai! 👍 Milte hain aapse bohot jald sync call par. Dobara shuru karne ke liye 'Menu' bheinje.";
                             return sendWhatsAppMessage(from, courtesyReply);
                         }
-                        await userRef.delete(); 
+                        userSessions[from] = null;
                     }
 
-                    // 🎯 STATE 1: COLLECT IDENTITY (OPTION 5 -> C PIPELINE)
+                    // 🎯 STATE 1: COLLECT IDENTITY (OPTION 5 -> C)
                     if (currentStep === 'collect_consultation_identity') {
-                        const contactDetails = rawText;
-                        let cleanName = "Valued Client";
-                        let cleanEmail = "Not Provided";
-                        try {
-                            cleanName = contactDetails.split('\n')[0].split(',')[0].trim();
-                            const globalEmailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/i;
-                            const emailMatch = contactDetails.match(globalEmailRegex);
-                            if (emailMatch) cleanEmail = emailMatch[1].trim();
-                        } catch (err) { console.error("Identity extraction layer fallback."); }
-
-                        await userRef.update({ step: 'collect_custom_query_and_time', clientName: cleanName, clientEmail: cleanEmail });
+                        userSessions[from].step = 'collect_custom_query_and_time'; 
+                        let cleanName = rawText.split('\n')[0].split(',')[0].trim();
+                        userSessions[from].clientName = cleanName;
 
                         return sendWhatsAppMessage(from, (userLang === 'EN')
                             ? `Thank you *${cleanName}*! 🙏\n\nNow, please share your **Project Requirement** along with your **Preferred Custom Time** for the strategy call.`
                             : `Thank you *${cleanName}*! 🙏\n\nAb kripya agle message mein apni **Website/Automation Requirement** aur sath hi apna **Preferred Custom Time** (jab aap call par baat karna chahte hain) ek sath likh kar bhejien.`);
                     }
 
-                    // 🎯 STATE 2: DISPATCH CUSTOM QUERY & TIME TO ADMIN SHAHID
+                    // 🎯 STATE 2: DISPATCH CUSTOM TIME + REQUIREMENTS TO ADMIN
                     if (currentStep === 'collect_custom_query_and_time') {
-                        await userRef.update({ step: 'post_registration' });
-                        const cleanName = sessionData.clientName;
-                        const cleanEmail = sessionData.clientEmail;
+                        userSessions[from].step = 'post_registration';
+                        const cleanName = userSessions[from].clientName;
 
-                        const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${cleanEmail}\n📝 *Custom Time & Query:* "${rawText}"\n\n🤖 *Status:* Live details captured securely!`;
+                        const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n📝 *Custom Time & Query:* "${rawText}"\n\n🤖 *Status:* Live details routed instantly!`;
                         await sendWhatsAppMessage("917529839762", comprehensiveAdminAlert);
 
                         let confirmationText = (userLang === 'EN')
@@ -159,16 +140,17 @@ app.post('/webhook', async (req, res) => {
 
                     // 🎯 STATE 3: INBOUND SEQUENCE - DETAILS ACQUISITION
                     if (currentStep === 'collect_details') {
-                        await userRef.update({ projectScope: rawText, step: 'ask_name_email' });
+                        userSessions[from].projectScope = rawText;
+                        userSessions[from].step = 'ask_name_email';
                         let replyText = (userLang === 'EN') 
                             ? "Awesome! 📝 Kindly reply with your **Full Name** and **Email Address**." 
                             : "Awesome! 📝 Kripya apna **Full Name** aur **Email ID** bhej lijiye.";
                         return sendWhatsAppMessage(from, replyText);
                     }
 
-                    // 🎯 STATE 4: INBOUND CHAT REGISTRATION COMPLETED
+                    // 🎯 STATE 4: REGISTRATION COMPLETED (CALCULATOR SYSTEM ACTIVE)
                     if (currentStep === 'ask_name_email') {
-                        await userRef.update({ step: 'completed' });
+                        userSessions[from].step = 'completed';
                         let cleanName = rawText.split('\n')[0].split(',')[0].trim();
                         let cleanEmail = "Not Provided";
                         
@@ -176,16 +158,19 @@ app.post('/webhook', async (req, res) => {
                         const emailMatch = rawText.match(globalEmailRegex);
                         if (emailMatch) cleanEmail = emailMatch[1].trim();
 
-                        const matchedBasePrice = getBasePriceByPlan(sessionData.projectScope);
+                        userSessions[from].clientName = cleanName;
+                        userSessions[from].clientEmail = cleanEmail;
+
+                        const matchedBasePrice = getBasePriceByPlan(userSessions[from].projectScope);
                         const finalPayable = calculateTotalPayable(matchedBasePrice);
                         
-                        const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n📝 *Plan Scope:* ${sessionData.projectScope}\n💰 *Calculated Price (incl GST):* ₹${finalPayable}`;
+                        const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n📝 *Plan Scope:* ${userSessions[from].projectScope}\n💰 *Calculated Price (incl GST):* ₹${finalPayable}`;
                         await sendWhatsAppMessage("917529839762", chatAdminNotification);
 
                         const uniqueProjectId = `SC-${Math.floor(10000 + Math.random() * 90000)}`;
                         const encodedName = encodeURIComponent(cleanName);
                         const encodedEmail = encodeURIComponent(cleanEmail);
-                        const encodedPlan = encodeURIComponent(sessionData.projectScope);
+                        const encodedPlan = encodeURIComponent(userSessions[from].projectScope);
 
                         let replyText = "";
                         if (userLang === 'EN') {
@@ -200,20 +185,20 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, replyText);
                     }
 
-                    // 🎯 STATE 5: META ADS LEAD CAPTURE LINKS REDIRECTING (OPTIONS 1 OR 2)
+                    // 🎯 STATE 5: META ADS REDIRECT MODULE (1 OR 2)
                     if (currentStep === 'awaiting_website_action') {
                         if (userText === '1') {
-                            await userRef.update({ step: 'completed' });
+                            userSessions[from].step = 'completed';
                             const uniqueProjectId = `SC-${Math.floor(10000 + Math.random() * 90000)}`;
-                            const encodedName = encodeURIComponent(sessionData.clientName);
-                            const encodedEmail = encodeURIComponent(sessionData.clientEmail || "");
-                            const encodedPlan = encodeURIComponent(sessionData.projectScope);
+                            const encodedName = encodeURIComponent(userSessions[from].clientName);
+                            const encodedEmail = encodeURIComponent(userSessions[from].clientEmail || "");
+                            const encodedPlan = encodeURIComponent(userSessions[from].projectScope);
                             
                             let replyText = "";
                             if (userLang === 'EN') {
                                 const tokenAmountUSD = "49";
                                 const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountUSD}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
-                                replyText = `🎉 *Excellent Choice!* Your data is validated. 🤝\n\nClick below to clear your **Token Booking ($49)**:\n\n🔗 *Pay Securely Here:* ${dynamicPaymentLink}`;
+                                replyText = `🎉 *Excellent Choice!* Your data is validated. 🤝\n\nClick below to pay your **Token Booking fee ($49)**:\n\n🔗 *Pay Securely Here:* ${dynamicPaymentLink}`;
                             } else {
                                 const tokenAmountINR = "999";
                                 const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
@@ -221,32 +206,32 @@ app.post('/webhook', async (req, res) => {
                             }
                             return sendWhatsAppMessage(from, replyText);
                         } else if (userText === '2') {
-                            await userRef.update({ step: 'post_registration' });
+                            userSessions[from].step = 'post_registration';
                             let replyText = (userLang === 'EN') ? "👤 Perfect! Shahid will connect with you shortly for a strategy sync call." : "👤 Perfect! Shahid bhai bohot jald aapke sath strategy call par connect karenge. Get ready to launch! 🚀";
                             return sendWhatsAppMessage(from, replyText);
                         }
                     }
 
-                    // 🎯 STATE 6: CONSULTATION FIXED SLOTS ROUTING (A, B, C)
+                    // 🎯 STATE 6: CONSULTATION TIMING INTERFACE (A, B, C)
                     if (currentStep === 'awaiting_consultation_slot') {
                         if (userText === 'a' || userText.startsWith('a ') || userText.startsWith('a,')) {
-                            await userRef.update({ step: 'post_registration' });
+                            userSessions[from].step = 'post_registration';
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT SELECTED!* 🚨\n📱 +${from}\n⏰ Chosen Slot: Aaj hi Shaam 5:00 Baje`);
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "✅ *Slot Request Received!* Today 5 PM is locked." : "✅ *Slot Request Received!* Aaj Shaam 5 baje ka timing lock ho gaya hai.");
                         } else if (userText === 'b' || userText.startsWith('b ') || userText.startsWith('b,')) {
-                            await userRef.update({ step: 'post_registration' });
+                            userSessions[from].step = 'post_registration';
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT SELECTED!* 🚨\n📱 +${from}\n⏰ Chosen Slot: Kal Dopahar 12:00 Baje`);
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "✅ *Slot Request Received!* Tomorrow 12 PM is locked." : "✅ *Slot Request Received!* Kal dopahar 12 baje ka timing lock ho gaya hai.");
                         } else if (userText === 'c' || userText.startsWith('c ') || userText.startsWith('c,')) {
-                            await userRef.update({ step: 'collect_consultation_identity' });
-                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍️ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍️ *Apna profile register karein:* Kripya apna *Full Name* aur *Email ID* reply mein bhejien.");
+                            userSessions[from].step = 'collect_consultation_identity';
+                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍️ *Please complete your profile:* Kindly reply with your *Full Name*." : "✍️ *Apna profile register karein:* Kripya apna *Full Name* reply mein bhejien.");
                         }
                     }
 
-                    // 🎯 STATE 7: META ADS INTAKE AD-SET INTERCEPTOR
+                    // 🎯 STATE 7: META ADS FB ENTRY POINT
                     if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate")) {
-                        if (sessionData.lastSubmitedTime && (Date.now() - sessionData.lastSubmitedTime < 60000)) { return; }
-                        await userRef.update({ lastSubmitedTime: Date.now() });
+                        if (userSessions[from].lastSubmitedTime && (Date.now() - userSessions[from].lastSubmitedTime < 60000)) { return; }
+                        userSessions[from].lastSubmitedTime = Date.now();
 
                         let clientName = "Valued Client";
                         let clientEmail = "";
@@ -267,7 +252,10 @@ app.post('/webhook', async (req, res) => {
                             if (emailMatch) clientEmail = emailMatch[1].trim();
                         } catch (parseError) { console.error("Parser failure exception."); }
 
-                        await userRef.update({ clientName: clientName, clientEmail: clientEmail, projectScope: projectScope, step: 'awaiting_website_action' });
+                        userSessions[from].clientName = clientName;
+                        userSessions[from].clientEmail = clientEmail;
+                        userSessions[from].projectScope = projectScope;
+                        userSessions[from].step = 'awaiting_website_action';
 
                         const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail || 'Not Provided'}\n📝 *Plan Chosen:* ${projectScope}\n💰 *Base Valuation:* ${isGlobalWebsiteTemplate ? '$' : '₹'}${parsedBasePrice}`;
                         await sendWhatsAppMessage("917529839762", adminNotification);
@@ -279,8 +267,8 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, clientReply);
                     }
 
-                    // 🎯 STATE 8: UNIFIED DYNAMIC CORE MENU ENGINE
-                    await userRef.update({ step: 'main_menu' });
+                    // 🎯 STATE 8: ALL ACTIVE CORE 5 OPTIONS ENGINE
+                    userSessions[from].step = 'main_menu';
                     let replyText = "";
                     if (userLang === 'EN') {
                         replyText = "Hello! Welcome to *Shahid Creatives*. 🚀\nWe design premium agile web ecosystems and high-converting automation workflows.\n\nSelect a professional stack tier via number:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI Business Automation & B2B Wholesale Demo**\n3️⃣ **🔥 Exclusive Launch Deal**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid**";
@@ -289,27 +277,27 @@ app.post('/webhook', async (req, res) => {
                     }
 
                     if (userText === '1') {
-                        await userRef.update({ step: 'collect_details' });
+                        userSessions[from].step = 'collect_details';
                         replyText = (userLang === 'EN')
                             ? "💻 *Shahid Creatives - Premium Web Tiers:*\n• 💼 *Starter Business Hub* ($299+)\n• 🛒 *Global E-commerce Engine* ($599)\n• 🚀 *Custom SaaS Enterprise Portal* ($1,750+)\n\n👉 Please reply with your preferred **Plan Name or Custom Specifications**!"
                             : "💻 *Shahid Creatives - Web Development Tiers:*\n• 📄 *Starter Plan* (Base Price: ₹8,713)\n• 💼 *Basic Small Business* (Base Price: ₹12,300)\n• 🌟 *Starter Business Hub* (Base Price: ₹25,500)\n• 🛒 *E-commerce Hub* (Base Price: ₹47,500)\n• 🚀 *Custom SaaS App* (Base Price: ₹1,45,000+)\n\n👉 Aap kaun sa package choose karna chahte hain? Niche specifications reply mein share kijiye!";
                     } else if (userText === '2') {
-                        await userRef.update({ step: 'collect_details' });
+                        userSessions[from].step = 'collect_details';
                         replyText = (userLang === 'EN')
                             ? "🤖 *AI Business Automation Hub:*\n• 🤖 *Enterprise Custom AI Hub* ($299+)\n📲 *B2B Wholesale Live Automation Demo:*\n🔗 https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo\n\n👉 Reply with your business workflow or automation goal to initiate development!"
                             : "🤖 *AI Business Automation & Live Demo:*\n• 🤖 *WhatsApp Bot & Lead Sync* (Base Price: ₹8,713)\n• 🏢 *Custom CRM Workflow Hub* (Base Price: ₹18,000)\n• 🚀 *Enterprise AI Suite* (Tailored Pricing)\n📲 *B2B Wholesale Live Automation Demo:*\n🔗 https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo\n\n👉 Apne automation requirements niche reply mein batayein!";
                     } else if (userText === '3') {
-                        await userRef.update({ step: 'collect_details' });
+                        userSessions[from].step = 'collect_details';
                         replyText = (userLang === 'EN')
                             ? "🔥 *Exclusive Global Launch Offer!* 🔥\nCoupon code **LAUNCH20** linked! Secures a **Flat 20% OFF** discount on final project invoice bill.\n\n👉 Reply with your **Name and Project Goal** right now to tag your discount code!"
                             : "🔥 *Exclusive Launch Offer!* 🔥\nMubarak ho! Coupon code **LAUNCH20** active kar diya hai. Secure a **Flat 20% Discount** on your project profile!\n\n👉 Is discount code ko lock karne ke liye niche apna **Name aur Project Type** likh kar bhejien.";
                     } else if (userText === '4') {
-                        await userRef.update({ step: 'collect_details' });
+                        userSessions[from].step = 'collect_details';
                         replyText = (userLang === 'EN')
                             ? "💳 *Direct Booking & Token System ($49):*\nTo construct your gateway, please provide your **Full Name, Contact Number, and Project/Plan Name**."
                             : "💳 *Direct Booking & Token System (₹999 Slot Lock):*\nYour custom live checkout status configure karne ke liye, kripya apna **Name, Phone Number, aur Project Name/Plan** reply mein bhejien.";
                     } else if (userText === '5') {
-                        await userRef.update({ step: 'awaiting_consultation_slot' });
+                        userSessions[from].step = 'awaiting_consultation_slot';
                         replyText = (userLang === 'EN')
                             ? `👤 *Direct Consultation with Shahid:*\nTo lock your free 15-minute growth strategy sync, select a slot:\n\n🅰️ **Today at 5:00 PM**\nⓑ **Tomorrow at 12:00 PM**\nⒸ **Custom Time (Type preferred time below)**\n\n👉 Kindly reply with *A, B, or C* to secure your slot!`
                             : `👤 *Direct Consultation with Shahid:*\nShahid Alam aapke sath directly connect karenge. Priority growth consultation slot book karne ke liye ek option choose karein:\n\n🅰️ **Aaj hi Shaam 5:00 Baje**\nⓑ **Kal Dopahar 12:00 Baje**\nⒸ **Custom Time (Apna secure timing niche type karein)**\n\n👉 Kripya **A, B, ya C** likh kar reply kijiye!`;
@@ -318,13 +306,13 @@ app.post('/webhook', async (req, res) => {
                     return sendWhatsAppMessage(from, replyText);
                 }
             }
-        } catch (error) { console.error("Webhook frame processing critical exception caught."); }
+        } catch (error) { console.error("Webhook processing logic error."); }
     }
 });
 
 async function sendWhatsAppMessage(to, text) {
     const DEFAULT_TOKEN = process.env.WHATSAPP_TOKEN;
-    const DEFAULT_PHONE_NUMBER_ID = "1138974165971937"; // Live verified ID
+    const DEFAULT_PHONE_NUMBER_ID = "1138974165971937"; 
     try {
         await axios({
             method: "POST", 
@@ -332,7 +320,7 @@ async function sendWhatsAppMessage(to, text) {
             data: { messaging_product: "whatsapp", to: to, type: "text", text: { body: text } },
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${DEFAULT_TOKEN}` }
         });
-    } catch (e) { console.error("WhatsApp API dispatch gateway error."); }
+    } catch (e) { console.error("WhatsApp API dispatch error."); }
 }
 
 const PORT = process.env.PORT || 3000;

@@ -113,7 +113,7 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // 🎯 STATE 1: COLLECT IDENTITY (OPTION 5 -> C PIPELINE) - REPETITIVE TEXT FIXED HERE
+                    // 🎯 STATE 1: COLLECT IDENTITY (OPTION 5 -> C PIPELINE)
                     if (currentStep === 'collect_consultation_identity') {
                         userSessions[from].step = 'collect_custom_query_and_time'; 
                         let cleanName = rawText.split('\n')[0].split(',')[0].trim();
@@ -185,33 +185,45 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, replyText);
                     }
 
-                    // 🎯 STATE 5: INTERCEPTING MENU CHOICES FOR WEBSITE ACTION FROM LEAD AD INTERCEPTIONS
+                    // 🎯 STATE 5: INTERCEPTING MENU CHOICES FROM FACEBOOK LEAD ADS FORM INBOUND ACTIONS
                     if (currentStep === 'awaiting_website_action') {
-                        if (userText === '1') {
+                        if (userText === '1' || userText.includes("token") || userText.includes("book") || userText.includes("confirm")) {
                             userSessions[from].step = 'process_requirement_menu';
                             let requirementPrompt = (userLang === 'EN')
                                 ? "Perfect! Let's lock your structural goal first. 🚀\n\nPlease select what you want to build today by replying with the option number (**1 to 5**):\n\n1️⃣ WhatsApp Chatbot ($110)\n2️⃣ Landing Page ($99)\n3️⃣ Business Website ($299)\n4️⃣ E-commerce Website ($599)\n5️⃣ Custom Software (Tailored)"
                                 : "Perfect! Pehle aapki structural requirement lock kar lete hain. 🚀\n\nNiche diye gaye options mein se koi ek number (**1 se 5**) reply kijiye:\n\n1️⃣ **WhatsApp AI Chatbot & Automation** (Base: ₹8,713)\n2️⃣ **Landing Page/Funnel** (Base: ₹12,300)\n3️⃣ **Business/Corporate Website** (Base: ₹25,500)\n4️⃣ **E-commerce Website** (Base: ₹47,500)\n5️⃣ **Custom Web Application / Software** (Base: ₹1,45,000+)";
                             return sendWhatsAppMessage(from, requirementPrompt);
-                        } else if (userText === '2') {
+                        } else if (userText === '2' || userText.includes("discuss") || userText.includes("call") || userText.includes("strategy")) {
                             userSessions[from].step = 'post_registration';
                             let replyText = (userLang === 'EN') ? "👤 Perfect! Shahid will connect with you shortly for a strategy sync call." : "👤 Perfect! Shahid bhai bohot jald aapke sath strategy call par connect karenge. Get ready to launch! 🚀";
                             return sendWhatsAppMessage(from, replyText);
                         }
                     }
 
-                    // 🎯 STATE 5.1: PROCESS WEB REQUIRED SELECTION (ASCENDING STRUCTURE MAP)
+                    // 🎯 STATE 5.1: HYBRID PROCESSOR FOR WEB REQUIREMENTS (TEXT AND NUMBER SAFE MAPPING)
                     if (currentStep === 'process_requirement_menu') {
-                        const validSelections = ['1', '2', '3', '4', '5'];
-                        if (validSelections.includes(userText)) {
-                            userSessions[from].step = 'ask_name_email'; 
-                            let dynamicCategory = "";
-                            if (userText === '1') dynamicCategory = "WhatsApp AI Chatbot & Automation";
-                            else if (userText === '2') dynamicCategory = "Landing Page/Funnel (Single Page Lead Gen)";
-                            else if (userText === '3') dynamicCategory = "Business/Corporate Website (Brand Showcase)";
-                            else if (userText === '4') dynamicCategory = "E-commerce Website (Online Store)";
-                            else if (userText === '5') dynamicCategory = "Custom Web Application / Software";
+                        let isMatchFound = false;
+                        let dynamicCategory = "";
 
+                        if (userText === '1' || userText.includes("chatbot") || userText.includes("bot") || userText.includes("automation")) {
+                            dynamicCategory = "WhatsApp AI Chatbot & Automation";
+                            isMatchFound = true;
+                        } else if (userText === '2' || userText.includes("landing") || userText.includes("funnel") || userText.includes("single page")) {
+                            dynamicCategory = "Landing Page/Funnel (Single Page Lead Gen)";
+                            isMatchFound = true;
+                        } else if (userText === '3' || userText.includes("business") || userText.includes("corporate") || userText.includes("showcase")) {
+                            dynamicCategory = "Business/Corporate Website (Brand Showcase)";
+                            isMatchFound = true;
+                        } else if (userText === '4' || userText.includes("e-commerce") || userText.includes("ecommerce") || userText.includes("store") || userText.includes("shop")) {
+                            dynamicCategory = "E-commerce Website (Online Store)";
+                            isMatchFound = true;
+                        } else if (userText === '5' || userText.includes("software") || userText.includes("app") || userText.includes("custom web")) {
+                            dynamicCategory = "Custom Web Application / Software";
+                            isMatchFound = true;
+                        }
+
+                        if (isMatchFound) {
+                            userSessions[from].step = 'ask_name_email';
                             userSessions[from].projectScope = dynamicCategory;
 
                             let askDetailsText = (userLang === 'EN')
@@ -220,22 +232,30 @@ app.post('/webhook', async (req, res) => {
                             return sendWhatsAppMessage(from, askDetailsText);
                         } else {
                             let fallbackMsg = (userLang === 'EN')
-                                ? "❌ Invalid choice. Please reply with a number from *1 to 5*."
-                                : "❌ Galat number. Kripya sirf *1 se 5* ke beech ka koi ek number reply kijiye.";
+                                ? "❌ Invalid choice. Please reply with a valid layout type name or option number from *1 to 5*."
+                                : "❌ Samajh nahi paye. Kripya list mein se sahi package ka naam likhein ya fir ek number (*1 se 5*) bheinje.";
                             return sendWhatsAppMessage(from, fallbackMsg);
                         }
                     }
 
-                    // 🎯 STATE 5.2: PROCESS AUTOMATION REQ SELECTION
+                    // 🎯 STATE 5.2: HYBRID PROCESSOR FOR AUTOMATION SUITE
                     if (currentStep === 'process_automation_menu') {
-                        const validAutomationSelections = ['1', '2', '3'];
-                        if (validAutomationSelections.includes(userText)) {
-                            userSessions[from].step = 'ask_name_email';
-                            let dynamicCategory = "";
-                            if (userText === '1') dynamicCategory = "WhatsApp AI Chatbot & Lead Sync";
-                            else if (userText === '2') dynamicCategory = "Custom CRM Workflow Hub";
-                            else if (userText === '3') dynamicCategory = "Enterprise AI Suite (Tailored Architecture)";
+                        let isAutomateMatch = false;
+                        let dynamicCategory = "";
 
+                        if (userText === '1' || userText.includes("bot") || userText.includes("sync")) {
+                            dynamicCategory = "WhatsApp AI Chatbot & Lead Sync";
+                            isAutomateMatch = true;
+                        } else if (userText === '2' || userText.includes("crm") || userText.includes("workflow")) {
+                            dynamicCategory = "Custom CRM Workflow Hub";
+                            isAutomateMatch = true;
+                        } else if (userText === '3' || userText.includes("enterprise") || userText.includes("suite")) {
+                            dynamicCategory = "Enterprise AI Suite (Tailored Architecture)";
+                            isAutomateMatch = true;
+                        }
+
+                        if (isAutomateMatch) {
+                            userSessions[from].step = 'ask_name_email';
                             userSessions[from].projectScope = dynamicCategory;
 
                             let askDetailsText = (userLang === 'EN')
@@ -244,23 +264,23 @@ app.post('/webhook', async (req, res) => {
                             return sendWhatsAppMessage(from, askDetailsText);
                         } else {
                             let fallbackMsg = (userLang === 'EN')
-                                ? "❌ Invalid selection. Please reply with a number from *1 to 3*."
-                                : "❌ Galat number. Kripya list mein se sirf *1, 2 ya 3* hi likh kar reply karein.";
+                                ? "❌ Invalid selection. Please reply with a valid number from *1 to 3* or suite category name."
+                                : "❌ Kripya list mein se sirf *1, 2 ya 3* hi likhein ya category module ka naam reply karein.";
                             return sendWhatsAppMessage(from, fallbackMsg);
                         }
                     }
 
                     // 🎯 STATE 6: CONSULTATION FIXED SLOTS ROUTING (A, B, C)
                     if (currentStep === 'awaiting_consultation_slot') {
-                        if (userText === 'a' || userText.startsWith('a ') || userText.startsWith('a,')) {
-                            userSessions[from].step = 'collect_consultation_identity'; // Forward to get name/email safely
+                        if (userText === 'a' || userText.includes("today") || userText.includes("aaj") || userText.includes("5")) {
+                            userSessions[from].step = 'collect_consultation_identity'; 
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: Aaj hi Shaam 5:00 Baje`);
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍️ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍️ *Apna profile register karein:* Kripya apna *Full Name* aur *Email ID* reply mein bhejien.");
-                        } else if (userText === 'b' || userText.startsWith('b ') || userText.startsWith('b,')) {
-                            userSessions[from].step = 'collect_consultation_identity'; // Forward to get name/email safely
+                        } else if (userText === 'b' || userText.includes("tomorrow") || userText.includes("kal") || userText.includes("12")) {
+                            userSessions[from].step = 'collect_consultation_identity'; 
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: Kal Dopahar 12:00 Baje`);
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍️ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍️ *Apna profile register karein:* Kripya apna *Full Name* aur *Email ID* reply mein bhejien.");
-                        } else if (userText === 'c' || userText.startsWith('c ') || userText.startsWith('c,')) {
+                        } else if (userText === 'c' || userText.includes("custom") || userText.includes("time") || userText.includes("mere")) {
                             userSessions[from].step = 'collect_consultation_identity';
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍️ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍️ *Apna profile register karein:* Kripya apna *Full Name* aur *Email ID* reply mein bhejien.");
                         }
@@ -305,37 +325,63 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, clientReply);
                     }
 
-                    // 🎯 STATE 8: UNIFIED DYNAMIC CORE MENU ENGINE
+                    // 🎯 STATE 8: CORE ENGINE - HYBRID GLOBAL PARSER FOR KEYWORDS IN MAIN MENU
                     if (currentStep === 'welcome' || currentStep === 'main_menu') {
                         userSessions[from].step = 'main_menu';
-                        let replyText = "";
-                        if (userLang === 'EN') {
-                            replyText = "Hello! Welcome to *Shahid Creatives*. 🚀\nWe design premium agile web ecosystems and high-converting automation workflows.\n\nSelect a professional stack tier via number:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI Business Automation & B2B Wholesale Demo**\n3️⃣ **🔥 Exclusive Launch Deal**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid**";
-                        } else {
-                            replyText = "Hello! Welcome to *Shahid Creatives* (Ludhiana, Punjab). 🚀\nHum engineer karte hain high-performance websites aur AI automation frameworks global and local brands ke liye.\n\nKoshish ko aage badhane ke liye niche se ek option reply kijiye:\n\n1️⃣ *Web Development Tiers* (Saare Standard Custom Packages)\n2️⃣ *AI Business Automation & B2B Wholesale Demo* (Bots & CRM Flows)\n3️⃣ *🔥 Exclusive Launch Deal* (Flat 20% OFF Status)\n4️⃣ *💳 Direct Booking & Token System* (₹999 Secure Path)\n5️⃣ *👤 Talk to Shahid* (Direct Consultation)";
+                        
+                        let isCoreMatch = false;
+                        let targetMenuRoute = userText;
+
+                        // Intent Parser Rules
+                        if (userText === '1' || userText.includes("web") || userText.includes("dev") || userText.includes("site") || userText.includes("website")) {
+                            targetMenuRoute = '1';
+                            isCoreMatch = true;
+                        } else if (userText === '2' || userText.includes("automation") || userText.includes("bot") || userText.includes("demo") || userText.includes("crm")) {
+                            targetMenuRoute = '2';
+                            isCoreMatch = true;
+                        } else if (userText === '3' || userText.includes("deal") || userText.includes("launch") || userText.includes("offer") || userText.includes("discount")) {
+                            targetMenuRoute = '3';
+                            isCoreMatch = true;
+                        } else if (userText === '4' || userText.includes("book") || userText.includes("token") || userText.includes("payment") || userText.includes("razorpay")) {
+                            targetMenuRoute = '4';
+                            isCoreMatch = true;
+                        } else if (userText === '5' || userText.includes("shahid") || userText.includes("talk") || userText.includes("consultation") || userText.includes("direct")) {
+                            targetMenuRoute = '5';
+                            isCoreMatch = true;
                         }
 
-                        if (userText === '1') {
+                        let replyText = "";
+                        if (!isCoreMatch) {
+                            if (userLang === 'EN') {
+                                replyText = "Hello! Welcome to *Shahid Creatives*. 🚀\nWe design premium agile web ecosystems.\n\nSelect a professional stack tier via number or category name:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI Business Automation & B2B Wholesale Demo**\n3️⃣ **🔥 Exclusive Launch Deal**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid**";
+                            } else {
+                                replyText = "Hello! Welcome to *Shahid Creatives* (Ludhiana, Punjab). 🚀\nHum engineer karte hain high-performance websites aur AI automation frameworks.\n\nKoshish ko aage badhane ke liye niche se ek option text ya number reply kijiye:\n\n1️⃣ *Web Development Tiers* (Saare Standard Custom Packages)\n2️⃣ *AI Business Automation & B2B Wholesale Demo* (Bots & CRM Flows)\n3️⃣ *🔥 Exclusive Launch Deal* (Flat 20% OFF Status)\n4️⃣ *💳 Direct Booking & Token System* (₹999 Secure Path)\n5️⃣ *👤 Talk to Shahid* (Direct Consultation)";
+                            }
+                            return sendWhatsAppMessage(from, replyText);
+                        }
+
+                        // Execute Routes safely
+                        if (targetMenuRoute === '1') {
                             userSessions[from].step = 'process_requirement_menu'; 
                             replyText = (userLang === 'EN')
                                 ? "Please select what you want to build today by replying with the option number (**1 to 5**):\n\n1️⃣ WhatsApp Chatbot ($110)\n2️⃣ Landing Page ($99)\n3️⃣ Business Website ($299)\n4️⃣ E-commerce Website ($599)\n5️⃣ Custom Software (Tailored)"
-                                : "Kripya select kijiye ki aap kya banwana chahte hain, reply mein sirf number (**1 se 5**) likhein:\n\n1️⃣ **WhatsApp AI Chatbot & Automation** (Base: ₹8,713)\n2️⃣ **Landing Page/Funnel** (Base: ₹12,300)\n3️⃣ **Business/Corporate Website** (Base: ₹25,500)\n4️⃣ **E-commerce Website** (Base: ₹47,500)\n5️⃣ **Custom Web Application / Software** (Base: ₹1,45,000+)";
-                        } else if (userText === '2') {
+                                : "Kripya select kijiye ki aap kya banwana chahte hain, reply mein number (**1 se 5**) ya package ka naam likhein:\n\n1️⃣ **WhatsApp AI Chatbot & Automation** (Base: ₹8,713)\n2️⃣ **Landing Page/Funnel** (Base: ₹12,300)\n3️⃣ **Business/Corporate Website** (Base: ₹25,500)\n4️⃣ **E-commerce Website** (Base: ₹47,500)\n5️⃣ **Custom Web Application / Software** (Base: ₹1,45,000+)";
+                        } else if (targetMenuRoute === '2') {
                             userSessions[from].step = 'process_automation_menu'; 
                             replyText = (userLang === 'EN')
                                 ? "🤖 **AI Business Automation Hub**\nPlease reply with an option number (**1 to 3**):\n\n1️⃣ WhatsApp Bot & Lead Sync ($110)\n2️⃣ Custom CRM Workflow Hub ($220)\n3️⃣ Enterprise AI Suite (Tailored)\n\n📲 *Live Wholesale B2B Automation Demo:* https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo"
-                                : "🤖 **AI Business Automation & Live Demo:**\nKripya niche diye gaye list mein se ek option number (**1 se 3**) reply kijiye:\n\n1️⃣ **WhatsApp Bot & Lead Sync** (Base: ₹8,713)\n2️⃣ **Custom CRM Workflow Hub** (Base: ₹18,000)\n3️⃣ **Enterprise AI Suite** (Custom Architecture)\n\n📲 *Live Wholesale B2B Automation Demo Link:* https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo";
-                        } else if (userText === '3') {
+                                : "🤖 **AI Business Automation & Live Demo:**\nKripya niche diye gaye list mein se ek option number (**1 se 3**) ya naam reply kijiye:\n\n1️⃣ **WhatsApp Bot & Lead Sync** (Base: ₹8,713)\n2️⃣ **Custom CRM Workflow Hub** (Base: ₹18,000)\n3️⃣ **Enterprise AI Suite** (Custom Architecture)\n\n📲 *Live Wholesale B2B Automation Demo Link:* https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo";
+                        } else if (targetMenuRoute === '3') {
                             userSessions[from].step = 'process_requirement_menu'; 
                             replyText = (userLang === 'EN')
                                 ? "🔥 *Exclusive Launch Offer Active!* (Flat 20% OFF Code Applied)\n\nPlease select your project requirement number (1 to 5) to secure your discounted slot:\n\n1️⃣ WhatsApp Chatbot ($110)\n2️⃣ Landing Page ($99)\n3️⃣ Business Website ($299)\n4️⃣ E-commerce Website ($599)\n5️⃣ Custom Software (Tailored)"
                                 : "🔥 *Exclusive Launch Offer Active!* (Flat 20% OFF Coupon apply kar diya gaya hai)\n\nAap jis requirement par discount lock karna chahte hain, kripya uska number (**1 se 5**) reply kijiye:\n\n1️⃣ **WhatsApp AI Chatbot & Automation** (Base: ₹8,713)\n2️⃣ **Landing Page/Funnel** (Base: ₹12,300)\n3️⃣ **Business/Corporate Website** (Base: ₹25,500)\n4️⃣ **E-commerce Website** (Base: ₹47,500)\n5️⃣ **Custom Web Application / Software** (Base: ₹1,45,000+)";
-                        } else if (userText === '4') {
+                        } else if (targetMenuRoute === '4') {
                             userSessions[from].step = 'process_requirement_menu'; 
                             replyText = (userLang === 'EN')
                                 ? "💳 *Direct Booking & Token System ($49)*\n\nPlease select the project type you want to lock slot for via option number (1 to 5):\n\n1️⃣ WhatsApp Chatbot ($110)\n2️⃣ Landing Page ($99)\n3️⃣ Business Website ($299)\n4️⃣ E-commerce Website ($599)\n5️⃣ Custom Software (Tailored)"
                                 : "💳 *Direct Booking & Token System (₹999 Slot Lock)*\n\nAap jis project layout ke liye secure token register karna chahte hain, kripya uska option number (**1 se 5**) bheinje:\n\n1️⃣ **WhatsApp AI Chatbot & Automation** (Base: ₹8,713)\n2️⃣ **Landing Page/Funnel** (Base: ₹12,300)\n3️⃣ **Business/Corporate Website** (Base: ₹25,500)\n4️⃣ **E-commerce Website** (Base: ₹47,500)\n5️⃣ **Custom Web Application / Software** (Base: ₹1,45,000+)";
-                        } else if (userText === '5') {
+                        } else if (targetMenuRoute === '5') {
                             userSessions[from].step = 'awaiting_consultation_slot';
                             replyText = (userLang === 'EN')
                                 ? `👤 *Direct Consultation with Shahid:*\nTo lock your free 15-minute growth strategy sync, select a slot:\n\n🅰️ **Today at 5:00 PM**\n🅱️ **Tomorrow at 12:00 PM**\n🅲️ **Custom Time (Type preferred time below)**\n\n👉 Kindly reply with *A, B, or C* to secure your slot!`

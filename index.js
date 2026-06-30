@@ -121,7 +121,7 @@ app.post('/webhook', async (req, res) => {
 
                         return sendWhatsAppMessage(from, (userLang === 'EN')
                             ? `Thank you *${cleanName}*! 🙏\n\nNow, please share your brief **Website or AI Automation Requirements** below to finalize the strategy blueprint.`
-                            : `Thank you *${cleanName}*! 🙏\n\nAb kripya agle message mein netizens apni brief **Website/AI Automation Requirement** likh kar bhejien taaki hum aapki call ke liye puri strategy ready rakh sakein.`);
+                            : `Thank you *${cleanName}*! 🙏\n\nAb kripya agle message mein apni brief **Website/AI Automation Requirement** likh kar bhejien taaki hum aapki call ke liye puri strategy ready rakh sakein.`);
                     }
 
                     // 🎯 STATE 2: DISPATCH CUSTOM QUERY & TIME TO ADMIN SHAHID
@@ -200,24 +200,24 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // 🎯 STATE 5.1: HYBRID PROCESSOR FOR WEB REQUIREMENTS (TEXT AND NUMBER SAFE MAPPING)
+                    // 🎯 STATE 5.1: UPGRADED DYNAMIC PROCESSOR FOR SUB-MENU (FUZZY LOGIC INSIDE KEYWORDS)
                     if (currentStep === 'process_requirement_menu') {
                         let isMatchFound = false;
                         let dynamicCategory = "";
 
-                        if (userText === '1' || userText.includes("chatbot") || userText.includes("bot") || userText.includes("automation")) {
+                        if (userText === '1' || userText === 'ai' || userText.includes("chatbot") || userText.includes("bot") || userText.includes("automation") || userText.includes("whatsapp ai")) {
                             dynamicCategory = "WhatsApp AI Chatbot & Automation";
                             isMatchFound = true;
                         } else if (userText === '2' || userText.includes("landing") || userText.includes("funnel") || userText.includes("single page")) {
                             dynamicCategory = "Landing Page/Funnel (Single Page Lead Gen)";
                             isMatchFound = true;
-                        } else if (userText === '3' || userText.includes("business") || userText.includes("corporate") || userText.includes("showcase")) {
+                        } else if (userText === '3' || userText.includes("business") || userText.includes("corporate") || userText.includes("showcase") || userText.includes("company")) {
                             dynamicCategory = "Business/Corporate Website (Brand Showcase)";
                             isMatchFound = true;
-                        } else if (userText === '4' || userText.includes("e-commerce") || userText.includes("ecommerce") || userText.includes("store") || text.includes("shop")) {
+                        } else if (userText === '4' || userText.includes("e-commerce") || userText.includes("ecommerce") || userText.includes("store") || userText.includes("shop") || userText.includes("online store")) {
                             dynamicCategory = "E-commerce Website (Online Store)";
                             isMatchFound = true;
-                        } else if (userText === '5' || userText.includes("software") || userText.includes("app") || userText.includes("custom web")) {
+                        } else if (userText === '5' || userText.includes("software") || userText.includes("app") || userText.includes("custom web") || userText.includes("application")) {
                             dynamicCategory = "Custom Web Application / Software";
                             isMatchFound = true;
                         }
@@ -238,12 +238,12 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // 🎯 STATE 5.2: HYBRID PROCESSOR FOR AUTOMATION SUITE
+                    // 🎯 STATE 5.2: PROCESS AUTOMATION REQ SELECTION
                     if (currentStep === 'process_automation_menu') {
                         let isAutomateMatch = false;
                         let dynamicCategory = "";
 
-                        if (userText === '1' || userText.includes("bot") || userText.includes("sync")) {
+                        if (userText === '1' || userText.includes("bot") || userText.includes("sync") || userText.includes("ai")) {
                             dynamicCategory = "WhatsApp AI Chatbot & Lead Sync";
                             isAutomateMatch = true;
                         } else if (userText === '2' || userText.includes("crm") || userText.includes("workflow")) {
@@ -325,14 +325,14 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, clientReply);
                     }
 
-                    // 🎯 STATE 8: CORE ENGINE - HYBRID GLOBAL PARSER WITH UPGRADED OPTION 3 RULES
+                    // 🎯 STATE 8: CORE ENGINE - HYBRID GLOBAL PARSER WITH FULL KEYWORD INTERCEPTIONS
                     if (currentStep === 'welcome' || currentStep === 'main_menu') {
                         userSessions[from].step = 'main_menu';
                         
                         let isCoreMatch = false;
                         let targetMenuRoute = userText;
 
-                        // Intent Parser Rules with Extended Option 3 Hooks ("flat 20%", "20%", "off")
+                        // Intent Parser Rules
                         if (userText === '1' || userText.includes("web") || userText.includes("dev") || userText.includes("site") || userText.includes("website")) {
                             targetMenuRoute = '1';
                             isCoreMatch = true;

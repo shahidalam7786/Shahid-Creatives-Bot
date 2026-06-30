@@ -121,27 +121,30 @@ app.post('/webhook', async (req, res) => {
 
                         return sendWhatsAppMessage(from, (userLang === 'EN')
                             ? `Thank you *${cleanName}*! 🙏\n\nNow, please share your brief **Website or AI Automation Requirements** below to finalize the strategy blueprint.`
-                            : `Thank you *${cleanName}*! 🙏\n\nAb kripya agle message mein apni brief **Website/AI Automation Requirement** likh kar bhejien taaki hum aapki call ke liye puri strategy ready rakh sakein.`);
+                            : `Thank you *${cleanName}*! 🙏\n\nAb kripya agle message mein netizens apni brief **Website/AI Automation Requirement** likh kar bhejien taaki hum aapki call ke liye puri strategy ready rakh sakein.`);
                     }
 
-                    // 🎯 STATE 2: DISPATCH CUSTOM QUERY & TIME TO ADMIN & FIREBASE DASHBOARD
+                    // 🎯 STATE 2: DISPATCH CUSTOM QUERY & TIME TO ADMIN AND FIREBASE LOGS (FIXED ENDPOINT)
                     if (currentStep === 'collect_custom_query_and_time') {
                         userSessions[from].step = 'post_registration';
                         const cleanName = userSessions[from].clientName;
 
-                        // Send WhatsApp Notification to Admin
+                        // Send WhatsApp Alert
                         const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n📝 *Custom Time & Query:* "${rawText}"\n\n🤖 *Status:* Live details captured securely!`;
                         await sendWhatsAppMessage("917529839762", comprehensiveAdminAlert);
 
-                        // Sync with Shahid Creatives Admin Dashboard (Option 5 Pipeline)
+                        // 📲 Sync to Dashboard via refined adaptive endpoint
                         try {
-                            await axios.post('https://shahidcreatives.com/webhook', {
-                                name: cleanName,
-                                phone: from,
-                                plan: "Direct Consultation Sync",
+                            await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
+                                client_name: cleanName,
+                                whatsapp_number: from,
+                                project_scope: `Direct Consultation Slot: "${rawText}"`,
+                                calculated_price: 0, // Consultation calls hold 0 commercial base value
                                 email: userSessions[from].clientEmail || "Not Provided"
                             });
-                        } catch (apiErr) { console.error("Admin Panel Sync Error (State 2):", apiErr.message); }
+                        } catch (apiErr) { 
+                            console.error("Admin Panel Sync Error (State 2 Consultation Pipeline):", apiErr.message); 
+                        }
 
                         let confirmationText = (userLang === 'EN')
                             ? `✅ *Booking Profile Complete!* \n\nThank you *${cleanName}*! Your specifications have been securely routed to Shahid. We will connect with you shortly! 🚀`
@@ -159,7 +162,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, replyText);
                     }
 
-                    // 🎯 STATE 4: INBOUND CHAT REGISTRATION COMPLETED & STREAMLINED ASYNC DASHBOARD STORAGE
+                    // 🎯 STATE 4: INBOUND CHAT REGISTRATION COMPLETED
                     if (currentStep === 'ask_name_email') {
                         userSessions[from].step = 'completed'; 
                         let cleanName = rawText.split('\n')[0].split(',')[0].trim();
@@ -175,11 +178,10 @@ app.post('/webhook', async (req, res) => {
                         const matchedBasePrice = getBasePriceByPlan(userSessions[from].projectScope);
                         const finalPayable = calculateTotalPayable(matchedBasePrice);
                         
-                        // Send WhatsApp Notification to Admin
                         const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n📝 *Plan Scope:* ${userSessions[from].projectScope}\n💰 *Calculated Price (incl GST):* ₹${finalPayable}`;
                         await sendWhatsAppMessage("917529839762", chatAdminNotification);
 
-                        // 📲 LIVE SYSTEM SYNC: Securely Posting to Your Refined Adaptive API Endpoint
+                        // Dashboard lead insertion
                         try {
                             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
                                 client_name: cleanName,
@@ -188,7 +190,6 @@ app.post('/webhook', async (req, res) => {
                                 calculated_price: finalPayable,
                                 email: cleanEmail
                             });
-                            console.log(`Lead for ${cleanName} synced successfully to Admin Panel.`);
                         } catch (dashboardError) {
                             console.error("Admin Dashboard Async Synchronization Failed:", dashboardError.message);
                         }
@@ -344,7 +345,6 @@ app.post('/webhook', async (req, res) => {
                         const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail || 'Not Provided'}\n📝 *Plan Chosen:* ${projectScope}\n💰 *Base Valuation:* ${isGlobalWebsiteTemplate ? '$' : '₹'}${parsedBasePrice}`;
                         await sendWhatsAppMessage("917529839762", adminNotification);
 
-                        // Sync Lead Ads data to dashboard directly
                         try {
                             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
                                 client_name: clientName,
@@ -362,7 +362,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, clientReply);
                     }
 
-                    // 🎯 STATE 8: CORE ENGINE - HYBRID DYNAMIC PARSER WITH FULL KEYWORD INTERCEPTIONS
+                    // 🎯 STATE 8: CORE ENGINE - HYBRID GLOBAL PARSER WITH FULL KEYWORD INTERCEPTIONS
                     if (currentStep === 'welcome' || currentStep === 'main_menu') {
                         userSessions[from].step = 'main_menu';
                         

@@ -26,7 +26,7 @@ function getBasePriceByPlan(planScope) {
     if (text.includes("starter business") || text.includes("business hub") || text.includes("corporate") || text.includes("brand growth")) {
         return "25500";
     }
-    if (text.includes("basic small") || text.includes("small business") || text.includes("informational layout")) {
+    if (text.includes("landing page") || text.includes("funnel") || text.includes("single page")) {
         return "12300";
     }
     if (text.includes("saas") || text.includes("app") || text.includes("software") || text.includes("enterprise") || text.includes("portal")) {
@@ -186,13 +186,13 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, replyText);
                     }
 
-                    // 🎯 STATE 5: INTERCEPTING MENU CHOICES FOR 1-5 REQUIREMENT FLOW
+                    // 🎯 STATE 5: INTERCEPTING MENU CHOICES FOR 1-5 REQUIREMENT FLOW WITH PRICE TRANSPARENCY
                     if (currentStep === 'awaiting_website_action') {
                         if (userText === '1') {
                             userSessions[from].step = 'process_requirement_menu';
                             let requirementPrompt = (userLang === 'EN')
-                                ? "Perfect! Let's lock your structural goal first. 🚀\n\nPlease select what you want to build today by replying with the option number (**1 to 5**):\n\n1️⃣ E-commerce Website (Online Store)\n2️⃣ Business/Corporate Website (Brand Showcase)\n3️⃣ Landing Page/Funnel (Single Page)\n4️⃣ WhatsApp AI Chatbot & Automation\n5️⃣ Custom Web Application / Software"
-                                : "Perfect! Pehle aapki structural requirement lock kar lete hain. 🚀\n\nNiche diye gaye options mein se koi ek number (**1 se 5**) reply kijiye:\n\n1️⃣ E-commerce Website (Online Store)\n2️⃣ Business/Corporate Website (Brand Showcase)\n3️⃣ Landing Page/Funnel (Single Page)\n4️⃣ WhatsApp AI Chatbot & Automation\n5️⃣ Custom Web Application / Software";
+                                ? "Perfect! Let's lock your structural goal first. 🚀\n\nPlease select what you want to build today by replying with the option number (**1 to 5**):\n\n1️⃣ E-commerce Website ($599)\n2️⃣ Business Website ($299)\n3️⃣ Landing Page ($99)\n4️⃣ WhatsApp Chatbot ($110)\n5️⃣ Custom Software (Tailored)"
+                                : "Perfect! Pehle aapki structural requirement lock kar lete hain. 🚀\n\nNiche diye gaye options mein se koi ek number (**1 se 5**) reply kijiye:\n\n1️⃣ **E-commerce Website** (Base: ₹47,500)\n2️⃣ **Business/Corporate Website** (Base: ₹25,500)\n3️⃣ **Landing Page/Funnel** (Base: ₹12,300)\n4️⃣ **WhatsApp AI Chatbot & Automation** (Base: ₹8,713)\n5️⃣ **Custom Web Application / Software** (Base: ₹1,45,000+)";
                             return sendWhatsAppMessage(from, requirementPrompt);
                         } else if (userText === '2') {
                             userSessions[from].step = 'post_registration';
@@ -205,7 +205,7 @@ app.post('/webhook', async (req, res) => {
                     if (currentStep === 'process_requirement_menu') {
                         const validSelections = ['1', '2', '3', '4', '5'];
                         if (validSelections.includes(userText)) {
-                            userSessions[from].step = 'ask_name_email'; // ROUTING TO ASK NAME AND EMAIL INSTEAD OF DIRECT LINK
+                            userSessions[from].step = 'ask_name_email'; 
                             let dynamicCategory = "";
                             if (userText === '1') dynamicCategory = "E-commerce Website (Online Store)";
                             else if (userText === '2') dynamicCategory = "Business/Corporate Website (Brand Showcase)";
@@ -294,8 +294,8 @@ app.post('/webhook', async (req, res) => {
                     if (userText === '1') {
                         userSessions[from].step = 'process_requirement_menu'; 
                         replyText = (userLang === 'EN')
-                            ? "Please select what you want to build today by replying with the option number (**1 to 5**):\n\n1️⃣ E-commerce Website\n2️⃣ Business Website\n3️⃣ Landing Page\n4️⃣ WhatsApp Chatbot\n5️⃣ Custom Software"
-                            : "Kripya select kijiye ki aap kya banwana chahte hain, reply mein sirf number (**1 se 5**) likhein:\n\n1️⃣ E-commerce Website (Online Store)\n2️⃣ Business/Corporate Website (Brand Showcase)\n3️⃣ Landing Page/Funnel (Single Page)\n4️⃣ WhatsApp AI Chatbot & Automation\n5️⃣ Custom Web Application / Software";
+                            ? "Please select what you want to build today by replying with the option number (**1 to 5**):\n\n1️⃣ E-commerce Website ($599)\n2️⃣ Business Website ($299)\n3️⃣ Landing Page ($99)\n4️⃣ WhatsApp Chatbot ($110)\n5️⃣ Custom Software (Tailored)"
+                            : "Kripya select kijiye ki aap kya banwana chahte hain, reply mein sirf number (**1 se 5**) likhein:\n\n1️⃣ **E-commerce Website** (Base: ₹47,500)\n2️⃣ **Business/Corporate Website** (Base: ₹25,500)\n3️⃣ **Landing Page/Funnel** (Base: ₹12,300)\n4️⃣ **WhatsApp AI Chatbot & Automation** (Base: ₹8,713)\n5️⃣ **Custom Web Application / Software** (Base: ₹1,45,000+)";
                     } else if (userText === '2') {
                         userSessions[from].step = 'collect_details';
                         replyText = (userLang === 'EN')

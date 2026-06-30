@@ -121,7 +121,7 @@ app.post('/webhook', async (req, res) => {
 
                         return sendWhatsAppMessage(from, (userLang === 'EN')
                             ? `Thank you *${cleanName}*! 🙏\n\nNow, please share your brief **Website or AI Automation Requirements** below to finalize the strategy blueprint.`
-                            : `Thank you *${cleanName}*! 🙏\n\nAb kripya agle message mein apni brief **Website/AI Automation Requirement** likh kar bhejien taaki hum aapki call ke liye puri strategy ready rakh sakein.`);
+                            : `Thank you *${cleanName}*! 🙏\n\nAb kripya agle message mein netizens apni brief **Website/AI Automation Requirement** likh kar bhejien taaki hum aapki call ke liye puri strategy ready rakh sakein.`);
                     }
 
                     // 🎯 STATE 2: DISPATCH CUSTOM QUERY & TIME TO ADMIN SHAHID
@@ -185,7 +185,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, replyText);
                     }
 
-                    // 🎯 STATE 5: INTERCEPTING MENU CHOICES FROM FACEBOOK LEAD ADS FORM INBOUND ACTIONS
+                    // 🎯 STATE 5: INTERCEPTING MENU CHOICES FOR WEBSITE ACTION FROM LEAD AD INTERCEPTIONS
                     if (currentStep === 'awaiting_website_action') {
                         if (userText === '1' || userText.includes("token") || userText.includes("book") || userText.includes("confirm")) {
                             userSessions[from].step = 'process_requirement_menu';
@@ -214,7 +214,7 @@ app.post('/webhook', async (req, res) => {
                         } else if (userText === '3' || userText.includes("business") || userText.includes("corporate") || userText.includes("showcase")) {
                             dynamicCategory = "Business/Corporate Website (Brand Showcase)";
                             isMatchFound = true;
-                        } else if (userText === '4' || userText.includes("e-commerce") || userText.includes("ecommerce") || userText.includes("store") || userText.includes("shop")) {
+                        } else if (userText === '4' || userText.includes("e-commerce") || userText.includes("ecommerce") || userText.includes("store") || text.includes("shop")) {
                             dynamicCategory = "E-commerce Website (Online Store)";
                             isMatchFound = true;
                         } else if (userText === '5' || userText.includes("software") || userText.includes("app") || userText.includes("custom web")) {
@@ -325,21 +325,21 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, clientReply);
                     }
 
-                    // 🎯 STATE 8: CORE ENGINE - HYBRID GLOBAL PARSER FOR KEYWORDS IN MAIN MENU
+                    // 🎯 STATE 8: CORE ENGINE - HYBRID GLOBAL PARSER WITH UPGRADED OPTION 3 RULES
                     if (currentStep === 'welcome' || currentStep === 'main_menu') {
                         userSessions[from].step = 'main_menu';
                         
                         let isCoreMatch = false;
                         let targetMenuRoute = userText;
 
-                        // Intent Parser Rules
+                        // Intent Parser Rules with Extended Option 3 Hooks ("flat 20%", "20%", "off")
                         if (userText === '1' || userText.includes("web") || userText.includes("dev") || userText.includes("site") || userText.includes("website")) {
                             targetMenuRoute = '1';
                             isCoreMatch = true;
                         } else if (userText === '2' || userText.includes("automation") || userText.includes("bot") || userText.includes("demo") || userText.includes("crm")) {
                             targetMenuRoute = '2';
                             isCoreMatch = true;
-                        } else if (userText === '3' || userText.includes("deal") || userText.includes("launch") || userText.includes("offer") || userText.includes("discount")) {
+                        } else if (userText === '3' || userText.includes("deal") || userText.includes("launch") || userText.includes("offer") || userText.includes("discount") || userText.includes("flat") || userText.includes("20%") || userText.includes("off") || userText.includes("coupon")) {
                             targetMenuRoute = '3';
                             isCoreMatch = true;
                         } else if (userText === '4' || userText.includes("book") || userText.includes("token") || userText.includes("payment") || userText.includes("razorpay")) {

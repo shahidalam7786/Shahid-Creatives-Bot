@@ -331,15 +331,15 @@ app.post('/webhook', async (req, res) => {
                                 ? "🔥 *Exclusive Launch Offer Active!* (Flat 20% OFF Code Applied)\n\nPlease select your project requirement number (1 to 5) to secure your discounted slot:\n\n1️⃣ WhatsApp Chatbot ($110)\n2️⃣ Landing Page ($99)\n3️⃣ Business Website ($299)\n4️⃣ E-commerce Website ($599)\n5️⃣ Custom Software (Tailored)"
                                 : "🔥 *Exclusive Launch Offer Active!* (Flat 20% OFF Coupon apply kar diya gaya hai)\n\nAap jis requirement par discount lock karna chahte hain, kripya uska number (**1 se 5**) reply kijiye:\n\n1️⃣ **WhatsApp AI Chatbot & Automation** (Base: ₹8,713)\n2️⃣ **Landing Page/Funnel** (Base: ₹12,300)\n3️⃣ **Business/Corporate Website** (Base: ₹25,500)\n4️⃣ **E-commerce Website** (Base: ₹47,500)\n5️⃣ **Custom Web Application / Software** (Base: ₹1,45,000+)";
                         } else if (userText === '4') {
-                            userSessions[from].step = 'process_requirement_menu'; // STREAMLINED DIRECTLY TO STANDARD FILTER
+                            userSessions[from].step = 'process_requirement_menu'; 
                             replyText = (userLang === 'EN')
                                 ? "💳 *Direct Booking & Token System ($49)*\n\nPlease select the project type you want to lock slot for via option number (1 to 5):\n\n1️⃣ WhatsApp Chatbot ($110)\n2️⃣ Landing Page ($99)\n3️⃣ Business Website ($299)\n4️⃣ E-commerce Website ($599)\n5️⃣ Custom Software (Tailored)"
                                 : "💳 *Direct Booking & Token System (₹999 Slot Lock)*\n\nAap jis project layout ke liye secure token register karna chahte hain, kripya uska option number (**1 se 5**) bheinje:\n\n1️⃣ **WhatsApp AI Chatbot & Automation** (Base: ₹8,713)\n2️⃣ **Landing Page/Funnel** (Base: ₹12,300)\n3️⃣ **Business/Corporate Website** (Base: ₹25,500)\n4️⃣ **E-commerce Website** (Base: ₹47,500)\n5️⃣ **Custom Web Application / Software** (Base: ₹1,45,000+)";
                         } else if (userText === '5') {
                             userSessions[from].step = 'awaiting_consultation_slot';
                             replyText = (userLang === 'EN')
-                                ? `👤 *Direct Consultation with Shahid:*\nTo lock your free 15-minute growth strategy sync, select a slot:\n\n🅰️ **Today at 5:00 PM**\nⓑ **Tomorrow at 12:00 PM**\nⒸ **Custom Time (Type preferred time below)**\n\n👉 Kindly reply with *A, B, or C* to secure your slot!`
-                                : `👤 *Direct Consultation with Shahid:*\nShahid Alam aapke sath directly connect karenge. Priority growth consultation slot book karne ke liye ek option choose karein:\n\n🅰️ **Aaj hi Shaam 5:00 Baje**\nⓑ **Kal Dopahar 12:00 Baje**\nⒸ **Custom Time (Apna secure timing niche type karein)**\n\n👉 Kripya **A, B, ya C** likh kar reply kijiye!`;
+                                ? `👤 *Direct Consultation with Shahid:*\nTo lock your free 15-minute growth strategy sync, select a slot:\n\n🅰️ **Today at 5:00 PM**\n🅱️ **Tomorrow at 12:00 PM**\n🅲️ **Custom Time (Type preferred time below)**\n\n👉 Kindly reply with *A, B, or C* to secure your slot!`
+                                : `👤 *Direct Consultation with Shahid:*\nShahid Alam aapke sath directly connect karenge. Priority growth consultation slot book karne ke liye ek option choose karein:\n\n🅰️ **Aaj hi Shaam 5:00 Baje**\n🅱️ **Kal Dopahar 12:00 Baje**\n🅲️ **Custom Time (Apna secure timing niche type karein)**\n\n👉 Kripya **A, B, ya C** likh kar reply kijiye!`;
                         }
                         
                         return sendWhatsAppMessage(from, replyText);

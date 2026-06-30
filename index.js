@@ -139,7 +139,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, confirmationText);
                     }
 
-                    // 🎯 STATE 3: INBOUND SEQUENCE - DETAILS ACQUISITION
+                    // 🎯 STATE 3: INBOUND SEQUENCE - DETAILS ACQUISITION (Fallback or raw logs)
                     if (currentStep === 'collect_details') {
                         userSessions[from].projectScope = rawText;
                         userSessions[from].step = 'ask_name_email';
@@ -149,7 +149,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, replyText);
                     }
 
-                    // 🎯 STATE 4: INBOUND CHAT REGISTRATION COMPLETED
+                    // 🎯 STATE 4: INBOUND CHAT REGISTRATION COMPLETED (FINESSED WITH GATEWAY)
                     if (currentStep === 'ask_name_email') {
                         userSessions[from].step = 'completed';
                         let cleanName = rawText.split('\n')[0].split(',')[0].trim();
@@ -181,12 +181,12 @@ app.post('/webhook', async (req, res) => {
                         } else {
                             const tokenAmountINR = "999";
                             const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
-                            replyText = `Thank you, aapki details receive ho gayi hain! 🤝\n\n🔥 *Launch Discount Applied:* Coupon code **LAUNCH20** (Flat 20% OFF) active ho gaya hai. Aap Razorpay se **₹999 Token Booking** complete karke slot lock kar sakte hain:\n\n🔗 *Direct Pay Gateway Link:* ${selfPayLink}`;
+                            replyText = `Mubarak ho! Aapki requirement *${userSessions[from].projectScope}* register ho gayi hai! 🤝\n\n🔥 *Launch Discount Applied:* Coupon code **LAUNCH20** active ho gaya hai. Aap niche diye gaye link se **₹999 Token Booking** complete karke flat 20% discount slot lock karein:\n\n🔗 *Direct Pay Gateway Link:* ${selfPayLink}`;
                         }
                         return sendWhatsAppMessage(from, replyText);
                     }
 
-                    // 🎯 STATE 5: INTERCEPTING META/MENU CHOICES AND PRE-QUALIFYING 1-5 REQUIREMENT MENUS
+                    // 🎯 STATE 5: INTERCEPTING MENU CHOICES FOR 1-5 REQUIREMENT FLOW
                     if (currentStep === 'awaiting_website_action') {
                         if (userText === '1') {
                             userSessions[from].step = 'process_requirement_menu';
@@ -201,11 +201,11 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // 🎯 STATE 5.5: DYNAMIC INTAKE GATEWAY FOR DYNAMIC CHOICES 1-5
+                    // 🎯 STATE 5.5: PROCESS REQ SELECTION -> ROUTE TO DETAILS DISCOVERY (ASK NAME & EMAIL FIRST)
                     if (currentStep === 'process_requirement_menu') {
                         const validSelections = ['1', '2', '3', '4', '5'];
                         if (validSelections.includes(userText)) {
-                            userSessions[from].step = 'completed'; // Proceeding directly to dynamic checkouts
+                            userSessions[from].step = 'ask_name_email'; // ROUTING TO ASK NAME AND EMAIL INSTEAD OF DIRECT LINK
                             let dynamicCategory = "";
                             if (userText === '1') dynamicCategory = "E-commerce Website (Online Store)";
                             else if (userText === '2') dynamicCategory = "Business/Corporate Website (Brand Showcase)";
@@ -215,22 +215,10 @@ app.post('/webhook', async (req, res) => {
 
                             userSessions[from].projectScope = dynamicCategory;
 
-                            const uniqueProjectId = `SC-${Math.floor(10000 + Math.random() * 90000)}`;
-                            const encodedName = encodeURIComponent(userSessions[from].clientName);
-                            const encodedEmail = encodeURIComponent(userSessions[from].clientEmail || "");
-                            const encodedPlan = encodeURIComponent(dynamicCategory);
-                            
-                            let replyText = "";
-                            if (userLang === 'EN') {
-                                const tokenAmountUSD = "49";
-                                const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountUSD}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
-                                replyText = `🎉 *Excellent Choice!* Requirement logged as *${dynamicCategory}*. 🤝\n\nClick below to clear your **Token Booking ($49)** & secure launch offer:\n\n🔗 *Pay Securely Here:* ${dynamicPaymentLink}`;
-                            } else {
-                                const tokenAmountINR = "999";
-                                const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
-                                replyText = `Mubarak ho! Aapki requirement *${dynamicCategory}* register ho gayi hai! 🤝\n\nNiche diye gaye link se **₹999 Token Booking** complete karke flat 20% discount slot lock karein:\n\n🔗 *Direct Pay Gateway Link:* ${dynamicPaymentLink}`;
-                            }
-                            return sendWhatsAppMessage(from, replyText);
+                            let askDetailsText = (userLang === 'EN')
+                                ? `Awesome! Selected: *${dynamicCategory}*. 📝 Kindly reply with your **Full Name** and **Email Address** to construct your quote profile.`
+                                : `Awesome! Aapne *${dynamicCategory}* select kiya hai. 📝 Ab kripya apna **Full Name** aur **Email ID** reply mein bhej lijiye taaki aapka profile safe ho sake.`;
+                            return sendWhatsAppMessage(from, askDetailsText);
                         } else {
                             let fallbackMsg = (userLang === 'EN')
                                 ? "❌ Invalid choice. Please reply with a number from *1 to 5*."
@@ -304,7 +292,7 @@ app.post('/webhook', async (req, res) => {
                     }
 
                     if (userText === '1') {
-                        userSessions[from].step = 'process_requirement_menu'; // Changed to requirement process map
+                        userSessions[from].step = 'process_requirement_menu'; 
                         replyText = (userLang === 'EN')
                             ? "Please select what you want to build today by replying with the option number (**1 to 5**):\n\n1️⃣ E-commerce Website\n2️⃣ Business Website\n3️⃣ Landing Page\n4️⃣ WhatsApp Chatbot\n5️⃣ Custom Software"
                             : "Kripya select kijiye ki aap kya banwana chahte hain, reply mein sirf number (**1 se 5**) likhein:\n\n1️⃣ E-commerce Website (Online Store)\n2️⃣ Business/Corporate Website (Brand Showcase)\n3️⃣ Landing Page/Funnel (Single Page)\n4️⃣ WhatsApp AI Chatbot & Automation\n5️⃣ Custom Web Application / Software";
@@ -338,7 +326,6 @@ app.post('/webhook', async (req, res) => {
 });
 
 async function sendWhatsAppMessage(to, text) {
-    // 🔒 TOKENS SECURED VIA RENDER ENVIRONMENT VARIABLES
     const SECURED_ACCESS_TOKEN = process.env.WHATSAPP_TOKEN; 
     const DEFAULT_PHONE_NUMBER_ID = "1202984902891472"; 
     try {

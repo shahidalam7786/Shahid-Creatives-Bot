@@ -101,17 +101,16 @@ app.post('/webhook', async (req, res) => {
                     const userLang = userSessions[from].lang;
                     const currentStep = userSessions[from].step;
 
-                    // 🎯 STATE 0: COURTESY REPLIES RESET BUFFER
-                    if (currentStep === 'post_registration') {
+                    // 🎯 STATE 0: COURTESY REPLIES RESET BUFFER (FIXED LOOP INTERCEPTOR)
+                    if (currentStep === 'completed' || currentStep === 'post_registration') {
                         const courtesyTriggers = ['thanks', 'thank you', 'ok', 'okay', 'ji', 'shukriya', 'thx'];
                         if (courtesyTriggers.includes(userText)) {
-                            userSessions[from] = null;
+                            userSessions[from] = null; // Kill session data safely
                             let courtesyReply = (userLang === 'EN')
-                                ? "You're most welcome! 👍 Glad to help. Type 'Menu' anytime to restart."
-                                : "Aapka swagat hai! 👍 Milte hain aapse bohot jald sync call par. Dobara shuru karne ke liye 'Menu' bheinje.";
+                                ? "You're most welcome! 👍 Glad to help. Type 'Menu' anytime if you want to explore again."
+                                : "Aapka swagat hai! 👍 Milte hain aapse bohot jald discovery call par. Dobara shuru karne ke liye kisi bhi waqt 'Menu' ya 'Hi' bheinje.";
                             return sendWhatsAppMessage(from, courtesyReply);
                         }
-                        userSessions[from] = null;
                     }
 
                     // 🎯 STATE 1: COLLECT IDENTITY (OPTION 5 -> C PIPELINE)
@@ -151,7 +150,7 @@ app.post('/webhook', async (req, res) => {
 
                     // 🎯 STATE 4: INBOUND CHAT REGISTRATION COMPLETED (FINESSED WITH GATEWAY)
                     if (currentStep === 'ask_name_email') {
-                        userSessions[from].step = 'completed';
+                        userSessions[from].step = 'completed'; // Stays in completed stage until reset trigger
                         let cleanName = rawText.split('\n')[0].split(',')[0].trim();
                         let cleanEmail = "Not Provided";
                         
@@ -283,42 +282,44 @@ app.post('/webhook', async (req, res) => {
                     }
 
                     // 🎯 STATE 8: UNIFIED DYNAMIC CORE MENU ENGINE
-                    userSessions[from].step = 'main_menu';
-                    let replyText = "";
-                    if (userLang === 'EN') {
-                        replyText = "Hello! Welcome to *Shahid Creatives*. 🚀\nWe design premium agile web ecosystems and high-converting automation workflows.\n\nSelect a professional stack tier via number:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI Business Automation & B2B Wholesale Demo**\n3️⃣ **🔥 Exclusive Launch Deal**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid**";
-                    } else {
-                        replyText = "Hello! Welcome to *Shahid Creatives* (Ludhiana, Punjab). 🚀\nHum engineer karte hain high-performance websites aur AI automation frameworks global and local brands ke liye.\n\nKoshish ko aage badhane ke liye niche se ek option reply kijiye:\n\n1️⃣ *Web Development Tiers* (Saare Standard Custom Packages)\n2️⃣ *AI Business Automation & B2B Wholesale Demo* (Bots & CRM Flows)\n3️⃣ *🔥 Exclusive Launch Deal* (Flat 20% OFF Status)\n4️⃣ *💳 Direct Booking & Token System* (₹999 Secure Path)\n5️⃣ *👤 Talk to Shahid* (Direct Consultation)";
-                    }
+                    if (currentStep === 'welcome' || currentStep === 'main_menu') {
+                        userSessions[from].step = 'main_menu';
+                        let replyText = "";
+                        if (userLang === 'EN') {
+                            replyText = "Hello! Welcome to *Shahid Creatives*. 🚀\nWe design premium agile web ecosystems and high-converting automation workflows.\n\nSelect a professional stack tier via number:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI Business Automation & B2B Wholesale Demo**\n3️⃣ **🔥 Exclusive Launch Deal**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid**";
+                        } else {
+                            replyText = "Hello! Welcome to *Shahid Creatives* (Ludhiana, Punjab). 🚀\nHum engineer karte hain high-performance websites aur AI automation frameworks global and local brands ke liye.\n\nKoshish ko aage badhane ke liye niche se ek option reply kijiye:\n\n1️⃣ *Web Development Tiers* (Saare Standard Custom Packages)\n2️⃣ *AI Business Automation & B2B Wholesale Demo* (Bots & CRM Flows)\n3️⃣ *🔥 Exclusive Launch Deal* (Flat 20% OFF Status)\n4️⃣ *💳 Direct Booking & Token System* (₹999 Secure Path)\n5️⃣ *👤 Talk to Shahid* (Direct Consultation)";
+                        }
 
-                    if (userText === '1') {
-                        userSessions[from].step = 'process_requirement_menu'; 
-                        replyText = (userLang === 'EN')
-                            ? "Please select what you want to build today by replying with the option number (**1 to 5**):\n\n1️⃣ WhatsApp Chatbot ($110)\n2️⃣ Landing Page ($99)\n3️⃣ Business Website ($299)\n4️⃣ E-commerce Website ($599)\n5️⃣ Custom Software (Tailored)"
-                            : "Kripya select kijiye ki aap kya banwana chahte hain, reply mein sirf number (**1 se 5**) likhein:\n\n1️⃣ **WhatsApp AI Chatbot & Automation** (Base: ₹8,713)\n2️⃣ **Landing Page/Funnel** (Base: ₹12,300)\n3️⃣ **Business/Corporate Website** (Base: ₹25,500)\n4️⃣ **E-commerce Website** (Base: ₹47,500)\n5️⃣ **Custom Web Application / Software** (Base: ₹1,45,000+)";
-                    } else if (userText === '2') {
-                        userSessions[from].step = 'collect_details';
-                        replyText = (userLang === 'EN')
-                            ? "🤖 *AI Business Automation Hub:*\n• 🤖 *Enterprise Custom AI Hub* ($299+)\n📲 *B2B Wholesale Live Automation Demo:*\n🔗 https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo\n\n👉 Reply with your business workflow or automation goal to initiate development!"
-                            : "🤖 *AI Business Automation & Live Demo:*\n• 🤖 *WhatsApp Bot & Lead Sync* (Base Price: ₹8,713)\n• 🏢 *Custom CRM Workflow Hub* (Base Price: ₹18,000)\n• 🚀 *Enterprise AI Suite* (Tailored Pricing)\n📲 *B2B Wholesale Live Automation Demo:*\n🔗 https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo\n\n👉 Apne automation requirements niche reply mein batayein!";
-                    } else if (userText === '3') {
-                        userSessions[from].step = 'collect_details';
-                        replyText = (userLang === 'EN')
-                            ? "🔥 *Exclusive Global Launch Offer!* 🔥\nCoupon code **LAUNCH20** linked! Secures a **Flat 20% OFF** discount on final project invoice bill.\n\n👉 Reply with your **Name and Project Goal** right now to tag your discount code!"
-                            : "🔥 *Exclusive Launch Offer!* 🔥\nMubarak ho! Coupon code **LAUNCH20** active kar diya hai. Secure a **Flat 20% Discount** on your project profile!\n\n👉 Is discount code ko lock karne ke liye niche apna **Name aur Project Type** likh kar bhejien.";
-                    } else if (userText === '4') {
-                        userSessions[from].step = 'collect_details';
-                        replyText = (userLang === 'EN')
-                            ? "💳 *Direct Booking & Token System ($49):*\nTo construct your gateway, please provide your **Full Name, Contact Number, and Project/Plan Name**."
-                            : "💳 *Direct Booking & Token System (₹999 Slot Lock):*\nYour custom live checkout status configure karne ke liye, kripya apna **Name, Phone Number, aur Project Name/Plan** reply mein bhejien.";
-                    } else if (userText === '5') {
-                        userSessions[from].step = 'awaiting_consultation_slot';
-                        replyText = (userLang === 'EN')
-                            ? `👤 *Direct Consultation with Shahid:*\nTo lock your free 15-minute growth strategy sync, select a slot:\n\n🅰️ **Today at 5:00 PM**\nⓑ **Tomorrow at 12:00 PM**\nⒸ **Custom Time (Type preferred time below)**\n\n👉 Kindly reply with *A, B, or C* to secure your slot!`
-                            : `👤 *Direct Consultation with Shahid:*\nShahid Alam aapke sath directly connect karenge. Priority growth consultation slot book karne ke liye ek option choose karein:\n\n🅰️ **Aaj hi Shaam 5:00 Baje**\nⓑ **Kal Dopahar 12:00 Baje**\nⒸ **Custom Time (Apna secure timing niche type karein)**\n\n👉 Kripya **A, B, ya C** likh kar reply kijiye!`;
+                        if (userText === '1') {
+                            userSessions[from].step = 'process_requirement_menu'; 
+                            replyText = (userLang === 'EN')
+                                ? "Please select what you want to build today by replying with the option number (**1 to 5**):\n\n1️⃣ WhatsApp Chatbot ($110)\n2️⃣ Landing Page ($99)\n3️⃣ Business Website ($299)\n4️⃣ E-commerce Website ($599)\n5️⃣ Custom Software (Tailored)"
+                                : "Kripya select kijiye ki aap kya banwana chahte hain, reply mein sirf number (**1 se 5**) likhein:\n\n1️⃣ **WhatsApp AI Chatbot & Automation** (Base: ₹8,713)\n2️⃣ **Landing Page/Funnel** (Base: ₹12,300)\n3️⃣ **Business/Corporate Website** (Base: ₹25,500)\n4️⃣ **E-commerce Website** (Base: ₹47,500)\n5️⃣ **Custom Web Application / Software** (Base: ₹1,45,000+)";
+                        } else if (userText === '2') {
+                            userSessions[from].step = 'collect_details';
+                            replyText = (userLang === 'EN')
+                                ? "🤖 *AI Business Automation Hub:*\n• 🤖 *Enterprise Custom AI Hub* ($299+)\n📲 *B2B Wholesale Live Automation Demo:*\n🔗 https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo\n\n👉 Reply with your business workflow or automation goal to initiate development!"
+                                : "🤖 *AI Business Automation & Live Demo:*\n• 🤖 *WhatsApp Bot & Lead Sync* (Base Price: ₹8,713)\n• 🏢 *Custom CRM Workflow Hub* (Base Price: ₹18,000)\n• 🚀 *Enterprise AI Suite* (Tailored Pricing)\n📲 *B2B Wholesale Live Automation Demo:*\n🔗 https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo\n\n👉 Apne automation requirements niche reply mein batayein!";
+                        } else if (userText === '3') {
+                            userSessions[from].step = 'collect_details';
+                            replyText = (userLang === 'EN')
+                                ? "🔥 *Exclusive Global Launch Offer!* 🔥\nCoupon code **LAUNCH20** linked! Secures a **Flat 20% OFF** discount on final project invoice bill.\n\n👉 Reply with your **Name and Project Goal** right now to tag your discount code!"
+                                : "🔥 *Exclusive Launch Offer!* 🔥\nMubarak ho! Coupon code **LAUNCH20** active kar diya hai. Secure a **Flat 20% Discount** on your project profile!\n\n👉 Is discount code ko lock karne ke liye niche apna **Name aur Project Type** likh kar bhejien.";
+                        } else if (userText === '4') {
+                            userSessions[from].step = 'collect_details';
+                            replyText = (userLang === 'EN')
+                                ? "💳 *Direct Booking & Token System ($49):*\nTo construct your gateway, please provide your **Full Name, Contact Number, and Project/Plan Name**."
+                                : "💳 *Direct Booking & Token System (₹999 Slot Lock):*\nYour custom live checkout status configure karne ke liye, kripya apna **Name, Phone Number, aur Project Name/Plan** reply mein bhejien.";
+                        } else if (userText === '5') {
+                            userSessions[from].step = 'awaiting_consultation_slot';
+                            replyText = (userLang === 'EN')
+                                ? `👤 *Direct Consultation with Shahid:*\nTo lock your free 15-minute growth strategy sync, select a slot:\n\n🅰️ **Today at 5:00 PM**\nⓑ **Tomorrow at 12:00 PM**\nⒸ **Custom Time (Type preferred time below)**\n\n👉 Kindly reply with *A, B, or C* to secure your slot!`
+                                : `👤 *Direct Consultation with Shahid:*\nShahid Alam aapke sath directly connect karenge. Priority growth consultation slot book karne ke liye ek option choose karein:\n\n🅰️ **Aaj hi Shaam 5:00 Baje**\nⓑ **Kal Dopahar 12:00 Baje**\nⒸ **Custom Time (Apna secure timing niche type karein)**\n\n👉 Kripya **A, B, ya C** likh kar reply kijiye!`;
+                        }
+                        
+                        return sendWhatsAppMessage(from, replyText);
                     }
-                    
-                    return sendWhatsAppMessage(from, replyText);
                 }
             }
         } catch (error) { console.error("Webhook processing logic error."); }

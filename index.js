@@ -20,7 +20,7 @@ function calculateTotalPayable(basePrice) {
 // 🎯 ROBUST PLAN PRICE MAPPER (Ordered by Selection Menu)
 function getBasePriceByPlan(planScope) {
     const text = String(planScope).toLowerCase().trim();
-    if (text.includes("whatsapp bot") || text.includes("lead sync") || text.includes("conversational bot")) {
+    if (text.includes("whatsapp bot") || text.includes("lead sync") || text.includes("conversational bot") || text.includes("chatbot")) {
         return "8713";
     }
     if (text.includes("landing page") || text.includes("funnel") || text.includes("single page")) {
@@ -29,7 +29,7 @@ function getBasePriceByPlan(planScope) {
     if (text.includes("crm workflow") || text.includes("custom crm") || text.includes("workflow hub")) {
         return "18000";
     }
-    if (text.includes("starter business") || text.includes("business hub") || text.includes("corporate") || text.includes("brand growth")) {
+    if (text.includes("business") || text.includes("corporate") || text.includes("showcase") || text.includes("brand")) {
         return "25500";
     }
     if (text.includes("e-commerce") || text.includes("ecommerce") || text.includes("store") || text.includes("shop") || text.includes("retail")) {
@@ -185,7 +185,7 @@ app.post('/webhook', async (req, res) => {
                         const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n📝 *Plan Scope:* ${userSessions[from].projectScope}\n💰 *Calculated Price (incl GST):* ₹${finalPayable}`;
                         await sendWhatsAppMessage("917529839762", chatAdminNotification);
 
-                        // Dashboard lead insertion
+                        // Dashboard lead insertion with dynamic variables mapping
                         try {
                             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
                                 client_name: cleanName,
@@ -195,7 +195,7 @@ app.post('/webhook', async (req, res) => {
                                 email: cleanEmail
                             });
                         } catch (dashboardError) {
-                            console.error("Admin Dashboard Async Synchronization Failed:", dashboardError.message);
+                            console.error("Admin Dashboard Sync Failed:", dashboardError.message);
                         }
 
                         const uniqueProjectId = `SC-${Math.floor(10000 + Math.random() * 90000)}`;
@@ -398,7 +398,7 @@ app.post('/webhook', async (req, res) => {
                             if (userLang === 'EN') {
                                 replyText = "Hello! Welcome to *Shahid Creatives*. 🚀\nWe design premium agile web ecosystems.\n\nSelect a professional stack tier via number or category name:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI Business Automation & B2B Wholesale Demo**\n3️⃣ **🔥 Exclusive Launch Deal**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid**";
                             } else {
-                                replyText = "Hello! Welcome to *Shahid Creatives* (Ludhiana, Punjab). 🚀\nHum engineer karte hain high-performance websites aur AI automation frameworks.\n\nKoshish ko aage badhane ke liye niche se ek option text ya number reply kijiye:\n\n1️⃣ *Web Development Tiers* (Saare Standard Custom Packages)\n2️⃣ *AI Business Automation & B2B Wholesale Demo* (Bots & CRM Flows)\n3️⃣ *🔥 Exclusive Launch Deal* (Flat 20% OFF Status)\n4️⃣ *💳 Direct Booking & Token System* (₹999 Secure Path)\n5️⃣ *👤 Talk to Shahid* (Direct Consultation)";
+                                replyText = "Hello! Welcome to *Shahid Creatives* (Ludhiana, Punjab). 2026 🚀\nHum engineer karte hain high-performance websites aur AI automation frameworks.\n\nKoshish ko aage badhane ke liye niche se ek option text ya number reply kijiye:\n\n1️⃣ *Web Development Tiers* (Saare Standard Custom Packages)\n2️⃣ *AI Business Automation & B2B Wholesale Demo* (Bots & CRM Flows)\n3️⃣ *🔥 Exclusive Launch Deal* (Flat 20% OFF Status)\n4️⃣ *💳 Direct Booking & Token System* (₹999 Secure Path)\n5️⃣ *👤 Talk to Shahid* (Direct Consultation)";
                             }
                             return sendWhatsAppMessage(from, replyText);
                         }

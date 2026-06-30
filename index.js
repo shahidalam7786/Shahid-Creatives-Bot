@@ -113,18 +113,22 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // 🎯 STATE 1: COLLECT IDENTITY (OPTION 5 -> C PIPELINE)
+                    // 🎯 STATE 1: COLLECT IDENTITY (DEEP DETAILED EXPLORATION QUESTIONNAIRE)
                     if (currentStep === 'collect_consultation_identity') {
                         userSessions[from].step = 'collect_custom_query_and_time'; 
                         let cleanName = rawText.split('\n')[0].split(',')[0].trim();
                         userSessions[from].clientName = cleanName;
 
-                        return sendWhatsAppMessage(from, (userLang === 'EN')
-                            ? `Thank you *${cleanName}*! 🙏\n\nNow, please share your brief **Website or AI Automation Requirements** below to finalize the strategy blueprint.`
-                            : `Thank you *${cleanName}*! 🙏\n\nAb kripya agle message mein netizens apni brief **Website/AI Automation Requirement** likh kar bhejien taaki hum aapki call ke liye puri strategy ready rakh sakein.`);
+                        let descriptivePrompt = "";
+                        if (userLang === 'EN') {
+                            descriptivePrompt = `Thank you *${cleanName}*! 🙏\n\nTo lock a high-converting strategy blueprint, please share your goals in the next reply:\n\n🌐 **1. Website Development:**\nWhich dynamic plan fits your vision? (Landing Page, Corporate Layout, or Full E-commerce Store?)\n\n🤖 **2. AI Automation Goals:**\nWhat precise processes do you want to automate? (Lead capture systems, Custom CRM workflows, or Auto Sheet Database logging?)`;
+                        } else {
+                            descriptivePrompt = `Thank you *${cleanName}*! 🙏\n\nStrategy call ko 100% efficient banane ke liye, kripya agle message mein niche di gayi details batayein:\n\n🌐 **1. Website Development:**\nAap kis tarah ka plan model ya scope dekh rahe hain? (Landing Page, Corporate Layout Showcase, ya Product Selling E-commerce Store?)\n\n🤖 **2. AI Automation Goals:**\nAapko business architecture me kya karwana hai? (Auto Lead Generation system, Automated CRM follow-ups, ya custom Google Sheets sync workflows?)`;
+                        }
+                        return sendWhatsAppMessage(from, descriptivePrompt);
                     }
 
-                    // 🎯 STATE 2: DISPATCH CUSTOM QUERY & TIME TO ADMIN AND FIREBASE LOGS (FIXED ENDPOINT)
+                    // 🎯 STATE 2: DISPATCH CUSTOM QUERY & TIME TO ADMIN AND FIREBASE LOGS
                     if (currentStep === 'collect_custom_query_and_time') {
                         userSessions[from].step = 'post_registration';
                         const cleanName = userSessions[from].clientName;
@@ -133,17 +137,17 @@ app.post('/webhook', async (req, res) => {
                         const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n📝 *Custom Time & Query:* "${rawText}"\n\n🤖 *Status:* Live details captured securely!`;
                         await sendWhatsAppMessage("917529839762", comprehensiveAdminAlert);
 
-                        // 📲 Sync to Dashboard via refined adaptive endpoint
+                        // Sync to Dashboard via Adaptive API Endpoint
                         try {
                             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
                                 client_name: cleanName,
                                 whatsapp_number: from,
-                                project_scope: `Direct Consultation Slot: "${rawText}"`,
-                                calculated_price: 0, // Consultation calls hold 0 commercial base value
+                                project_scope: `Direct Consultation Slot Details: "${rawText}"`,
+                                calculated_price: 0,
                                 email: userSessions[from].clientEmail || "Not Provided"
                             });
                         } catch (apiErr) { 
-                            console.error("Admin Panel Sync Error (State 2 Consultation Pipeline):", apiErr.message); 
+                            console.error("Admin Panel Sync Error (State 2):", apiErr.message); 
                         }
 
                         let confirmationText = (userLang === 'EN')
@@ -301,14 +305,17 @@ app.post('/webhook', async (req, res) => {
                     if (currentStep === 'awaiting_consultation_slot') {
                         if (userText === 'a' || userText.includes("today") || userText.includes("aaj") || userText.includes("5")) {
                             userSessions[from].step = 'collect_consultation_identity'; 
+                            userSessions[from].projectScope = "Direct Consultation Slot: Aaj hi Shaam 5:00 Baje";
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: Aaj hi Shaam 5:00 Baje`);
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍️ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍️ *Apna profile register karein:* Kripya apna *Full Name* aur *Email ID* reply mein bhejien.");
                         } else if (userText === 'b' || userText.includes("tomorrow") || userText.includes("kal") || userText.includes("12")) {
                             userSessions[from].step = 'collect_consultation_identity'; 
+                            userSessions[from].projectScope = "Direct Consultation Slot: Kal Dopahar 12:00 Baje";
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: Kal Dopahar 12:00 Baje`);
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍️ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍️ *Apna profile register karein:* Kripya apna *Full Name* aur *Email ID* reply mein bhejien.");
                         } else if (userText === 'c' || userText.includes("custom") || userText.includes("time") || userText.includes("mere")) {
                             userSessions[from].step = 'collect_consultation_identity';
+                            userSessions[from].projectScope = "Direct Consultation Slot: Custom Time Input Required";
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍️ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍️ *Apna profile register karein:* Kripya apna *Full Name* aur *Email ID* reply mein bhejien.");
                         }
                     }
@@ -362,7 +369,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, clientReply);
                     }
 
-                    // 🎯 STATE 8: CORE ENGINE - HYBRID GLOBAL PARSER WITH FULL KEYWORD INTERCEPTIONS
+                    // 🎯 STATE 8: CORE ENGINE - HYBRID GLOBAL PARSER
                     if (currentStep === 'welcome' || currentStep === 'main_menu') {
                         userSessions[from].step = 'main_menu';
                         

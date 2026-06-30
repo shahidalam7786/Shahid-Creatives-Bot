@@ -138,7 +138,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, confirmationText);
                     }
 
-                    // 🎯 STATE 3: INBOUND SEQUENCE - DETAILS ACQUISITION (Fallback or raw logs)
+                    // 🎯 STATE 3: INBOUND SEQUENCE - DETAILS ACQUISITION (Fallback)
                     if (currentStep === 'collect_details') {
                         userSessions[from].projectScope = rawText;
                         userSessions[from].step = 'ask_name_email';
@@ -185,7 +185,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, replyText);
                     }
 
-                    // 🎯 STATE 5: INTERCEPTING MENU CHOICES FOR 1-5 REQUIREMENT FLOW
+                    // 🎯 STATE 5: INTERCEPTING MENU CHOICES FOR WEBSITE ACTION FROM LEAD AD INTERCEPTIONS
                     if (currentStep === 'awaiting_website_action') {
                         if (userText === '1') {
                             userSessions[from].step = 'process_requirement_menu';
@@ -200,7 +200,7 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // 🎯 STATE 5.1: INTERCEPTING SUB-MENU OPTIONS FROM WEB (1-5)
+                    // 🎯 STATE 5.1: PROCESS WEB REQUIRED SELECTION (ASCENDING STRUCTURE MAP)
                     if (currentStep === 'process_requirement_menu') {
                         const validSelections = ['1', '2', '3', '4', '5'];
                         if (validSelections.includes(userText)) {
@@ -226,7 +226,7 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // 🎯 STATE 5.2: NEW NUMBER-WISE INTERACTIVE MENU FOR AUTOMATION PIPELINE (MAIN MENU -> OPTION 2)
+                    // 🎯 STATE 5.2: PROCESS AUTOMATION REQ SELECTION
                     if (currentStep === 'process_automation_menu') {
                         const validAutomationSelections = ['1', '2', '3'];
                         if (validAutomationSelections.includes(userText)) {
@@ -321,15 +321,15 @@ app.post('/webhook', async (req, res) => {
                                 ? "Please select what you want to build today by replying with the option number (**1 to 5**):\n\n1️⃣ WhatsApp Chatbot ($110)\n2️⃣ Landing Page ($99)\n3️⃣ Business Website ($299)\n4️⃣ E-commerce Website ($599)\n5️⃣ Custom Software (Tailored)"
                                 : "Kripya select kijiye ki aap kya banwana chahte hain, reply mein sirf number (**1 se 5**) likhein:\n\n1️⃣ **WhatsApp AI Chatbot & Automation** (Base: ₹8,713)\n2️⃣ **Landing Page/Funnel** (Base: ₹12,300)\n3️⃣ **Business/Corporate Website** (Base: ₹25,500)\n4️⃣ **E-commerce Website** (Base: ₹47,500)\n5️⃣ **Custom Web Application / Software** (Base: ₹1,45,000+)";
                         } else if (userText === '2') {
-                            userSessions[from].step = 'process_automation_menu'; // REDIRECTED TO FRESH INTERACTIVE FLOW 
+                            userSessions[from].step = 'process_automation_menu'; 
                             replyText = (userLang === 'EN')
                                 ? "🤖 **AI Business Automation Hub**\nPlease reply with an option number (**1 to 3**):\n\n1️⃣ WhatsApp Bot & Lead Sync ($110)\n2️⃣ Custom CRM Workflow Hub ($220)\n3️⃣ Enterprise AI Suite (Tailored)\n\n📲 *Live Wholesale B2B Automation Demo:* https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo"
                                 : "🤖 **AI Business Automation & Live Demo:**\nKripya niche diye gaye list mein se ek option number (**1 se 3**) reply kijiye:\n\n1️⃣ **WhatsApp Bot & Lead Sync** (Base: ₹8,713)\n2️⃣ **Custom CRM Workflow Hub** (Base: ₹18,000)\n3️⃣ **Enterprise AI Suite** (Custom Architecture)\n\n📲 *Live Wholesale B2B Automation Demo Link:* https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo";
                         } else if (userText === '3') {
-                            userSessions[from].step = 'collect_details';
+                            userSessions[from].step = 'process_requirement_menu'; // STREAMLINED DIRECTLY TO PRICE LIST
                             replyText = (userLang === 'EN')
-                                ? "🔥 *Exclusive Global Launch Offer!* 🔥\nCoupon code **LAUNCH20** linked! Secures a **Flat 20% OFF** discount on final project invoice bill.\n\n👉 Reply with your **Name and Project Goal** right now to tag your discount code!"
-                                : "🔥 *Exclusive Launch Offer!* 🔥\nMubarak ho! Coupon code **LAUNCH20** active kar diya hai. Secure a **Flat 20% Discount** on your project profile!\n\n👉 Is discount code ko lock karne ke liye niche apna **Name aur Project Type** likh kar bhejien.";
+                                ? "🔥 *Exclusive Launch Offer Active!* (Flat 20% OFF Code Applied)\n\nPlease select your project requirement number (1 to 5) to secure your discounted slot:\n\n1️⃣ WhatsApp Chatbot ($110)\n2️⃣ Landing Page ($99)\n3️⃣ Business Website ($299)\n4️⃣ E-commerce Website ($599)\n5️⃣ Custom Software (Tailored)"
+                                : "🔥 *Exclusive Launch Offer Active!* (Flat 20% OFF Coupon apply kar diya gaya hai)\n\nAap jis requirement par discount lock karna chahte hain, kripya uska number (**1 se 5**) reply kijiye:\n\n1️⃣ **WhatsApp AI Chatbot & Automation** (Base: ₹8,713)\n2️⃣ **Landing Page/Funnel** (Base: ₹12,300)\n3️⃣ **Business/Corporate Website** (Base: ₹25,500)\n4️⃣ **E-commerce Website** (Base: ₹47,500)\n5️⃣ **Custom Web Application / Software** (Base: ₹1,45,000+)";
                         } else if (userText === '4') {
                             userSessions[from].step = 'collect_details';
                             replyText = (userLang === 'EN')

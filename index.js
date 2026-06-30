@@ -186,30 +186,56 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, replyText);
                     }
 
-                    // 🎯 STATE 5: META ADS LEAD CAPTURE LINKS REDIRECTING (OPTIONS 1 OR 2)
+                    // 🎯 STATE 5: INTERCEPTING META/MENU CHOICES AND PRE-QUALIFYING 1-5 REQUIREMENT MENUS
                     if (currentStep === 'awaiting_website_action') {
                         if (userText === '1') {
-                            userSessions[from].step = 'completed';
+                            userSessions[from].step = 'process_requirement_menu';
+                            let requirementPrompt = (userLang === 'EN')
+                                ? "Perfect! Let's lock your structural goal first. 🚀\n\nPlease select what you want to build today by replying with the option number (**1 to 5**):\n\n1️⃣ E-commerce Website (Online Store)\n2️⃣ Business/Corporate Website (Brand Showcase)\n3️⃣ Landing Page/Funnel (Single Page)\n4️⃣ WhatsApp AI Chatbot & Automation\n5️⃣ Custom Web Application / Software"
+                                : "Perfect! Pehle aapki structural requirement lock kar lete hain. 🚀\n\nNiche diye gaye options mein se koi ek number (**1 se 5**) reply kijiye:\n\n1️⃣ E-commerce Website (Online Store)\n2️⃣ Business/Corporate Website (Brand Showcase)\n3️⃣ Landing Page/Funnel (Single Page)\n4️⃣ WhatsApp AI Chatbot & Automation\n5️⃣ Custom Web Application / Software";
+                            return sendWhatsAppMessage(from, requirementPrompt);
+                        } else if (userText === '2') {
+                            userSessions[from].step = 'post_registration';
+                            let replyText = (userLang === 'EN') ? "👤 Perfect! Shahid will connect with you shortly for a strategy sync call." : "👤 Perfect! Shahid bhai bohot jald aapke sath strategy call par connect karenge. Get ready to launch! 🚀";
+                            return sendWhatsAppMessage(from, replyText);
+                        }
+                    }
+
+                    // 🎯 STATE 5.5: DYNAMIC INTAKE GATEWAY FOR DYNAMIC CHOICES 1-5
+                    if (currentStep === 'process_requirement_menu') {
+                        const validSelections = ['1', '2', '3', '4', '5'];
+                        if (validSelections.includes(userText)) {
+                            userSessions[from].step = 'completed'; // Proceeding directly to dynamic checkouts
+                            let dynamicCategory = "";
+                            if (userText === '1') dynamicCategory = "E-commerce Website (Online Store)";
+                            else if (userText === '2') dynamicCategory = "Business/Corporate Website (Brand Showcase)";
+                            else if (userText === '3') dynamicCategory = "Landing Page/Funnel (Single Page Lead Gen)";
+                            else if (userText === '4') dynamicCategory = "WhatsApp AI Chatbot & Automation";
+                            else if (userText === '5') dynamicCategory = "Custom Web Application / Software";
+
+                            userSessions[from].projectScope = dynamicCategory;
+
                             const uniqueProjectId = `SC-${Math.floor(10000 + Math.random() * 90000)}`;
                             const encodedName = encodeURIComponent(userSessions[from].clientName);
                             const encodedEmail = encodeURIComponent(userSessions[from].clientEmail || "");
-                            const encodedPlan = encodeURIComponent(userSessions[from].projectScope);
+                            const encodedPlan = encodeURIComponent(dynamicCategory);
                             
                             let replyText = "";
                             if (userLang === 'EN') {
                                 const tokenAmountUSD = "49";
                                 const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountUSD}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
-                                replyText = `🎉 *Excellent Choice!* Your data is validated. 🤝\n\nClick below to clear your **Token Booking ($49)**:\n\n🔗 *Pay Securely Here:* ${dynamicPaymentLink}`;
+                                replyText = `🎉 *Excellent Choice!* Requirement logged as *${dynamicCategory}*. 🤝\n\nClick below to clear your **Token Booking ($49)** & secure launch offer:\n\n🔗 *Pay Securely Here:* ${dynamicPaymentLink}`;
                             } else {
                                 const tokenAmountINR = "999";
                                 const dynamicPaymentLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
-                                replyText = `Thank you, details received! 🤝\n\n🔗 *Direct Pay Gateway Link:* ${dynamicPaymentLink}`;
+                                replyText = `Mubarak ho! Aapki requirement *${dynamicCategory}* register ho gayi hai! 🤝\n\nNiche diye gaye link se **₹999 Token Booking** complete karke flat 20% discount slot lock karein:\n\n🔗 *Direct Pay Gateway Link:* ${dynamicPaymentLink}`;
                             }
                             return sendWhatsAppMessage(from, replyText);
-                        } else if (userText === '2') {
-                            userSessions[from].step = 'post_registration';
-                            let replyText = (userLang === 'EN') ? "👤 Perfect! Shahid will connect with you shortly for a strategy sync call." : "👤 Perfect! Shahid bhai bohot jald aapke sath strategy call par connect karenge. Get ready to launch! 🚀";
-                            return sendWhatsAppMessage(from, replyText);
+                        } else {
+                            let fallbackMsg = (userLang === 'EN')
+                                ? "❌ Invalid choice. Please reply with a number from *1 to 5*."
+                                : "❌ Galat number. Kripya sirf *1 se 5* ke beech ka koi ek number reply kijiye.";
+                            return sendWhatsAppMessage(from, fallbackMsg);
                         }
                     }
 
@@ -278,10 +304,10 @@ app.post('/webhook', async (req, res) => {
                     }
 
                     if (userText === '1') {
-                        userSessions[from].step = 'collect_details';
+                        userSessions[from].step = 'process_requirement_menu'; // Changed to requirement process map
                         replyText = (userLang === 'EN')
-                            ? "💻 *Shahid Creatives - Premium Web Tiers:*\n• 💼 *Starter Business Hub* ($299+)\n• 🛒 *Global E-commerce Engine* ($599)\n• 🚀 *Custom SaaS Enterprise Portal* ($1,750+)\n\n👉 Please reply with your preferred **Plan Name or Custom Specifications**!"
-                            : "💻 *Shahid Creatives - Web Development Tiers:*\n• 📄 *Starter Plan* (Base Price: ₹8,713)\n• 💼 *Basic Small Business* (Base Price: ₹12,300)\n• 🌟 *Starter Business Hub* (Base Price: ₹25,500)\n• 🛒 *E-commerce Hub* (Base Price: ₹47,500)\n• 🚀 *Custom SaaS App* (Base Price: ₹1,45,000+)\n\n👉 Aap kaun sa package choose karna chahte hain? Niche specifications reply mein share kijiye!";
+                            ? "Please select what you want to build today by replying with the option number (**1 to 5**):\n\n1️⃣ E-commerce Website\n2️⃣ Business Website\n3️⃣ Landing Page\n4️⃣ WhatsApp Chatbot\n5️⃣ Custom Software"
+                            : "Kripya select kijiye ki aap kya banwana chahte hain, reply mein sirf number (**1 se 5**) likhein:\n\n1️⃣ E-commerce Website (Online Store)\n2️⃣ Business/Corporate Website (Brand Showcase)\n3️⃣ Landing Page/Funnel (Single Page)\n4️⃣ WhatsApp AI Chatbot & Automation\n5️⃣ Custom Web Application / Software";
                     } else if (userText === '2') {
                         userSessions[from].step = 'collect_details';
                         replyText = (userLang === 'EN')
@@ -312,7 +338,7 @@ app.post('/webhook', async (req, res) => {
 });
 
 async function sendWhatsAppMessage(to, text) {
-    // 🔒 TOKENS SECURED VIA RENDER ENVIRONMENT ENVIRONMENT VARIABLES
+    // 🔒 TOKENS SECURED VIA RENDER ENVIRONMENT VARIABLES
     const SECURED_ACCESS_TOKEN = process.env.WHATSAPP_TOKEN; 
     const DEFAULT_PHONE_NUMBER_ID = "1202984902891472"; 
     try {

@@ -46,6 +46,28 @@ app.get('/', (req, res) => {
     res.status(200).send("Shahid Creatives Bot Server is Live on Render with Secured Credentials! 🚀");
 });
 
+// 🟢 FIXED: Missing Route Handler for Client Credentials & Token Logs Delivery
+app.post('/send-client-credentials', async (req, res) => {
+    try {
+        const payload = req.body;
+        console.log("Captured Credentials Packet via API Route:", payload);
+        
+        // Auto Sync dynamically directly to your responsive core backend panel
+        await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
+            client_name: payload.name || payload.client_name || "API Inbound Portal Lead",
+            whatsapp_number: payload.phone || payload.whatsapp_number || "0000000000",
+            project_scope: payload.plan || payload.project_scope || "Credentials Sync Event",
+            calculated_price: payload.price || payload.calculated_price || 0,
+            email: payload.email || "Not Provided"
+        });
+
+        res.status(200).json({ success: true, message: "Credentials Packet routed securely to Admin Dashboard Log Framework!" });
+    } catch (err) {
+        console.error("Error Inside Credentials Packet Routing Engine:", err.message);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 // Meta Webhook Verification
 app.get('/webhook', (req, res) => {
     const VERIFY_TOKEN = "shahid_creatives_secret_token_123";
@@ -398,7 +420,7 @@ app.post('/webhook', async (req, res) => {
                             if (userLang === 'EN') {
                                 replyText = "Hello! Welcome to *Shahid Creatives*. 🚀\nWe design premium agile web ecosystems.\n\nSelect a professional stack tier via number or category name:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI Business Automation & B2B Wholesale Demo**\n3️⃣ **🔥 Exclusive Launch Deal**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid**";
                             } else {
-                                replyText = "Hello! Welcome to *Shahid Creatives* (Ludhiana, Punjab). 2026 🚀\nHum engineer karte hain high-performance websites aur AI automation frameworks.\n\nKoshish ko aage badhane ke liye niche se ek option text ya number reply kijiye:\n\n1️⃣ *Web Development Tiers* (Saare Standard Custom Packages)\n2️⃣ *AI Business Automation & B2B Wholesale Demo* (Bots & CRM Flows)\n3️⃣ *🔥 Exclusive Launch Deal* (Flat 20% OFF Status)\n4️⃣ *💳 Direct Booking & Token System* (₹999 Secure Path)\n5️⃣ *👤 Talk to Shahid* (Direct Consultation)";
+                                replyText = "Hello! Welcome to *Shahid Creatives* (Ludhiana, Punjab). 🚀\nHum engineer karte hain high-performance websites aur AI automation frameworks.\n\nKoshish ko aage badhane ke liye niche se ek option text ya number reply kijiye:\n\n1️⃣ *Web Development Tiers* (Saare Standard Custom Packages)\n2️⃣ *AI Business Automation & B2B Wholesale Demo* (Bots & CRM Flows)\n3️⃣ *🔥 Exclusive Launch Deal* (Flat 20% OFF Status)\n4️⃣ *💳 Direct Booking & Token System* (₹999 Secure Path)\n5️⃣ *👤 Talk to Shahid* (Direct Consultation)";
                             }
                             return sendWhatsAppMessage(from, replyText);
                         }
@@ -440,6 +462,7 @@ app.post('/webhook', async (req, res) => {
 
 async function sendWhatsAppMessage(to, text) {
     const SECURED_ACCESS_TOKEN = process.env.WHATSAPP_TOKEN; 
+    // 🟢 UPDATED: This dynamic ID fallback is aligned securely with active app token authorizations
     const DEFAULT_PHONE_NUMBER_ID = "1202984902891472"; 
     try {
         await axios({
@@ -448,7 +471,9 @@ async function sendWhatsAppMessage(to, text) {
             data: { messaging_product: "whatsapp", to: to, type: "text", text: { body: text } },
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${SECURED_ACCESS_TOKEN}` }
         });
-    } catch (e) { console.error("WhatsApp API dispatch error."); }
+    } catch (e) { 
+        console.error("WhatsApp API dispatch error:", e.response ? e.response.data : e.message); 
+    }
 }
 
 const PORT = process.env.PORT || 3000;

@@ -26,6 +26,9 @@ function getBasePriceByPlan(planScope) {
     if (text.includes("landing page") || text.includes("funnel") || text.includes("single page")) {
         return "12300";
     }
+    if (text.includes("crm workflow") || text.includes("custom crm") || text.includes("workflow hub")) {
+        return "18000";
+    }
     if (text.includes("starter business") || text.includes("business hub") || text.includes("corporate") || text.includes("brand growth")) {
         return "25500";
     }
@@ -34,9 +37,6 @@ function getBasePriceByPlan(planScope) {
     }
     if (text.includes("saas") || text.includes("app") || text.includes("software") || text.includes("enterprise") || text.includes("portal")) {
         return "145000";
-    }
-    if (text.includes("crm") || text.includes("workflow") || text.includes("sheet database")) {
-        return "18000";
     }
     return "8713"; 
 }
@@ -101,11 +101,11 @@ app.post('/webhook', async (req, res) => {
                     const userLang = userSessions[from].lang;
                     const currentStep = userSessions[from].step;
 
-                    // 🎯 STATE 0: COURTESY REPLIES RESET BUFFER (FIXED LOOP INTERCEPTOR)
+                    // 🎯 STATE 0: COURTESY REPLIES RESET BUFFER
                     if (currentStep === 'completed' || currentStep === 'post_registration') {
                         const courtesyTriggers = ['thanks', 'thank you', 'ok', 'okay', 'ji', 'shukriya', 'thx'];
                         if (courtesyTriggers.includes(userText)) {
-                            userSessions[from] = null; // Kill session data safely
+                            userSessions[from] = null; 
                             let courtesyReply = (userLang === 'EN')
                                 ? "You're most welcome! 👍 Glad to help. Type 'Menu' anytime if you want to explore again."
                                 : "Aapka swagat hai! 👍 Milte hain aapse bohot jald discovery call par. Dobara shuru karne ke liye kisi bhi waqt 'Menu' ya 'Hi' bheinje.";
@@ -148,9 +148,9 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, replyText);
                     }
 
-                    // 🎯 STATE 4: INBOUND CHAT REGISTRATION COMPLETED (FINESSED WITH GATEWAY)
+                    // 🎯 STATE 4: INBOUND CHAT REGISTRATION COMPLETED
                     if (currentStep === 'ask_name_email') {
-                        userSessions[from].step = 'completed'; // Stays in completed stage until reset trigger
+                        userSessions[from].step = 'completed'; 
                         let cleanName = rawText.split('\n')[0].split(',')[0].trim();
                         let cleanEmail = "Not Provided";
                         
@@ -185,7 +185,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, replyText);
                     }
 
-                    // 🎯 STATE 5: INTERCEPTING MENU CHOICES FOR 1-5 REQUIREMENT FLOW WITH ASCENDING PRICES
+                    // 🎯 STATE 5: INTERCEPTING MENU CHOICES FOR 1-5 REQUIREMENT FLOW
                     if (currentStep === 'awaiting_website_action') {
                         if (userText === '1') {
                             userSessions[from].step = 'process_requirement_menu';
@@ -200,7 +200,7 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // 🎯 STATE 5.5: PROCESS REQ SELECTION -> ROUTE TO DETAILS DISCOVERY (ASCENDING STRUCTURE MAP)
+                    // 🎯 STATE 5.1: INTERCEPTING SUB-MENU OPTIONS FROM WEB (1-5)
                     if (currentStep === 'process_requirement_menu') {
                         const validSelections = ['1', '2', '3', '4', '5'];
                         if (validSelections.includes(userText)) {
@@ -222,6 +222,30 @@ app.post('/webhook', async (req, res) => {
                             let fallbackMsg = (userLang === 'EN')
                                 ? "❌ Invalid choice. Please reply with a number from *1 to 5*."
                                 : "❌ Galat number. Kripya sirf *1 se 5* ke beech ka koi ek number reply kijiye.";
+                            return sendWhatsAppMessage(from, fallbackMsg);
+                        }
+                    }
+
+                    // 🎯 STATE 5.2: NEW NUMBER-WISE INTERACTIVE MENU FOR AUTOMATION PIPELINE (MAIN MENU -> OPTION 2)
+                    if (currentStep === 'process_automation_menu') {
+                        const validAutomationSelections = ['1', '2', '3'];
+                        if (validAutomationSelections.includes(userText)) {
+                            userSessions[from].step = 'ask_name_email';
+                            let dynamicCategory = "";
+                            if (userText === '1') dynamicCategory = "WhatsApp AI Chatbot & Lead Sync";
+                            else if (userText === '2') dynamicCategory = "Custom CRM Workflow Hub";
+                            else if (userText === '3') dynamicCategory = "Enterprise AI Suite (Tailored Architecture)";
+
+                            userSessions[from].projectScope = dynamicCategory;
+
+                            let askDetailsText = (userLang === 'EN')
+                                ? `Excellent Selection: *${dynamicCategory}*. 🤖 📝 Kindly reply with your **Full Name** and **Email Address** to proceed.`
+                                : `Excellent Selection! Aapne *${dynamicCategory}* choose kiya hai. 🤖 📝 Ab kripya apna **Full Name** aur **Email ID** reply mein bheinje taaki aapka discount tracking slot link kiya ja sake.`;
+                            return sendWhatsAppMessage(from, askDetailsText);
+                        } else {
+                            let fallbackMsg = (userLang === 'EN')
+                                ? "❌ Invalid selection. Please reply with a number from *1 to 3*."
+                                : "❌ Galat number. Kripya list mein se sirf *1, 2 ya 3* hi likh kar reply karein.";
                             return sendWhatsAppMessage(from, fallbackMsg);
                         }
                     }
@@ -297,10 +321,10 @@ app.post('/webhook', async (req, res) => {
                                 ? "Please select what you want to build today by replying with the option number (**1 to 5**):\n\n1️⃣ WhatsApp Chatbot ($110)\n2️⃣ Landing Page ($99)\n3️⃣ Business Website ($299)\n4️⃣ E-commerce Website ($599)\n5️⃣ Custom Software (Tailored)"
                                 : "Kripya select kijiye ki aap kya banwana chahte hain, reply mein sirf number (**1 se 5**) likhein:\n\n1️⃣ **WhatsApp AI Chatbot & Automation** (Base: ₹8,713)\n2️⃣ **Landing Page/Funnel** (Base: ₹12,300)\n3️⃣ **Business/Corporate Website** (Base: ₹25,500)\n4️⃣ **E-commerce Website** (Base: ₹47,500)\n5️⃣ **Custom Web Application / Software** (Base: ₹1,45,000+)";
                         } else if (userText === '2') {
-                            userSessions[from].step = 'collect_details';
+                            userSessions[from].step = 'process_automation_menu'; // REDIRECTED TO FRESH INTERACTIVE FLOW 
                             replyText = (userLang === 'EN')
-                                ? "🤖 *AI Business Automation Hub:*\n• 🤖 *Enterprise Custom AI Hub* ($299+)\n📲 *B2B Wholesale Live Automation Demo:*\n🔗 https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo\n\n👉 Reply with your business workflow or automation goal to initiate development!"
-                                : "🤖 *AI Business Automation & Live Demo:*\n• 🤖 *WhatsApp Bot & Lead Sync* (Base Price: ₹8,713)\n• 🏢 *Custom CRM Workflow Hub* (Base Price: ₹18,000)\n• 🚀 *Enterprise AI Suite* (Tailored Pricing)\n📲 *B2B Wholesale Live Automation Demo:*\n🔗 https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo\n\n👉 Apne automation requirements niche reply mein batayein!";
+                                ? "🤖 **AI Business Automation Hub**\nPlease reply with an option number (**1 to 3**):\n\n1️⃣ WhatsApp Bot & Lead Sync ($110)\n2️⃣ Custom CRM Workflow Hub ($220)\n3️⃣ Enterprise AI Suite (Tailored)\n\n📲 *Live Wholesale B2B Automation Demo:* https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo"
+                                : "🤖 **AI Business Automation & Live Demo:**\nKripya niche diye gaye list mein se ek option number (**1 se 3**) reply kijiye:\n\n1️⃣ **WhatsApp Bot & Lead Sync** (Base: ₹8,713)\n2️⃣ **Custom CRM Workflow Hub** (Base: ₹18,000)\n3️⃣ **Enterprise AI Suite** (Custom Architecture)\n\n📲 *Live Wholesale B2B Automation Demo Link:* https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo";
                         } else if (userText === '3') {
                             userSessions[from].step = 'collect_details';
                             replyText = (userLang === 'EN')

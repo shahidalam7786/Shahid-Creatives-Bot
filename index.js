@@ -113,15 +113,15 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // 🎯 STATE 1: COLLECT IDENTITY (OPTION 5 -> C PIPELINE)
+                    // 🎯 STATE 1: COLLECT IDENTITY (OPTION 5 -> C PIPELINE) - REPETITIVE TEXT FIXED HERE
                     if (currentStep === 'collect_consultation_identity') {
                         userSessions[from].step = 'collect_custom_query_and_time'; 
                         let cleanName = rawText.split('\n')[0].split(',')[0].trim();
                         userSessions[from].clientName = cleanName;
 
                         return sendWhatsAppMessage(from, (userLang === 'EN')
-                            ? `Thank you *${cleanName}*! 🙏\n\nNow, please share your **Project Requirement** along with your **Preferred Custom Time** for the strategy call.`
-                            : `Thank you *${cleanName}*! 🙏\n\nAb kripya agle message mein apni **Website/Automation Requirement** aur sath hi apna **Preferred Custom Time** (jab aap call par baat karna chahte hain) ek sath likh kar bhejien.`);
+                            ? `Thank you *${cleanName}*! 🙏\n\nNow, please share your brief **Website or AI Automation Requirements** below to finalize the strategy blueprint.`
+                            : `Thank you *${cleanName}*! 🙏\n\nAb kripya agle message mein apni brief **Website/AI Automation Requirement** likh kar bhejien taaki hum aapki call ke liye puri strategy ready rakh sakein.`);
                     }
 
                     // 🎯 STATE 2: DISPATCH CUSTOM QUERY & TIME TO ADMIN SHAHID
@@ -133,8 +133,8 @@ app.post('/webhook', async (req, res) => {
                         await sendWhatsAppMessage("917529839762", comprehensiveAdminAlert);
 
                         let confirmationText = (userLang === 'EN')
-                            ? `✅ *Booking Profile Complete!* \n\nThank you *${cleanName}*! Your custom timing and specifications have been securely routed to Shahid. We will connect with you shortly! 🚀`
-                            : `✅ *Booking Profile Complete!* \n\nThank you *${cleanName}*! Aapka custom timing aur requirement details Shahid bhai tak pahunch gaya hai. Hamari team aapse jald hi raabta karegi! 🚀`;
+                            ? `✅ *Booking Profile Complete!* \n\nThank you *${cleanName}*! Your specifications have been securely routed to Shahid. We will connect with you shortly! 🚀`
+                            : `✅ *Booking Profile Complete!* \n\nThank you *${cleanName}*! Aapka requirement details Shahid bhai tak pahunch gaya hai. Hamari team aapse jald hi raabta karegi! 🚀`;
                         return sendWhatsAppMessage(from, confirmationText);
                     }
 
@@ -253,13 +253,13 @@ app.post('/webhook', async (req, res) => {
                     // 🎯 STATE 6: CONSULTATION FIXED SLOTS ROUTING (A, B, C)
                     if (currentStep === 'awaiting_consultation_slot') {
                         if (userText === 'a' || userText.startsWith('a ') || userText.startsWith('a,')) {
-                            userSessions[from].step = 'post_registration';
-                            await sendWhatsAppMessage("917529839762", `🚨 *SLOT SELECTED!* 🚨\n📱 +${from}\n⏰ Chosen Slot: Aaj hi Shaam 5:00 Baje`);
-                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✅ *Slot Request Received!* Today 5 PM is locked." : "✅ *Slot Request Received!* Aaj Shaam 5 baje ka timing lock ho gaya hai.");
+                            userSessions[from].step = 'collect_consultation_identity'; // Forward to get name/email safely
+                            await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: Aaj hi Shaam 5:00 Baje`);
+                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍️ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍️ *Apna profile register karein:* Kripya apna *Full Name* aur *Email ID* reply mein bhejien.");
                         } else if (userText === 'b' || userText.startsWith('b ') || userText.startsWith('b,')) {
-                            userSessions[from].step = 'post_registration';
-                            await sendWhatsAppMessage("917529839762", `🚨 *SLOT SELECTED!* 🚨\n📱 +${from}\n⏰ Chosen Slot: Kal Dopahar 12:00 Baje`);
-                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✅ *Slot Request Received!* Tomorrow 12 PM is locked." : "✅ *Slot Request Received!* Kal dopahar 12 baje ka timing lock ho gaya hai.");
+                            userSessions[from].step = 'collect_consultation_identity'; // Forward to get name/email safely
+                            await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: Kal Dopahar 12:00 Baje`);
+                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍️ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍️ *Apna profile register karein:* Kripya apna *Full Name* aur *Email ID* reply mein bhejien.");
                         } else if (userText === 'c' || userText.startsWith('c ') || userText.startsWith('c,')) {
                             userSessions[from].step = 'collect_consultation_identity';
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍️ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍️ *Apna profile register karein:* Kripya apna *Full Name* aur *Email ID* reply mein bhejien.");

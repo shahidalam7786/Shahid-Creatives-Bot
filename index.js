@@ -200,7 +200,7 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // 🎯 STATE 5.1: UPGRADED DYNAMIC PROCESSOR FOR SUB-MENU (FUZZY LOGIC INSIDE KEYWORDS)
+                    // 🎯 STATE 5.1: UPGRADED SUB-MENU (FIXED `text` UNDEFINED COMPILATION ERROR)
                     if (currentStep === 'process_requirement_menu') {
                         let isMatchFound = false;
                         let dynamicCategory = "";
@@ -325,15 +325,15 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, clientReply);
                     }
 
-                    // 🎯 STATE 8: CORE ENGINE - HYBRID GLOBAL PARSER WITH FULL KEYWORD INTERCEPTIONS
+                    // 🎯 STATE 8: CORE ENGINE - HYBRID DYNAMIC PARSER (WITH EXTRA GRANULAR KEYWORD MAPPING)
                     if (currentStep === 'welcome' || currentStep === 'main_menu') {
                         userSessions[from].step = 'main_menu';
                         
                         let isCoreMatch = false;
                         let targetMenuRoute = userText;
 
-                        // Intent Parser Rules
-                        if (userText === '1' || userText.includes("web") || userText.includes("dev") || userText.includes("site") || userText.includes("website")) {
+                        // Intent Parser Extended Rules (Added custom, package, standard to option 1 hooks)
+                        if (userText === '1' || userText.includes("web") || userText.includes("dev") || userText.includes("site") || userText.includes("website") || userText.includes("package") || userText.includes("custom") || userText.includes("standard")) {
                             targetMenuRoute = '1';
                             isCoreMatch = true;
                         } else if (userText === '2' || userText.includes("automation") || userText.includes("bot") || userText.includes("demo") || userText.includes("crm")) {

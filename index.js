@@ -185,9 +185,11 @@ app.post('/webhook', async (req, res) => {
                         userSessions[from].step = 'post_registration';
                         const cleanName = userSessions[from].clientName;
 
+                        // Send WhatsApp Alert
                         const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n📝 *Custom Time & Query:* "${rawText}"\n\n🤖 *Status:* Live details captured securely!`;
                         await sendWhatsAppMessage("917529839762", comprehensiveAdminAlert);
 
+                        // Sync to Dashboard via Adaptive API Endpoint
                         try {
                             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
                                 client_name: cleanName,
@@ -235,6 +237,7 @@ app.post('/webhook', async (req, res) => {
                         const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n📝 *Plan Scope:* ${userSessions[from].projectScope}\n💰 *Calculated Price (incl GST):* ₹${finalPayable}`;
                         await sendWhatsAppMessage("917529839762", chatAdminNotification);
 
+                        // Dashboard lead insertion with dynamic variables mapping
                         try {
                             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
                                 client_name: cleanName,
@@ -280,7 +283,7 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // 🎯 STATE 5.1: UPGRADED DYNAMIC PROCESSOR FOR SUB-MENU (FUZZY LOGIC & STRICT CURRENCY SEPARATORS)
+                    // 🎯 STATE 5.1: PROCESSOR FOR SUB-MENU (FUZZY LOGIC INSIDE KEYWORDS)
                     if (currentStep === 'process_requirement_menu') {
                         let isMatchFound = false;
                         let dynamicCategory = "";
@@ -359,7 +362,6 @@ app.post('/webhook', async (req, res) => {
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍️ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍️ *Apna profile register karein:* Kripya apna *Full Name* aur *Email ID* reply mein bhejien.");
                         } else if (userText === 'b' || userText.includes("tomorrow") || userText.includes("kal") || userText.includes("12")) {
                             userSessions[from].step = 'collect_consultation_identity'; 
- Back-end param storage update
                             userSessions[from].projectScope = "Direct Consultation Slot: Kal Dopahar 12:00 Baje";
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: Kal Dopahar 12:00 Baje`);
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍️ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍️ *Apna profile register karein:* Kripya apna *Full Name* aur *Email ID* reply mein bhejien.");
@@ -370,7 +372,7 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // 🎯 STATE 7: META ADS INTAKE AD-SET INTERCEPTOR (FIXED PROMPT DISPATCH WITH STRICT STICKY ENGLISH ENVIRONMENT)
+                    // 🎯 STATE 7: META ADS INTAKE AD-SET INTERCEPTOR
                     if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate") || rawText.includes("Valuation: $")) {
                         if (userSessions[from].lastSubmitedTime && (Date.now() - userSessions[from].lastSubmitedTime < 60000)) { return; }
                         userSessions[from].lastSubmitedTime = Date.now();
@@ -398,7 +400,7 @@ app.post('/webhook', async (req, res) => {
                         userSessions[from].clientEmail = clientEmail;
                         userSessions[from].projectScope = projectScope;
                         userSessions[from].step = 'awaiting_website_action';
-                        userSessions[from].lang = 'EN'; // Lock down to Sticky English right here!
+                        userSessions[from].lang = 'EN'; 
 
                         const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail || 'Not Provided'}\n📝 *Plan Chosen:* ${projectScope}\n💰 *Base Valuation:* $${parsedBasePrice}`;
                         await sendWhatsAppMessage("917529839762", adminNotification);
@@ -413,7 +415,6 @@ app.post('/webhook', async (req, res) => {
                             });
                         } catch (err) { console.error("Meta Intake Dashboard sync err:", err.message); }
 
-                        // Strictly Fire pure English response for USD tracks
                         let clientReply = `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved.\n\n🔥 *Exclusive Reward Activated:* Launch code **LAUNCH20** secures a **Flat 20% OFF** discount!\n\nPlease reply with your choice number:\n\n1️⃣ **Book Token (Confirm Slot & Claim 20% OFF)**\n2️⃣ **Discuss Requirements (Schedule Strategy Call)**`;
                         
                         return sendWhatsAppMessage(from, clientReply);
@@ -503,5 +504,6 @@ async function sendWhatsAppMessage(to, text) {
     }
 }
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`ChatBot engine live on port ${PORT}`));
+// 🟢 FIXED PORT BINDING SCAN INTERCEPTOR FOR RENDER DEPLOYMENTS
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, '0.0.0.0', () => console.log(`ChatBot engine live on port ${PORT}`));

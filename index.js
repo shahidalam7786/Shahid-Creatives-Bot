@@ -46,13 +46,12 @@ app.get('/', (req, res) => {
     res.status(200).send("Shahid Creatives Bot Server is Live on Render with Secured Credentials! 🚀");
 });
 
-// 🟢 FIXED: Missing Route Handler for Client Credentials & Token Logs Delivery
+// 🟢 ROUTE HANDLER: Client Credentials Logs Delivery
 app.post('/send-client-credentials', async (req, res) => {
     try {
         const payload = req.body;
         console.log("Captured Credentials Packet via API Route:", payload);
         
-        // Auto Sync dynamically directly to your responsive core backend panel
         await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
             client_name: payload.name || payload.client_name || "API Inbound Portal Lead",
             whatsapp_number: payload.phone || payload.whatsapp_number || "0000000000",
@@ -64,6 +63,32 @@ app.post('/send-client-credentials', async (req, res) => {
         res.status(200).json({ success: true, message: "Credentials Packet routed securely to Admin Dashboard Log Framework!" });
     } catch (err) {
         console.error("Error Inside Credentials Packet Routing Engine:", err.message);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// 🟢 ROUTE HANDLER: Payment Reminders Dispatch Engine
+app.post('/send-payment-reminder', async (req, res) => {
+    try {
+        const payload = req.body;
+        console.log("Payment Reminder Request Received:", payload);
+
+        const clientPhone = payload.phone || payload.whatsapp_number;
+        const clientName = payload.name || payload.client_name || "Valued Client";
+        const projectName = payload.plan || payload.project_scope || "Your Project Slot";
+        const tokenAmount = payload.amount || "999";
+
+        if (!clientPhone) {
+            return res.status(400).json({ success: false, error: "Missing required client 'phone' parameter." });
+        }
+
+        const reminderMessage = `⚠️ *Payment Pending Reminder - Shahid Creatives* 🚀\n\nHello *${clientName}*,\n\nThis is a quick reminder regarding your slot confirmation booking for *${projectName}*.\n\nKindly complete your **₹${tokenAmount} Token Booking** slot lock parameter using your dynamic pay gateway dashboard link to avoid slot cancellation.\n\nIf you have already paid, kindly reply with 'Thanks' to update status. 👍`;
+
+        await sendWhatsAppMessage(clientPhone, reminderMessage);
+
+        res.status(200).json({ success: true, message: "Payment reminder notification triggered successfully!" });
+    } catch (err) {
+        console.error("Error Inside Payment Reminder Engine:", err.message);
         res.status(500).json({ success: false, error: err.message });
     }
 });
@@ -101,7 +126,7 @@ app.post('/webhook', async (req, res) => {
                     const userText = rawText.trim().toLowerCase();
                     
                     const isInternationalNumber = !from.startsWith("91");
-                    const isGlobalWebsiteTemplate = rawText.includes("Global USD") || rawText.includes("Worldwide") || rawText.includes("$");
+                    const isGlobalWebsiteTemplate = rawText.includes("Global USD") || rawText.includes("Worldwide") || rawText.includes("$") || rawText.includes("Valuation: $");
                     
                     // ⚡ Reset mechanism for fallback restart
                     const resetTriggers = ['hi', 'hello', 'menu', 'start', 'hey'];
@@ -120,6 +145,11 @@ app.post('/webhook', async (req, res) => {
                         };
                     }
                     
+                    // Dynamic Override if incoming payload strictly triggers USD markers
+                    if (isGlobalWebsiteTemplate) {
+                        userSessions[from].lang = 'EN';
+                    }
+
                     const userLang = userSessions[from].lang;
                     const currentStep = userSessions[from].step;
 
@@ -155,11 +185,9 @@ app.post('/webhook', async (req, res) => {
                         userSessions[from].step = 'post_registration';
                         const cleanName = userSessions[from].clientName;
 
-                        // Send WhatsApp Alert
                         const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n📝 *Custom Time & Query:* "${rawText}"\n\n🤖 *Status:* Live details captured securely!`;
                         await sendWhatsAppMessage("917529839762", comprehensiveAdminAlert);
 
-                        // Sync to Dashboard via Adaptive API Endpoint
                         try {
                             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
                                 client_name: cleanName,
@@ -207,7 +235,6 @@ app.post('/webhook', async (req, res) => {
                         const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n📝 *Plan Scope:* ${userSessions[from].projectScope}\n💰 *Calculated Price (incl GST):* ₹${finalPayable}`;
                         await sendWhatsAppMessage("917529839762", chatAdminNotification);
 
-                        // Dashboard lead insertion with dynamic variables mapping
                         try {
                             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
                                 client_name: cleanName,
@@ -253,7 +280,7 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // 🎯 STATE 5.1: UPGRADED DYNAMIC PROCESSOR FOR SUB-MENU (FUZZY LOGIC INSIDE KEYWORDS)
+                    // 🎯 STATE 5.1: UPGRADED DYNAMIC PROCESSOR FOR SUB-MENU (FUZZY LOGIC & STRICT CURRENCY SEPARATORS)
                     if (currentStep === 'process_requirement_menu') {
                         let isMatchFound = false;
                         let dynamicCategory = "";
@@ -332,6 +359,7 @@ app.post('/webhook', async (req, res) => {
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍️ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍️ *Apna profile register karein:* Kripya apna *Full Name* aur *Email ID* reply mein bhejien.");
                         } else if (userText === 'b' || userText.includes("tomorrow") || userText.includes("kal") || userText.includes("12")) {
                             userSessions[from].step = 'collect_consultation_identity'; 
+ Back-end param storage update
                             userSessions[from].projectScope = "Direct Consultation Slot: Kal Dopahar 12:00 Baje";
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: Kal Dopahar 12:00 Baje`);
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍️ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍️ *Apna profile register karein:* Kripya apna *Full Name* aur *Email ID* reply mein bhejien.");
@@ -342,8 +370,8 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // 🎯 STATE 7: META ADS INTAKE AD-SET INTERCEPTOR
-                    if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate")) {
+                    // 🎯 STATE 7: META ADS INTAKE AD-SET INTERCEPTOR (FIXED PROMPT DISPATCH WITH STRICT STICKY ENGLISH ENVIRONMENT)
+                    if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate") || rawText.includes("Valuation: $")) {
                         if (userSessions[from].lastSubmitedTime && (Date.now() - userSessions[from].lastSubmitedTime < 60000)) { return; }
                         userSessions[from].lastSubmitedTime = Date.now();
 
@@ -355,7 +383,7 @@ app.post('/webhook', async (req, res) => {
                         try {
                             const nameMatch = rawText.match(/(?:Client Name|👤[^:]*):\s*([^\n\r]+)/i);
                             const scopeMatch = rawText.match(/(?:Category Model|Model|Specifications[^:]*):\s*([^\n\r]+)/i);
-                            const priceMatch = rawText.match(/(?:Base Price|Price[^:]*):\s*([^\n\r]+)/i);
+                            const priceMatch = rawText.match(/(?:Base Price|Price|Valuation[^:]*):\s*([^\n\r]+)/i);
                             
                             if (nameMatch) clientName = nameMatch[1].split('\n')[0].split(',')[0].trim();
                             if (scopeMatch) projectScope = scopeMatch[1].replace(/[\*•\-]/g, '').trim();
@@ -370,8 +398,9 @@ app.post('/webhook', async (req, res) => {
                         userSessions[from].clientEmail = clientEmail;
                         userSessions[from].projectScope = projectScope;
                         userSessions[from].step = 'awaiting_website_action';
+                        userSessions[from].lang = 'EN'; // Lock down to Sticky English right here!
 
-                        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail || 'Not Provided'}\n📝 *Plan Chosen:* ${projectScope}\n💰 *Base Valuation:* ${isGlobalWebsiteTemplate ? '$' : '₹'}${parsedBasePrice}`;
+                        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail || 'Not Provided'}\n📝 *Plan Chosen:* ${projectScope}\n💰 *Base Valuation:* $${parsedBasePrice}`;
                         await sendWhatsAppMessage("917529839762", adminNotification);
 
                         try {
@@ -379,14 +408,13 @@ app.post('/webhook', async (req, res) => {
                                 client_name: clientName,
                                 whatsapp_number: from,
                                 project_scope: projectScope,
-                                calculated_price: calculateTotalPayable(parsedBasePrice),
+                                calculated_price: parsedBasePrice,
                                 email: clientEmail
                             });
                         } catch (err) { console.error("Meta Intake Dashboard sync err:", err.message); }
 
-                        let clientReply = (userLang === 'EN')
-                            ? `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved.\n\n🔥 *Exclusive Reward Activated:* Launch code **LAUNCH20** secures a **Flat 20% OFF** discount!\n\nPlease reply with your choice number:\n\n1️⃣ **Book Token (Confirm Slot & Claim 20% OFF)**\n2️⃣ **Discuss Requirements (Schedule Strategy Call)**`
-                            : `Thank you *${clientName}*! 🙏 Aapka data server par secure ho gaya hai.\n\n🔥 *Exclusive Offer Activated:* Coupon code **LAUNCH20** (Flat 20% OFF) active ho gaya hai!\n\nNiche diye gaye number se reply kijiye:\n\n1️⃣ **Token Book Karein (Slot Confirm & Claim 20% OFF)**\n2️⃣ **Discuss Requirements (Strategy Call)**`;
+                        // Strictly Fire pure English response for USD tracks
+                        let clientReply = `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved.\n\n🔥 *Exclusive Reward Activated:* Launch code **LAUNCH20** secures a **Flat 20% OFF** discount!\n\nPlease reply with your choice number:\n\n1️⃣ **Book Token (Confirm Slot & Claim 20% OFF)**\n2️⃣ **Discuss Requirements (Schedule Strategy Call)**`;
                         
                         return sendWhatsAppMessage(from, clientReply);
                     }
@@ -418,7 +446,7 @@ app.post('/webhook', async (req, res) => {
                         let replyText = "";
                         if (!isCoreMatch) {
                             if (userLang === 'EN') {
-                                replyText = "Hello! Welcome to *Shahid Creatives*. 🚀\nWe design premium agile web ecosystems.\n\nSelect a professional stack tier via number or category name:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI Business Automation & B2B Wholesale Demo**\n3️⃣ **🔥 Exclusive Launch Deal**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid**";
+                                replyText = "Hello! Welcome to *Shahid Creatives*. 🚀\nWe design premium agile web ecosystems and high-converting automation workflows.\n\nSelect a professional stack tier via number:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI Business Automation & B2B Wholesale Demo**\n3️⃣ **🔥 Exclusive Launch Deal**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid**";
                             } else {
                                 replyText = "Hello! Welcome to *Shahid Creatives* (Ludhiana, Punjab). 🚀\nHum engineer karte hain high-performance websites aur AI automation frameworks.\n\nKoshish ko aage badhane ke liye niche se ek option text ya number reply kijiye:\n\n1️⃣ *Web Development Tiers* (Saare Standard Custom Packages)\n2️⃣ *AI Business Automation & B2B Wholesale Demo* (Bots & CRM Flows)\n3️⃣ *🔥 Exclusive Launch Deal* (Flat 20% OFF Status)\n4️⃣ *💳 Direct Booking & Token System* (₹999 Secure Path)\n5️⃣ *👤 Talk to Shahid* (Direct Consultation)";
                             }
@@ -462,7 +490,6 @@ app.post('/webhook', async (req, res) => {
 
 async function sendWhatsAppMessage(to, text) {
     const SECURED_ACCESS_TOKEN = process.env.WHATSAPP_TOKEN; 
-    // 🟢 UPDATED: This dynamic ID fallback is aligned securely with active app token authorizations
     const DEFAULT_PHONE_NUMBER_ID = "1202984902891472"; 
     try {
         await axios({

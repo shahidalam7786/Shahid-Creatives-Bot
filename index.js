@@ -184,7 +184,7 @@ app.post('/webhook', async (req, res) => {
                     const userLang = userSessions[from].lang;
                     const currentStep = userSessions[from].step;
 
-                    // 🎯 STATE -1: REGION CHECK ENGINE (FIRST STEP INBOUND INTERCEPTOR)
+                    // 🎯 STATE -1: REGION CHECK ENGINE
                     if (currentStep === 'region_check') {
                         let processedRoute = false;
                         
@@ -224,7 +224,7 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // 🎯 STATE 1: COLLECT IDENTITY (DEEP DETAILED EXPLORATION QUESTIONNAIRE)
+                    // 🎯 STATE 1: COLLECT IDENTITY
                     if (currentStep === 'collect_consultation_identity') {
                         userSessions[from].step = 'collect_custom_query_and_time'; 
                         let cleanName = rawText.split('\n')[0].split(',')[0].trim();
@@ -239,7 +239,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, descriptivePrompt);
                     }
 
-                    // 🎯 STATE 2: DISPATCH CUSTOM QUERY & TIME TO ADMIN AND FIREBASE LOGS
+                    // 🎯 STATE 2: DISPATCH CUSTOM QUERY & TIME
                     if (currentStep === 'collect_custom_query_and_time') {
                         userSessions[from].step = 'post_registration';
                         const cleanName = userSessions[from].clientName;
@@ -275,7 +275,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, replyText);
                     }
 
-                    // 🎯 STATE 4: INBOUND CHAT REGISTRATION COMPLETED (DYNAMIC ADMIN NOTIFICATION INSIDE PAYLOAD)
+                    // 🎯 STATE 4: INBOUND CHAT REGISTRATION COMPLETED (FIXED INR & USD TOKENS + ORIGINAL PRICE ATTACHED)
                     if (currentStep === 'ask_name_email') {
                         userSessions[from].step = 'completed'; 
                         let cleanName = rawText.split('\n')[0].split(',')[0].trim();
@@ -292,7 +292,6 @@ app.post('/webhook', async (req, res) => {
                         const matchedBasePrice = getBasePriceByPlan(userSessions[from].projectScope, isUSDTrack);
                         const finalPayable = calculateTotalPayable(matchedBasePrice, isUSDTrack);
                         
-                        // 🟢 FIXED: Dynamic Currency Symbol and Tax Label for Admin Alert Message
                         const currencySymbol = isUSDTrack ? '$' : '₹';
                         const taxLabel = isUSDTrack ? 'incl Gateway Fees' : 'incl GST';
 
@@ -318,13 +317,14 @@ app.post('/webhook', async (req, res) => {
 
                         let replyText = "";
                         if (isUSDTrack) {
+                            // 🚀 FIXED: Dynamic parameters passed securely to lock USD frontend template state
                             const tokenAmountUSD = "49";
-                            const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountUSD}&currency=USD&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
-                            replyText = `Thank you, your profile is secure! 🤝\n\n🔥 *Launch Discount Applied:* Your code **LAUNCH20** (Flat 20% OFF) is successfully linked.\n\n🔗 *Pay Securely Here:* ${selfPayLink}`;
+                            const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountUSD}&currency=USD&totalPrice=${finalPayable}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
+                            replyText = `Thank you, your profile is secure! 🤝\n\n🔥 *Launch Discount Applied:* Your code **LAUNCH20** (Flat 20% OFF) is successfully linked to your project estimate of $${finalPayable}.\n\n🔗 *Pay Securely Here (USD Slot Guarantee):* ${selfPayLink}`;
                         } else {
                             const tokenAmountINR = "999";
-                            const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&currency=INR&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
-                            replyText = `Mubarak ho! Aapki requirement *${userSessions[from].projectScope}* register ho gayi hai! 🤝\n\n🔥 *Launch Discount Applied:* Coupon code **LAUNCH20** active ho gaya hai. Aap niche diye gaye link se **₹999 Token Booking** complete karke flat 20% discount slot lock karein:\n\n🔗 *Direct Pay Gateway Link:* ${selfPayLink}`;
+                            const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&currency=INR&totalPrice=${finalPayable}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
+                            replyText = `Mubarak ho! Aapki requirement *${userSessions[from].projectScope}* register ho gayi hai! 🤝\n\n🔥 *Launch Discount Applied:* Coupon code **LAUNCH20** active ho gaya hai aapke ₹${finalPayable} estimate par. Aap niche diye gaye link se **₹999 Token Booking** complete karke discount slot lock karein:\n\n🔗 *Direct Pay Gateway Link:* ${selfPayLink}`;
                         }
                         return sendWhatsAppMessage(from, replyText);
                     }
@@ -437,7 +437,7 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // 🎯 STATE 6: CONSULTATION FIXED SLOTS ROUTING (A, B, C)
+                    // 🎯 STATE 6: CONSULTATION FIXED SLOTS ROUTING
                     if (currentStep === 'awaiting_consultation_slot') {
                         if (userText === 'a' || userText.includes("today") || userText.includes("aaj") || userText.includes("5")) {
                             userSessions[from].step = 'collect_consultation_identity'; 
@@ -512,7 +512,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, clientReply);
                     }
 
-                    // 🎯 STATE 8: CORE ENGINE - HYBRID GLOBAL PARSER
+                    // 🎯 STATE 8: CORE ENGINE
                     if (currentStep === 'welcome' || currentStep === 'main_menu') {
                         userSessions[from].step = 'main_menu';
                         

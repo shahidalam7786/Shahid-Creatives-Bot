@@ -136,7 +136,7 @@ app.post('/webhook', async (req, res) => {
 
                     if (!userSessions[from]) {
                         userSessions[from] = { 
-                            step: 'welcome', 
+                            step: 'region_check', // New Entry point for strict region onboarding
                             lang: (isInternationalNumber || isGlobalWebsiteTemplate) ? 'EN' : 'HINGLISH', 
                             clientName: "Valued Client", 
                             clientEmail: "", 
@@ -145,13 +145,38 @@ app.post('/webhook', async (req, res) => {
                         };
                     }
                     
-                    // Dynamic Override if incoming payload strictly triggers USD markers
-                    if (isGlobalWebsiteTemplate) {
-                        userSessions[from].lang = 'EN';
-                    }
-
                     const userLang = userSessions[from].lang;
                     const currentStep = userSessions[from].step;
+
+                    // 🎯 STATE -1: REGION CHECK ENGINE (FIRST STEP INBOUND INTERCEPTOR)
+                    if (currentStep === 'region_check') {
+                        let processedRoute = false;
+                        
+                        if (userText === '1' || userText.includes("india") || userText.includes("inr")) {
+                            userSessions[from].lang = 'HINGLISH';
+                            userSessions[from].step = 'main_menu';
+                            processedRoute = true;
+                        } else if (userText === '2' || userText.includes("outside") || userText.includes("usd") || userText.includes("global") || isInternationalNumber) {
+                            userSessions[from].lang = 'EN';
+                            userSessions[from].step = 'main_menu';
+                            processedRoute = true;
+                        }
+
+                        if (processedRoute) {
+                            // Automatically forward to selected Main Menu layout instantly
+                            let replyText = "";
+                            if (userSessions[from].lang === 'EN') {
+                                replyText = "Hello! Welcome to *Shahid Creatives*. 🚀\nWe design premium agile web ecosystems and high-converting automation workflows.\n\nSelect a professional stack tier via option number:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI Business Automation Hub**\n3️⃣ **🔥 Exclusive Launch Deal**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid (Direct Consultation)**";
+                            } else {
+                                replyText = "Hello! Welcome to *Shahid Creatives* (Ludhiana, Punjab). 🚀\nHum engineer karte hain high-performance websites aur AI automation frameworks.\n\nKoshish ko aage badhane ke liye ek option number reply kijiye:\n\n1️⃣ *Web Development Tiers* (Saare Standard Custom Packages)\n2️⃣ *AI Business Automation & B2B Wholesale Demo*\n3️⃣ *🔥 Exclusive Launch Deal* (Flat 20% OFF Status)\n4️⃣ *💳 Direct Booking & Token System* (₹999 Secure Path)\n5️⃣ *👤 Talk to Shahid* (Direct Consultation)";
+                            }
+                            return sendWhatsAppMessage(from, replyText);
+                        } else {
+                            // If initial chat trigger text didn't match 1 or 2, prompt selection directly
+                            let WelcomeGateText = "Welcome to *Shahid Creatives*! 🚀 Please select your location layout to proceed:\n\n1️⃣ **India (₹ INR / Hinglish)**\n2️⃣ **Outside India ($ USD / English)**\n\n👉 Reply with *1 or 2* to initialize setup!";
+                            return sendWhatsAppMessage(from, WelcomeGateText);
+                        }
+                    }
 
                     // 🎯 STATE 0: COURTESY REPLIES RESET BUFFER
                     if (currentStep === 'completed' || currentStep === 'post_registration') {
@@ -185,11 +210,9 @@ app.post('/webhook', async (req, res) => {
                         userSessions[from].step = 'post_registration';
                         const cleanName = userSessions[from].clientName;
 
-                        // Send WhatsApp Alert
                         const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n📝 *Custom Time & Query:* "${rawText}"\n\n🤖 *Status:* Live details captured securely!`;
                         await sendWhatsAppMessage("917529839762", comprehensiveAdminAlert);
 
-                        // Sync to Dashboard via Adaptive API Endpoint
                         try {
                             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
                                 client_name: cleanName,
@@ -237,7 +260,6 @@ app.post('/webhook', async (req, res) => {
                         const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n📝 *Plan Scope:* ${userSessions[from].projectScope}\n💰 *Calculated Price (incl GST):* ₹${finalPayable}`;
                         await sendWhatsAppMessage("917529839762", chatAdminNotification);
 
-                        // Dashboard lead insertion with dynamic variables mapping
                         try {
                             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
                                 client_name: cleanName,
@@ -373,7 +395,7 @@ app.post('/webhook', async (req, res) => {
                     }
 
                     // 🎯 STATE 7: META ADS INTAKE AD-SET INTERCEPTOR
-                    if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate") || rawText.includes("Valuation: $")) {
+                    if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate")) {
                         if (userSessions[from].lastSubmitedTime && (Date.now() - userSessions[from].lastSubmitedTime < 60000)) { return; }
                         userSessions[from].lastSubmitedTime = Date.now();
 
@@ -385,7 +407,7 @@ app.post('/webhook', async (req, res) => {
                         try {
                             const nameMatch = rawText.match(/(?:Client Name|👤[^:]*):\s*([^\n\r]+)/i);
                             const scopeMatch = rawText.match(/(?:Category Model|Model|Specifications[^:]*):\s*([^\n\r]+)/i);
-                            const priceMatch = rawText.match(/(?:Base Price|Price|Valuation[^:]*):\s*([^\n\r]+)/i);
+                            const priceMatch = rawText.match(/(?:Base Price|Price[^:]*):\s*([^\n\r]+)/i);
                             
                             if (nameMatch) clientName = nameMatch[1].split('\n')[0].split(',')[0].trim();
                             if (scopeMatch) projectScope = scopeMatch[1].replace(/[\*•\-]/g, '').trim();
@@ -400,9 +422,8 @@ app.post('/webhook', async (req, res) => {
                         userSessions[from].clientEmail = clientEmail;
                         userSessions[from].projectScope = projectScope;
                         userSessions[from].step = 'awaiting_website_action';
-                        userSessions[from].lang = 'EN'; 
 
-                        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail || 'Not Provided'}\n📝 *Plan Chosen:* ${projectScope}\n💰 *Base Valuation:* $${parsedBasePrice}`;
+                        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail || 'Not Provided'}\n📝 *Plan Chosen:* ${projectScope}\n💰 *Base Valuation:* ${isGlobalWebsiteTemplate ? '$' : '₹'}${parsedBasePrice}`;
                         await sendWhatsAppMessage("917529839762", adminNotification);
 
                         try {
@@ -410,12 +431,14 @@ app.post('/webhook', async (req, res) => {
                                 client_name: clientName,
                                 whatsapp_number: from,
                                 project_scope: projectScope,
-                                calculated_price: parsedBasePrice,
+                                calculated_price: calculateTotalPayable(parsedBasePrice),
                                 email: clientEmail
                             });
                         } catch (err) { console.error("Meta Intake Dashboard sync err:", err.message); }
 
-                        let clientReply = `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved.\n\n🔥 *Exclusive Reward Activated:* Launch code **LAUNCH20** secures a **Flat 20% OFF** discount!\n\nPlease reply with your choice number:\n\n1️⃣ **Book Token (Confirm Slot & Claim 20% OFF)**\n2️⃣ **Discuss Requirements (Schedule Strategy Call)**`;
+                        let clientReply = (userLang === 'EN')
+                            ? `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved.\n\n🔥 *Exclusive Reward Activated:* Launch code **LAUNCH20** secures a **Flat 20% OFF** discount!\n\nPlease reply with your choice number:\n\n1️⃣ **Book Token (Confirm Slot & Claim 20% OFF)**\n2️⃣ **Discuss Requirements (Schedule Strategy Call)**`
+                            : `Thank you *${clientName}*! 🙏 Aapka data server par secure ho gaya hai.\n\n🔥 *Exclusive Offer Activated:* Coupon code **LAUNCH20** (Flat 20% OFF) active ho gaya hai!\n\nNiche diye gaye number se reply kijiye:\n\n1️⃣ **Token Book Karein (Slot Confirm & Claim 20% OFF)**\n2️⃣ **Discuss Requirements (Strategy Call)**`;
                         
                         return sendWhatsAppMessage(from, clientReply);
                     }
@@ -449,7 +472,7 @@ app.post('/webhook', async (req, res) => {
                             if (userLang === 'EN') {
                                 replyText = "Hello! Welcome to *Shahid Creatives*. 🚀\nWe design premium agile web ecosystems and high-converting automation workflows.\n\nSelect a professional stack tier via number:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI Business Automation & B2B Wholesale Demo**\n3️⃣ **🔥 Exclusive Launch Deal**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid**";
                             } else {
-                                replyText = "Hello! Welcome to *Shahid Creatives* (Ludhiana, Punjab). 🚀\nHum engineer karte hain high-performance websites aur AI automation frameworks.\n\nKoshish ko aage badhane ke liye niche se ek option text ya number reply kijiye:\n\n1️⃣ *Web Development Tiers* (Saare Standard Custom Packages)\n2️⃣ *AI Business Automation & B2B Wholesale Demo* (Bots & CRM Flows)\n3️⃣ *🔥 Exclusive Launch Deal* (Flat 20% OFF Status)\n4️⃣ *💳 Direct Booking & Token System* (₹999 Secure Path)\n5️⃣ *👤 Talk to Shahid* (Direct Consultation)";
+                                replyText = "Hello! Welcome to *Shahid Creatives* (Ludhiana, Punjab). 2026 🚀\nHum engineer karte hain high-performance websites aur AI automation frameworks.\n\nKoshish ko aage badhane ke liye niche se ek option text ya number reply kijiye:\n\n1️⃣ *Web Development Tiers* (Saare Standard Custom Packages)\n2️⃣ *AI Business Automation & B2B Wholesale Demo* (Bots & CRM Flows)\n3️⃣ *🔥 Exclusive Launch Deal* (Flat 20% OFF Status)\n4️⃣ *💳 Direct Booking & Token System* (₹999 Secure Path)\n5️⃣ *👤 Talk to Shahid* (Direct Consultation)";
                             }
                             return sendWhatsAppMessage(from, replyText);
                         }
@@ -504,6 +527,5 @@ async function sendWhatsAppMessage(to, text) {
     }
 }
 
-// 🟢 FIXED PORT BINDING SCAN INTERCEPTOR FOR RENDER DEPLOYMENTS
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, '0.0.0.0', () => console.log(`ChatBot engine live on port ${PORT}`));

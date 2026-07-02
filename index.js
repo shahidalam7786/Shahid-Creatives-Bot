@@ -224,7 +224,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, clientReply);
                     }
 
-                    // Fallback to memory setup if no session exists yet
+                    // Fallback initialization if session is clean
                     if (!userSessions[from]) {
                         userSessions[from] = { 
                             step: 'region_check', 
@@ -238,6 +238,16 @@ app.post('/webhook', async (req, res) => {
                     
                     const userLang = userSessions[from].lang;
                     const currentStep = userSessions[from].step;
+
+                    // 🎯 FIXED GLOBAL PRIORITY STATE 0: COURTESY REPLIES RESET BUFFER (Moved Outside of Trapped Steps)
+                    const courtesyTriggers = ['thanks', 'thank you', 'ok', 'okay', 'ji', 'shukriya', 'thx'];
+                    if (courtesyTriggers.includes(userText)) {
+                        userSessions[from] = null; 
+                        let courtesyReply = (userLang === 'EN')
+                            ? "You're most welcome! 👍 Glad to help. Type 'Menu' anytime if you want to explore again."
+                            : "Aapka swagat hai! 👍 Milte hain aapse bohot jald discovery call par. Dobara shuru karne ke liye kisi bhi waqt 'Menu' ya 'Hi' bheinje.";
+                        return sendWhatsAppMessage(from, courtesyReply);
+                    }
 
                     // 🎯 STATE -1: REGION CHECK ENGINE
                     if (currentStep === 'region_check') {
@@ -264,18 +274,6 @@ app.post('/webhook', async (req, res) => {
                         } else {
                             let WelcomeGateText = "Welcome to *Shahid Creatives*! 🚀 Please select your location layout to proceed:\n\n1️⃣ **India (Tax/Billing: ₹ INR)**\n2️⃣ **Outside India (Global Billing: $ USD)**\n\n👉 Reply with *1 or 2* to initialize setup!";
                             return sendWhatsAppMessage(from, WelcomeGateText);
-                        }
-                    }
-
-                    // 🎯 STATE 0: COURTESY REPLIES RESET BUFFER
-                    if (currentStep === 'completed' || currentStep === 'post_registration') {
-                        const courtesyTriggers = ['thanks', 'thank you', 'ok', 'okay', 'ji', 'shukriya', 'thx'];
-                        if (courtesyTriggers.includes(userText)) {
-                            userSessions[from] = null; 
-                            let courtesyReply = (userLang === 'EN')
-                                ? "You're most welcome! 👍 Glad to help. Type 'Menu' anytime if you want to explore again."
-                                : "Aapka swagat hai! 👍 Milte hain aapse bohot jald discovery call par. Dobara shuru karne ke liye kisi bhi waqt 'Menu' ya 'Hi' bheinje.";
-                            return sendWhatsAppMessage(from, courtesyReply);
                         }
                     }
 

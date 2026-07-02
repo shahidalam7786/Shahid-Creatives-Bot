@@ -33,7 +33,7 @@ function getBasePriceByPlan(planScope, isUSD = false) {
         if (text.includes("whatsapp chatbot") || text.includes("chatbot") || text.includes("bot")) {
             return "110";
         }
-        if (text.includes("starter plan") || text.includes("visiting card")) {
+        if (text.includes("starter plan") || text.includes("visiting card") || text.includes("starter / visiting card site")) {
             return "199";
         }
         if (text.includes("basic plan") || text.includes("landing page")) {
@@ -50,7 +50,6 @@ function getBasePriceByPlan(planScope, isUSD = false) {
         }
         return "110";
     } else {
-        // Existing Standard Indian Domestic base currency layout rules
         if (text.includes("whatsapp bot") || text.includes("lead sync") || text.includes("conversational bot")) {
             return "8713";
         }
@@ -158,14 +157,76 @@ app.post('/webhook', async (req, res) => {
                     const userText = rawText.trim().toLowerCase();
                     
                     const isInternationalNumber = !from.startsWith("91");
-                    const isGlobalWebsiteTemplate = rawText.includes("Global USD") || rawText.includes("Worldwide") || rawText.includes("$") || rawText.includes("Valuation: $");
-                    
+                    const isGlobalWebsiteTemplate = rawText.includes("Global USD") || rawText.includes("Worldwide") || rawText.includes("$") || rawText.includes("lock in my custom website estimate");
+
                     // ⚡ Reset mechanism for fallback restart
                     const resetTriggers = ['hi', 'hello', 'menu', 'start', 'hey'];
                     if (resetTriggers.includes(userText)) {
                         userSessions[from] = null;
                     }
 
+                    // 🎯 TOP PRIORITY INTERCEPTOR: WEBSITE INBOUND FORM SYNC (CRUCIAL FIXED POSITION)
+                    if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate") || rawText.includes("Estimated Price:") || rawText.includes("Grand Total:")) {
+                        if (userSessions[from] && userSessions[from].lastSubmitedTime && (Date.now() - userSessions[from].lastSubmitedTime < 15000)) { return; }
+                        
+                        let clientName = "Valued Client";
+                        let clientEmail = "Not Provided";
+                        let projectScope = "Website Custom Estimate";
+                        let parsedBasePrice = "199"; 
+                        
+                        try {
+                            const nameMatch = rawText.match(/(?:Client Name|👤[^:]*):\s*([^\n\r]+)/i);
+                            const scopeMatch = rawText.match(/(?:Plan Chosen|Category Model|Specifications[^:]*):\s*([^\n\r]+)/i);
+                            const priceMatch = rawText.match(/(?:Estimated Price|Base Price|Price|Grand Total[^:]*):\s*\$([0-9.]+)/i);
+                            
+                            if (nameMatch) clientName = nameMatch[1].split('\n')[0].split(',')[0].trim();
+                            if (scopeMatch) projectScope = scopeMatch[1].replace(/[\*•\-]/g, '').trim();
+                            if (priceMatch) parsedBasePrice = priceMatch[1].trim();
+                            
+                            const globalEmailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/i;
+                            const emailMatch = rawText.match(globalEmailRegex);
+                            if (emailMatch) clientEmail = emailMatch[1].trim();
+                        } catch (parseError) { console.error("Parser failure exception inside incoming landing webhook."); }
+
+                        // Allocate secure state configuration explicitly
+                        userSessions[from] = {
+                            step: 'awaiting_website_action',
+                            lang: 'EN', // Force global English environment
+                            clientName: clientName,
+                            clientEmail: clientEmail,
+                            projectScope: projectScope,
+                            lastSubmitedTime: Date.now()
+                        };
+
+                        const calculatedPrice = calculateTotalPayable(parsedBasePrice, true);
+
+                        // Route internal trace summary packet to admin
+                        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail}\n📝 *Plan Chosen:* ${projectScope}\n💰 *Calculated Dynamic Valuation:* $${calculatedPrice}`;
+                        await sendWhatsAppMessage("917529839762", adminNotification);
+
+                        try {
+                            await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
+                                client_name: clientName,
+                                whatsapp_number: from,
+                                project_scope: projectScope,
+                                calculated_price: calculatedPrice,
+                                email: clientEmail
+                            });
+                        } catch (err) { console.error("Meta Intake Dashboard sync err:", err.message); }
+
+                        const uniqueProjectId = `SC-${Math.floor(10000 + Math.random() * 90000)}`;
+                        const encodedName = encodeURIComponent(clientName);
+                        const encodedEmail = encodeURIComponent(clientEmail);
+                        const encodedPlan = encodeURIComponent(projectScope);
+                        const tokenAmountUSD = "49";
+
+                        const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountUSD}&currency=USD&totalPrice=${calculatedPrice}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
+
+                        let clientReply = `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved to our dashboard.\n\n🔥 *Exclusive Reward Activated:* Launch code **LAUNCH20** secures a **Flat 20% OFF** discount linked directly to your project value.\n\n🔗 *Pay Securely Here (USD Slot Guarantee):* ${selfPayLink}`;
+                        return sendWhatsAppMessage(from, clientReply);
+                    }
+
+                    // Fallback to memory setup if no session exists yet
                     if (!userSessions[from]) {
                         userSessions[from] = { 
                             step: 'region_check', 
@@ -177,10 +238,6 @@ app.post('/webhook', async (req, res) => {
                         };
                     }
                     
-                    if (isGlobalWebsiteTemplate) {
-                        userSessions[from].lang = 'EN';
-                    }
-
                     const userLang = userSessions[from].lang;
                     const currentStep = userSessions[from].step;
 
@@ -275,7 +332,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, replyText);
                     }
 
-                    // 🎯 STATE 4: INBOUND CHAT REGISTRATION COMPLETED (FIXED INR & USD TOKENS + ORIGINAL PRICE ATTACHED)
+                    // 🎯 STATE 4: INBOUND CHAT REGISTRATION COMPLETED
                     if (currentStep === 'ask_name_email') {
                         userSessions[from].step = 'completed'; 
                         let cleanName = rawText.split('\n')[0].split(',')[0].trim();
@@ -317,7 +374,6 @@ app.post('/webhook', async (req, res) => {
 
                         let replyText = "";
                         if (isUSDTrack) {
-                            // 🚀 FIXED: Dynamic parameters passed securely to lock USD frontend template state
                             const tokenAmountUSD = "49";
                             const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountUSD}&currency=USD&totalPrice=${finalPayable}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
                             replyText = `Thank you, your profile is secure! 🤝\n\n🔥 *Launch Discount Applied:* Your code **LAUNCH20** (Flat 20% OFF) is successfully linked to your project estimate of $${finalPayable}.\n\n🔗 *Pay Securely Here (USD Slot Guarantee):* ${selfPayLink}`;
@@ -456,63 +512,7 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // 🎯 STATE 7: META ADS INTAKE AD-SET INTERCEPTOR
-                    if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate")) {
-                        if (userSessions[from].lastSubmitedTime && (Date.now() - userSessions[from].lastSubmitedTime < 60000)) { return; }
-                        userSessions[from].lastSubmitedTime = Date.now();
-
-                        let clientName = "Valued Client";
-                        let clientEmail = "";
-                        let projectScope = "Website Custom Estimate";
-                        let parsedBasePrice = "110"; 
-                        
-                        try {
-                            const nameMatch = rawText.match(/(?:Client Name|👤[^:]*):\s*([^\n\r]+)/i);
-                            const scopeMatch = rawText.match(/(?:Category Model|Model|Specifications[^:]*):\s*([^\n\r]+)/i);
-                            const priceMatch = rawText.match(/(?:Base Price|Price|Valuation[^:]*):\s*([^\n\r]+)/i);
-                            
-                            if (nameMatch) clientName = nameMatch[1].split('\n')[0].split(',')[0].trim();
-                            if (scopeMatch) projectScope = scopeMatch[1].replace(/[\*•\-]/g, '').trim();
-                            if (priceMatch) parsedBasePrice = priceMatch[1].replace(/[^0-9.]/g, '').trim();
-                            
-                            const globalEmailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/i;
-                            const emailMatch = rawText.match(globalEmailRegex);
-                            if (emailMatch) clientEmail = emailMatch[1].trim();
-                        } catch (parseError) { console.error("Parser failure exception."); }
-
-                        userSessions[from].clientName = clientName;
-                        userSessions[from].clientEmail = clientEmail;
-                        userSessions[from].projectScope = projectScope;
-                        userSessions[from].step = 'awaiting_website_action';
-                        
-                        const isUSDTrack = (isGlobalWebsiteTemplate || rawText.includes("$"));
-                        userSessions[from].lang = isUSDTrack ? 'EN' : 'HINGLISH';
-
-                        const calculatedPrice = calculateTotalPayable(parsedBasePrice, isUSDTrack);
-                        const currencySymbol = isUSDTrack ? '$' : '₹';
-                        const taxLabel = isUSDTrack ? 'incl Gateway Fees' : 'incl GST';
-
-                        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail || 'Not Provided'}\n📝 *Plan Chosen:* ${projectScope}\n💰 *Base Valuation:* ${currencySymbol}${calculatedPrice}`;
-                        await sendWhatsAppMessage("917529839762", adminNotification);
-
-                        try {
-                            await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
-                                client_name: clientName,
-                                whatsapp_number: from,
-                                project_scope: projectScope,
-                                calculated_price: calculatedPrice,
-                                email: clientEmail
-                            });
-                        } catch (err) { console.error("Meta Intake Dashboard sync err:", err.message); }
-
-                        let clientReply = (userSessions[from].lang === 'EN')
-                            ? `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved.\n\n🔥 *Exclusive Reward Activated:* Launch code **LAUNCH20** secures a **Flat 20% OFF** discount!\n\nPlease reply with your choice number:\n\n1️⃣ **Book Token (Confirm Slot & Claim 20% OFF)**\n2️⃣ **Discuss Requirements (Schedule Strategy Call)**`
-                            : `Thank you *${clientName}*! 🙏 Aapka data server par secure ho gaya hai.\n\n🔥 *Exclusive Offer Activated:* Coupon code **LAUNCH20** (Flat 20% OFF) active ho gaya hai!\n\nNiche diye gaye number se reply kijiye:\n\n1️⃣ **Token Book Karein (Slot Confirm & Claim 20% OFF)**\n2️⃣ **Discuss Requirements (Strategy Call)**`;
-                        
-                        return sendWhatsAppMessage(from, clientReply);
-                    }
-
-                    // 🎯 STATE 8: CORE ENGINE
+                    // 🎯 STATE 8: CORE ENGINE - HYBRID GLOBAL PARSER
                     if (currentStep === 'welcome' || currentStep === 'main_menu') {
                         userSessions[from].step = 'main_menu';
                         

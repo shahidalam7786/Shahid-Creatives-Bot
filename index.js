@@ -72,6 +72,22 @@ function getBasePriceByPlan(planScope, isUSD = false) {
     }
 }
 
+// 🤖 BACKGROUND TIMEOUT ENGINE: 10-Minute Automated Nudge Follow-up
+setInterval(() => {
+    const now = Date.now();
+    for (const from in userSessions) {
+        const session = userSessions[from];
+        if (session && session.step !== 'completed' && session.step !== 'post_registration' && (now - session.lastInteractionTime > 600000) && !session.nudgeSent) {
+            const nudgeMessage = (session.lang === 'EN')
+                ? "Hi! I noticed you were exploring our premium development options. Do you have any questions or need help locking in your slot? 😊"
+                : "Hi! Maine dekha aap Shahid Creatives ki services explore kar rahe the. Kya aapko koi sawal hai ya coupon lock karne me koi help chahiye? 😊";
+            
+            sendWhatsAppMessage(from, nudgeMessage);
+            session.nudgeSent = true; 
+        }
+    }
+}, 60000);
+
 // 🤖 SERVER HEALTH CHECK (For 24/7 UptimeRobot Connection)
 app.get('/', (req, res) => {
     res.status(200).send("Shahid Creatives Bot Server is Live on Render with Secured Credentials! 🚀");
@@ -135,7 +151,6 @@ app.get('/webhook', (req, res) => {
     }
     res.sendStatus(403);
 });
-
 // Main Webhook Logic for Processing Messages
 app.post('/webhook', async (req, res) => {
     res.sendStatus(200); 
@@ -194,7 +209,9 @@ app.post('/webhook', async (req, res) => {
                             clientName: clientName,
                             clientEmail: clientEmail,
                             projectScope: projectScope,
-                            lastSubmitedTime: Date.now()
+                            lastSubmitedTime: Date.now(),
+                            lastInteractionTime: Date.now(),
+                            nudgeSent: false
                         };
 
                         const calculatedPrice = calculateTotalPayable(parsedBasePrice, true);
@@ -232,14 +249,20 @@ app.post('/webhook', async (req, res) => {
                             clientName: "Valued Client", 
                             clientEmail: "", 
                             projectScope: "Custom Project Development",
-                            lastSubmitedTime: 0 
+                            lastSubmitedTime: 0,
+                            lastInteractionTime: Date.now(),
+                            nudgeSent: false
                         };
                     }
                     
+                    // Timestamps refresh par nudge tracker release karein
+                    userSessions[from].lastInteractionTime = Date.now();
+                    userSessions[from].nudgeSent = false;
+
                     const userLang = userSessions[from].lang;
                     const currentStep = userSessions[from].step;
 
-                    // 🎯 FIXED GLOBAL PRIORITY STATE 0: COURTESY REPLIES RESET BUFFER (Moved Outside of Trapped Steps)
+                    // 🎯 FIXED GLOBAL PRIORITY STATE 0: COURTESY REPLIES RESET BUFFER
                     const courtesyTriggers = ['thanks', 'thank you', 'ok', 'okay', 'ji', 'shukriya', 'thx'];
                     if (courtesyTriggers.includes(userText)) {
                         userSessions[from] = null; 

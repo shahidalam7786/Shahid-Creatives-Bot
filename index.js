@@ -2,7 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const axios = require('axios');
 
-const app = report || express();
+const app = express();
 app.use(bodyParser.json());
 
 // 🟢 LIGHTWEIGHT IN-MEMORY STORAGE (Render Safe)
@@ -275,7 +275,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, replyText);
                     }
 
-                    // 🎯 STATE 4: INBOUND CHAT REGISTRATION COMPLETED (UPDATED WITH EXPLICIT CURRENCY CHECK FOR LINK GENERATION)
+                    // 🎯 STATE 4: INBOUND CHAT REGISTRATION COMPLETED (DYNAMIC ADMIN NOTIFICATION INSIDE PAYLOAD)
                     if (currentStep === 'ask_name_email') {
                         userSessions[from].step = 'completed'; 
                         let cleanName = rawText.split('\n')[0].split(',')[0].trim();
@@ -292,8 +292,11 @@ app.post('/webhook', async (req, res) => {
                         const matchedBasePrice = getBasePriceByPlan(userSessions[from].projectScope, isUSDTrack);
                         const finalPayable = calculateTotalPayable(matchedBasePrice, isUSDTrack);
                         
-                        // Send Internal Trace Alert
-                        const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n📝 *Plan Scope:* ${userSessions[from].projectScope}\n💰 *Calculated Price:* ${isUSDTrack ? '$' : '₹'}${finalPayable}`;
+                        // 🟢 FIXED: Dynamic Currency Symbol and Tax Label for Admin Alert Message
+                        const currencySymbol = isUSDTrack ? '$' : '₹';
+                        const taxLabel = isUSDTrack ? 'incl Gateway Fees' : 'incl GST';
+
+                        const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n📝 *Plan Scope:* ${userSessions[from].projectScope}\n💰 *Calculated Price (${taxLabel}):* ${currencySymbol}${finalPayable}`;
                         await sendWhatsAppMessage("917529839762", chatAdminNotification);
 
                         try {
@@ -315,7 +318,6 @@ app.post('/webhook', async (req, res) => {
 
                         let replyText = "";
                         if (isUSDTrack) {
-                            // 🚀 FIXED SYSTEMA SYNC PARAMETER: Appending currency=USD string to eliminate the portal symbol loop glitch!
                             const tokenAmountUSD = "49";
                             const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountUSD}&currency=USD&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
                             replyText = `Thank you, your profile is secure! 🤝\n\n🔥 *Launch Discount Applied:* Your code **LAUNCH20** (Flat 20% OFF) is successfully linked.\n\n🔗 *Pay Securely Here:* ${selfPayLink}`;
@@ -342,7 +344,7 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // 🎯 STATE 5.1: NEW EXPLICIT USD PLANS AND FUZZY REQ CHECK STRINGS
+                    // 🎯 STATE 5.1: PROCESSOR FOR SUB-MENU
                     if (currentStep === 'process_requirement_menu') {
                         let isMatchFound = false;
                         let dynamicCategory = "";
@@ -369,7 +371,6 @@ app.post('/webhook', async (req, res) => {
                                 isMatchFound = true;
                             }
                         } else {
-                            // Legacy Local Domestic Parsing Strings
                             if (userText === '1' || userText === 'ai' || userText.includes("chatbot") || userText.includes("bot")) {
                                 dynamicCategory = "WhatsApp AI Chatbot & Automation";
                                 isMatchFound = true;
@@ -456,7 +457,7 @@ app.post('/webhook', async (req, res) => {
                     }
 
                     // 🎯 STATE 7: META ADS INTAKE AD-SET INTERCEPTOR
-                    if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate") || rawText.includes("Valuation: $")) {
+                    if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate")) {
                         if (userSessions[from].lastSubmitedTime && (Date.now() - userSessions[from].lastSubmitedTime < 60000)) { return; }
                         userSessions[from].lastSubmitedTime = Date.now();
 
@@ -488,8 +489,10 @@ app.post('/webhook', async (req, res) => {
                         userSessions[from].lang = isUSDTrack ? 'EN' : 'HINGLISH';
 
                         const calculatedPrice = calculateTotalPayable(parsedBasePrice, isUSDTrack);
+                        const currencySymbol = isUSDTrack ? '$' : '₹';
+                        const taxLabel = isUSDTrack ? 'incl Gateway Fees' : 'incl GST';
 
-                        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail || 'Not Provided'}\n📝 *Plan Chosen:* ${projectScope}\n💰 *Base Valuation:* ${isUSDTrack ? '$' : '₹'}${calculatedPrice}`;
+                        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail || 'Not Provided'}\n📝 *Plan Chosen:* ${projectScope}\n💰 *Base Valuation:* ${currencySymbol}${calculatedPrice}`;
                         await sendWhatsAppMessage("917529839762", adminNotification);
 
                         try {

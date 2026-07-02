@@ -25,7 +25,7 @@ function calculateTotalPayable(basePrice, isUSD = false) {
     }
 }
 
-// 🎯 UPGRADED ROBUST PLAN PRICE MAPPER (Strictly Ordered by your New USD Specifications)
+// 🎯 ROBUST PLAN PRICE MAPPER (Strictly Ordered by USD & INR Specifications)
 function getBasePriceByPlan(planScope, isUSD = false) {
     const text = String(planScope).toLowerCase().trim();
     
@@ -165,7 +165,7 @@ app.post('/webhook', async (req, res) => {
                         userSessions[from] = null;
                     }
 
-                    // 🎯 TOP PRIORITY INTERCEPTOR: WEBSITE INBOUND FORM SYNC (CRUCIAL FIXED POSITION)
+                    // 🎯 TOP PRIORITY INTERCEPTOR: WEBSITE INBOUND FORM SYNC
                     if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate") || rawText.includes("Estimated Price:") || rawText.includes("Grand Total:")) {
                         if (userSessions[from] && userSessions[from].lastSubmitedTime && (Date.now() - userSessions[from].lastSubmitedTime < 15000)) { return; }
                         
@@ -188,10 +188,9 @@ app.post('/webhook', async (req, res) => {
                             if (emailMatch) clientEmail = emailMatch[1].trim();
                         } catch (parseError) { console.error("Parser failure exception inside incoming landing webhook."); }
 
-                        // Allocate secure state configuration explicitly
                         userSessions[from] = {
                             step: 'awaiting_website_action',
-                            lang: 'EN', // Force global English environment
+                            lang: 'EN', 
                             clientName: clientName,
                             clientEmail: clientEmail,
                             projectScope: projectScope,
@@ -200,7 +199,6 @@ app.post('/webhook', async (req, res) => {
 
                         const calculatedPrice = calculateTotalPayable(parsedBasePrice, true);
 
-                        // Route internal trace summary packet to admin
                         const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail}\n📝 *Plan Chosen:* ${projectScope}\n💰 *Calculated Dynamic Valuation:* $${calculatedPrice}`;
                         await sendWhatsAppMessage("917529839762", adminNotification);
 
@@ -281,7 +279,7 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // 🎯 STATE 1: COLLECT IDENTITY
+                    // 🎯 STATE 1: COLLECT IDENTITY (DEEP DETAILED EXPLORATION QUESTIONNAIRE)
                     if (currentStep === 'collect_consultation_identity') {
                         userSessions[from].step = 'collect_custom_query_and_time'; 
                         let cleanName = rawText.split('\n')[0].split(',')[0].trim();
@@ -296,7 +294,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, descriptivePrompt);
                     }
 
-                    // 🎯 STATE 2: DISPATCH CUSTOM QUERY & TIME
+                    // 🎯 STATE 2: DISPATCH CUSTOM QUERY & TIME TO DASHBOARD
                     if (currentStep === 'collect_custom_query_and_time') {
                         userSessions[from].step = 'post_registration';
                         const cleanName = userSessions[from].clientName;

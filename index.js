@@ -30,44 +30,20 @@ function getBasePriceByPlan(planScope, isUSD = false) {
     const text = String(planScope).toLowerCase().trim();
     
     if (isUSD) {
-        if (text.includes("whatsapp chatbot") || text.includes("chatbot") || text.includes("bot")) {
-            return "110";
-        }
-        if (text.includes("starter plan") || text.includes("visiting card") || text.includes("starter / visiting card site")) {
-            return "199";
-        }
-        if (text.includes("basic plan") || text.includes("landing page")) {
-            return "299";
-        }
-        if (text.includes("starter business") || text.includes("business website")) {
-            return "499";
-        }
-        if (text.includes("e-commerce hub") || text.includes("ecommerce") || text.includes("store")) {
-            return "899";
-        }
-        if (text.includes("custom enterprise") || text.includes("software") || text.includes("app")) {
-            return "2499";
-        }
+        if (text.includes("whatsapp chatbot") || text.includes("chatbot") || text.includes("bot")) return "110";
+        if (text.includes("starter plan") || text.includes("visiting card") || text.includes("starter / visiting card site")) return "199";
+        if (text.includes("basic plan") || text.includes("landing page")) return "299";
+        if (text.includes("starter business") || text.includes("business website")) return "499";
+        if (text.includes("e-commerce hub") || text.includes("ecommerce")) return "899";
+        if (text.includes("custom enterprise") || text.includes("software")) return "2499";
         return "110";
     } else {
-        if (text.includes("whatsapp bot") || text.includes("lead sync") || text.includes("conversational bot")) {
-            return "8713";
-        }
-        if (text.includes("landing page") || text.includes("funnel")) {
-            return "12300";
-        }
-        if (text.includes("crm workflow") || text.includes("workflow hub")) {
-            return "18000";
-        }
-        if (text.includes("business") || text.includes("corporate") || text.includes("showcase")) {
-            return "25500";
-        }
-        if (text.includes("e-commerce") || text.includes("ecommerce") || text.includes("store")) {
-            return "47500";
-        }
-        if (text.includes("saas") || text.includes("app") || text.includes("software")) {
-            return "145000";
-        }
+        if (text.includes("whatsapp bot") || text.includes("lead sync")) return "8713";
+        if (text.includes("landing page") || text.includes("funnel")) return "12300";
+        if (text.includes("crm workflow") || text.includes("workflow hub")) return "18000";
+        if (text.includes("business") || text.includes("corporate")) return "25500";
+        if (text.includes("e-commerce") || text.includes("store")) return "47500";
+        if (text.includes("saas") || text.includes("software")) return "145000";
         return "8713"; 
     }
 }
@@ -88,7 +64,7 @@ setInterval(() => {
     }
 }, 60000);
 
-// 🤖 SERVER HEALTH CHECK (For 24/7 UptimeRobot Connection)
+// 🤖 SERVER HEALTH CHECK
 app.get('/', (req, res) => {
     res.status(200).send("Shahid Creatives Bot Server is Live on Render with Secured Credentials! 🚀");
 });
@@ -97,8 +73,6 @@ app.get('/', (req, res) => {
 app.post('/send-client-credentials', async (req, res) => {
     try {
         const payload = req.body;
-        console.log("Captured Credentials Packet via API Route:", payload);
-        
         await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
             client_name: payload.name || payload.client_name || "API Inbound Portal Lead",
             whatsapp_number: payload.phone || payload.whatsapp_number || "0000000000",
@@ -106,10 +80,8 @@ app.post('/send-client-credentials', async (req, res) => {
             calculated_price: payload.price || payload.calculated_price || 0,
             email: payload.email || "Not Provided"
         });
-
-        res.status(200).json({ success: true, message: "Credentials Packet routed securely to Admin Dashboard Log Framework!" });
+        res.status(200).json({ success: true, message: "Credentials Packet routed securely!" });
     } catch (err) {
-        console.error("Error Inside Credentials Packet Routing Engine:", err.message);
         res.status(500).json({ success: false, error: err.message });
     }
 });
@@ -118,24 +90,13 @@ app.post('/send-client-credentials', async (req, res) => {
 app.post('/send-payment-reminder', async (req, res) => {
     try {
         const payload = req.body;
-        console.log("Payment Reminder Request Received:", payload);
-
         const clientPhone = payload.phone || payload.whatsapp_number;
-        const clientName = payload.name || payload.client_name || "Valued Client";
-        const projectName = payload.plan || payload.project_scope || "Your Project Slot";
-        const tokenAmount = payload.amount || "999";
+        if (!clientPhone) return res.status(400).json({ success: false, error: "Missing number" });
 
-        if (!clientPhone) {
-            return res.status(400).json({ success: false, error: "Missing required client 'phone' parameter." });
-        }
-
-        const reminderMessage = `⚠️ *Payment Pending Reminder - Shahid Creatives* 🚀\n\nHello *${clientName}*,\n\nThis is a quick reminder regarding your slot confirmation booking for *${projectName}*.\n\nKindly complete your **₹${tokenAmount} Token Booking** slot lock parameter using your dynamic pay gateway dashboard link to avoid slot cancellation.\n\nIf you have already paid, kindly reply with 'Thanks' to update status. 👍`;
-
+        const reminderMessage = `⚠️ *Payment Pending Reminder - Shahid Creatives* 🚀\n\nHello,\n\nThis is a quick reminder regarding your slot confirmation booking using your dynamic pay gateway dashboard link to avoid slot cancellation. 👍`;
         await sendWhatsAppMessage(clientPhone, reminderMessage);
-
-        res.status(200).json({ success: true, message: "Payment reminder notification triggered successfully!" });
+        res.status(200).json({ success: true });
     } catch (err) {
-        console.error("Error Inside Payment Reminder Engine:", err.message);
         res.status(500).json({ success: false, error: err.message });
     }
 });
@@ -143,11 +104,118 @@ app.post('/send-payment-reminder', async (req, res) => {
 // Meta Webhook Verification
 app.get('/webhook', (req, res) => {
     const VERIFY_TOKEN = "shahid_creatives_secret_token_123";
-    const mode = req.query['hub.mode'];
-    const token = req.query['hub.verify_token'];
-    const challenge = req.query['hub.challenge'];
-    if (mode && token && mode === 'subscribe' && token === VERIFY_TOKEN) {
-        return res.status(200).send(challenge);
+    if (req.query['hub.mode'] === 'subscribe' && req.query['hub.verify_token'] === VERIFY_TOKEN) {
+        return res.status(200).send(req.query['hub.challenge']);
+    }
+    res.sendStatus(403);
+});const express = require('express');
+const bodyParser = require('body-parser');
+const axios = require('axios');
+
+const app = express();
+app.use(bodyParser.json());
+
+// 🟢 LIGHTWEIGHT IN-MEMORY STORAGE (Render Safe)
+const userSessions = {};
+
+// 📈 DYNAMIC PRICING LEDGER MAPPING WITH +3.5% GATEWAY FEES FOR USD / +18% GST FOR INR
+function calculateTotalPayable(basePrice, isUSD = false) {
+    const cleanBase = parseFloat(basePrice.toString().replace(/[^0-9.]/g, ''));
+    if (isNaN(cleanBase)) return 0;
+    
+    if (isUSD) {
+        // Base Plan + 3.5% Stripe/PayPal Gateway Processor Processing Fee
+        const totalUSD = cleanBase * 1.035;
+        return Math.round(totalUSD);
+    } else {
+        // Standard Indian domestic structure (Base + 18% GST + 2.5% Portal Gateway)
+        const withGST = cleanBase * 1.18; 
+        const totalPayable = withGST * 1.025; 
+        return Math.round(totalPayable);
+    }
+}
+
+// 🎯 ROBUST PLAN PRICE MAPPER (Strictly Ordered by USD & INR Specifications)
+function getBasePriceByPlan(planScope, isUSD = false) {
+    const text = String(planScope).toLowerCase().trim();
+    
+    if (isUSD) {
+        if (text.includes("whatsapp chatbot") || text.includes("chatbot") || text.includes("bot")) return "110";
+        if (text.includes("starter plan") || text.includes("visiting card") || text.includes("starter / visiting card site")) return "199";
+        if (text.includes("basic plan") || text.includes("landing page")) return "299";
+        if (text.includes("starter business") || text.includes("business website")) return "499";
+        if (text.includes("e-commerce hub") || text.includes("ecommerce")) return "899";
+        if (text.includes("custom enterprise") || text.includes("software")) return "2499";
+        return "110";
+    } else {
+        if (text.includes("whatsapp bot") || text.includes("lead sync")) return "8713";
+        if (text.includes("landing page") || text.includes("funnel")) return "12300";
+        if (text.includes("crm workflow") || text.includes("workflow hub")) return "18000";
+        if (text.includes("business") || text.includes("corporate")) return "25500";
+        if (text.includes("e-commerce") || text.includes("store")) return "47500";
+        if (text.includes("saas") || text.includes("software")) return "145000";
+        return "8713"; 
+    }
+}
+
+// 🤖 BACKGROUND TIMEOUT ENGINE: 10-Minute Automated Nudge Follow-up
+setInterval(() => {
+    const now = Date.now();
+    for (const from in userSessions) {
+        const session = userSessions[from];
+        if (session && session.step !== 'completed' && session.step !== 'post_registration' && (now - session.lastInteractionTime > 600000) && !session.nudgeSent) {
+            const nudgeMessage = (session.lang === 'EN')
+                ? "Hi! I noticed you were exploring our premium development options. Do you have any questions or need help locking in your slot? 😊"
+                : "Hi! Maine dekha aap Shahid Creatives ki services explore kar rahe the. Kya aapko koi sawal hai ya coupon lock karne me koi help chahiye? 😊";
+            
+            sendWhatsAppMessage(from, nudgeMessage);
+            session.nudgeSent = true; 
+        }
+    }
+}, 60000);
+
+// 🤖 SERVER HEALTH CHECK
+app.get('/', (req, res) => {
+    res.status(200).send("Shahid Creatives Bot Server is Live on Render with Secured Credentials! 🚀");
+});
+
+// 🟢 ROUTE HANDLER: Client Credentials Logs Delivery
+app.post('/send-client-credentials', async (req, res) => {
+    try {
+        const payload = req.body;
+        await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
+            client_name: payload.name || payload.client_name || "API Inbound Portal Lead",
+            whatsapp_number: payload.phone || payload.whatsapp_number || "0000000000",
+            project_scope: payload.plan || payload.project_scope || "Credentials Sync Event",
+            calculated_price: payload.price || payload.calculated_price || 0,
+            email: payload.email || "Not Provided"
+        });
+        res.status(200).json({ success: true, message: "Credentials Packet routed securely!" });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// 🟢 ROUTE HANDLER: Payment Reminders Dispatch Engine
+app.post('/send-payment-reminder', async (req, res) => {
+    try {
+        const payload = req.body;
+        const clientPhone = payload.phone || payload.whatsapp_number;
+        if (!clientPhone) return res.status(400).json({ success: false, error: "Missing number" });
+
+        const reminderMessage = `⚠️ *Payment Pending Reminder - Shahid Creatives* 🚀\n\nHello,\n\nThis is a quick reminder regarding your slot confirmation booking using your dynamic pay gateway dashboard link to avoid slot cancellation. 👍`;
+        await sendWhatsAppMessage(clientPhone, reminderMessage);
+        res.status(200).json({ success: true });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Meta Webhook Verification
+app.get('/webhook', (req, res) => {
+    const VERIFY_TOKEN = "shahid_creatives_secret_token_123";
+    if (req.query['hub.mode'] === 'subscribe' && req.query['hub.verify_token'] === VERIFY_TOKEN) {
+        return res.status(200).send(req.query['hub.challenge']);
     }
     res.sendStatus(403);
 });
@@ -201,8 +269,46 @@ app.post('/webhook', async (req, res) => {
                             const globalEmailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/i;
                             const emailMatch = rawText.match(globalEmailRegex);
                             if (emailMatch) clientEmail = emailMatch[1].trim();
-                        } catch (parseError) { console.error("Parser failure exception inside incoming landing webhook."); }
+                        } catch (parseError) { console.error("Parser failure exception inside landing template."); }
 
+                        // 🛑 CRITICAL PAID FILTER: Check if user has already paid the amount
+                        if (userText.includes("paid the full amount") || userText.includes("advance amount paid") || userText.includes("paid the full") || userText.includes("i just paid")) {
+                            
+                            // Initialize session as completed immediately to prevent nudge triggers
+                            userSessions[from] = {
+                                step: 'post_registration',
+                                lang: isInternationalNumber ? 'EN' : 'HINGLISH',
+                                clientName: clientName,
+                                clientEmail: clientEmail,
+                                projectScope: projectScope,
+                                lastSubmitedTime: Date.now(),
+                                lastInteractionTime: Date.now(),
+                                nudgeSent: true // Block automated background follow-ups
+                            };
+
+                            // Notify Admin Panel
+                            const paidAdminAlert = `✅ *PAID CLIENT REGISTERED!* ✅\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail}\n📝 *Plan Scope:* ${projectScope}\n💳 *Status:* Fully Paid via Portal Gateway!`;
+                            await sendWhatsAppMessage("917529839762", paidAdminAlert);
+
+                            try {
+                                await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
+                                    client_name: clientName,
+                                    whatsapp_number: from,
+                                    project_scope: `${projectScope} (Status: Fully Paid Portal Form)`,
+                                    calculated_price: calculateTotalPayable(parsedBasePrice, isInternationalNumber),
+                                    email: clientEmail
+                                });
+                            } catch (err) { console.error("Paid lead API sync error:", err.message); }
+
+                            // Send clean onboarding success message without any payment links or discount codes
+                            let paidSuccessReply = (userSessions[from].lang === 'EN')
+                                ? `Thank you *${clientName}*! 🙏 Your paid booking has been successfully verified on our dashboard.\n\n⚡ *Status:* **Project Consultation Stage Activated!**\n\nShahid has been notified and we are setting up your development blueprint environment. We will connect with you shortly for the strategic sync session! 🚀`
+                                : `Mubarak ho *${clientName}*! 🙏 Aapki payment received data hamare dashboard par successfully sync ho gayi hai.\n\n⚡ *Status:* **Project Consultation Stage Active!**\n\nShahid bhai aapke project parameters verify kar rahe hain. Hamari team strategy aur architecture mapping discovery call ke liye aapse bohot jald raabta karegi! 🚀`;
+                            
+                            return sendWhatsAppMessage(from, paidSuccessReply);
+                        }
+
+                        // Otherwise execute normal link flow if unpaid lead arrives
                         userSessions[from] = {
                             step: 'awaiting_website_action',
                             lang: 'EN', 
@@ -215,27 +321,15 @@ app.post('/webhook', async (req, res) => {
                         };
 
                         const calculatedPrice = calculateTotalPayable(parsedBasePrice, true);
-
-                        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail}\n📝 *Plan Chosen:* ${projectScope}\n💰 *Calculated Dynamic Valuation:* $${calculatedPrice}`;
+                        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n📝 *Plan:* ${projectScope}\n💰 *Price:* $${calculatedPrice}`;
                         await sendWhatsAppMessage("917529839762", adminNotification);
 
                         try {
-                            await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
-                                client_name: clientName,
-                                whatsapp_number: from,
-                                project_scope: projectScope,
-                                calculated_price: calculatedPrice,
-                                email: clientEmail
-                            });
-                        } catch (err) { console.error("Meta Intake Dashboard sync err:", err.message); }
+                            await axios.post('https://shahidcreatives.com/api/whatsapp-leads', { client_name: clientName, whatsapp_number: from, project_scope: projectScope, calculated_price: calculatedPrice, email: clientEmail });
+                        } catch (err) { console.error("Meta Dashboard sync err."); }
 
                         const uniqueProjectId = `SC-${Math.floor(10000 + Math.random() * 90000)}`;
-                        const encodedName = encodeURIComponent(clientName);
-                        const encodedEmail = encodeURIComponent(clientEmail);
-                        const encodedPlan = encodeURIComponent(projectScope);
-                        const tokenAmountUSD = "49";
-
-                        const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountUSD}&currency=USD&totalPrice=${calculatedPrice}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
+                        const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=49&currency=USD&totalPrice=${calculatedPrice}&name=${encodeURIComponent(clientName)}&email=${encodeURIComponent(clientEmail)}&phone=${from}&plan=${encodeURIComponent(projectScope)}&coupon=LAUNCH20`;
 
                         let clientReply = `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved to our dashboard.\n\n🔥 *Exclusive Reward Activated:* Launch code **LAUNCH20** secures a **Flat 20% OFF** discount linked directly to your project value.\n\n🔗 *Pay Securely Here (USD Slot Guarantee):* ${selfPayLink}`;
                         return sendWhatsAppMessage(from, clientReply);
@@ -255,7 +349,6 @@ app.post('/webhook', async (req, res) => {
                         };
                     }
                     
-                    // Timestamps refresh par nudge tracker release karein
                     userSessions[from].lastInteractionTime = Date.now();
                     userSessions[from].nudgeSent = false;
 
@@ -331,9 +424,7 @@ app.post('/webhook', async (req, res) => {
                                 calculated_price: 0,
                                 email: userSessions[from].clientEmail || "Not Provided"
                             });
-                        } catch (apiErr) { 
-                            console.error("Admin Panel Sync Error (State 2):", apiErr.message); 
-                        }
+                        } catch (apiErr) { console.error("Admin Dashboard tracking pipeline err."); }
 
                         let confirmationText = (userLang === 'EN')
                             ? `✅ *Booking Profile Complete!* \n\nThank you *${cleanName}*! Your specifications have been securely routed to Shahid. We will connect with you shortly! 🚀`
@@ -345,9 +436,7 @@ app.post('/webhook', async (req, res) => {
                     if (currentStep === 'collect_details') {
                         userSessions[from].projectScope = rawText;
                         userSessions[from].step = 'ask_name_email';
-                        let replyText = (userLang === 'EN') 
-                            ? "Awesome! 📝 Kindly reply with your **Full Name** and **Email Address**." 
-                            : "Awesome! 📝 Kripya apna **Full Name** aur **Email ID** bhej lijiye.";
+                        let replyText = (userLang === 'EN') ? "Awesome! 📝 Kindly reply with your **Full Name** and **Email Address**." : "Awesome! 📝 Kripya apna **Full Name** aur **Email ID** bhej lijiye.";
                         return sendWhatsAppMessage(from, replyText);
                     }
 
@@ -375,16 +464,8 @@ app.post('/webhook', async (req, res) => {
                         await sendWhatsAppMessage("917529839762", chatAdminNotification);
 
                         try {
-                            await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
-                                client_name: cleanName,
-                                whatsapp_number: from,
-                                project_scope: userSessions[from].projectScope,
-                                calculated_price: finalPayable,
-                                email: cleanEmail
-                            });
-                        } catch (dashboardError) {
-                            console.error("Admin Dashboard Sync Failed:", dashboardError.message);
-                        }
+                            await axios.post('https://shahidcreatives.com/api/whatsapp-leads', { client_name: cleanName, whatsapp_number: from, project_scope: userSessions[from].projectScope, calculated_price: finalPayable, email: cleanEmail });
+                        } catch (dashboardError) { console.error("Admin Sync exception logic execution handler."); }
 
                         const uniqueProjectId = `SC-${Math.floor(10000 + Math.random() * 90000)}`;
                         const encodedName = encodeURIComponent(cleanName);
@@ -426,56 +507,29 @@ app.post('/webhook', async (req, res) => {
                         const isUSDTrack = (userLang === 'EN');
 
                         if (isUSDTrack) {
-                            if (userText === '1' || userText.includes("chatbot") || userText.includes("bot")) {
-                                dynamicCategory = "WhatsApp Chatbot";
-                                isMatchFound = true;
-                            } else if (userText === '2' || userText.includes("starter plan")) {
-                                dynamicCategory = "Starter Plan";
-                                isMatchFound = true;
-                            } else if (userText === '3' || userText.includes("basic plan")) {
-                                dynamicCategory = "Basic Plan";
-                                isMatchFound = true;
-                            } else if (userText === '4' || userText.includes("starter business")) {
-                                dynamicCategory = "Starter Business Site";
-                                isMatchFound = true;
-                            } else if (userText === '5' || userText.includes("e-commerce hub") || userText.includes("ecommerce")) {
-                                dynamicCategory = "E-Commerce Hub";
-                                isMatchFound = true;
-                            } else if (userText === '6' || userText.includes("custom enterprise") || userText.includes("enterprise app")) {
-                                dynamicCategory = "Custom Enterprise App";
-                                isMatchFound = true;
-                            }
+                            if (userText === '1' || userText.includes("chatbot") || userText.includes("bot")) { dynamicCategory = "WhatsApp Chatbot"; isMatchFound = true; }
+                            else if (userText === '2' || userText.includes("starter plan")) { dynamicCategory = "Starter Plan"; isMatchFound = true; }
+                            else if (userText === '3' || userText.includes("basic plan")) { dynamicCategory = "Basic Plan"; isMatchFound = true; }
+                            else if (userText === '4' || userText.includes("starter business")) { dynamicCategory = "Starter Business Site"; isMatchFound = true; }
+                            else if (userText === '5' || userText.includes("e-commerce hub")) { dynamicCategory = "E-Commerce Hub"; isMatchFound = true; }
+                            else if (userText === '6' || userText.includes("custom enterprise")) { dynamicCategory = "Custom Enterprise App"; isMatchFound = true; }
                         } else {
-                            if (userText === '1' || userText === 'ai' || userText.includes("chatbot") || userText.includes("bot")) {
-                                dynamicCategory = "WhatsApp AI Chatbot & Automation";
-                                isMatchFound = true;
-                            } else if (userText === '2' || userText.includes("landing") || userText.includes("funnel")) {
-                                dynamicCategory = "Landing Page/Funnel (Single Page Lead Gen)";
-                                isMatchFound = true;
-                            } else if (userText === '3' || userText.includes("business") || userText.includes("corporate")) {
-                                dynamicCategory = "Business/Corporate Website (Brand Showcase)";
-                                isMatchFound = true;
-                            } else if (userText === '4' || userText.includes("e-commerce") || userText.includes("ecommerce") || userText.includes("store")) {
-                                dynamicCategory = "E-commerce Website (Online Store)";
-                                isMatchFound = true;
-                            } else if (userText === '5' || userText.includes("software") || userText.includes("app") || userText.includes("custom web")) {
-                                dynamicCategory = "Custom Web Application / Software";
-                                isMatchFound = true;
-                            }
+                            if (userText === '1' || userText === 'ai' || userText.includes("chatbot")) { dynamicCategory = "WhatsApp AI Chatbot & Automation"; isMatchFound = true; }
+                            else if (userText === '2' || userText.includes("landing")) { dynamicCategory = "Landing Page/Funnel (Single Page Lead Gen)"; isMatchFound = true; }
+                            else if (userText === '3' || userText.includes("business")) { dynamicCategory = "Business/Corporate Website (Brand Showcase)"; isMatchFound = true; }
+                            else if (userText === '4' || userText.includes("e-commerce")) { dynamicCategory = "E-commerce Website (Online Store)"; isMatchFound = true; }
+                            else if (userText === '5' || userText.includes("software")) { dynamicCategory = "Custom Web Application / Software"; isMatchFound = true; }
                         }
 
                         if (isMatchFound) {
                             userSessions[from].step = 'ask_name_email';
                             userSessions[from].projectScope = dynamicCategory;
-
                             let askDetailsText = isUSDTrack
                                 ? `Awesome! Selected: *${dynamicCategory}*. 📝 Kindly reply with your **Full Name** and **Email Address** to construct your quote profile.`
                                 : `Awesome! Aapne *${dynamicCategory}* select kiya hai. 📝 Ab kripya apna **Full Name** aur **Email ID** reply mein bhej lijiye taaki aapka profile safe ho sake.`;
                             return sendWhatsAppMessage(from, askDetailsText);
                         } else {
-                            let fallbackMsg = isUSDTrack
-                                ? "❌ Invalid choice. Please reply with a valid layout number from *1 to 6* or exact category name."
-                                : "❌ Samajh nahi paye. Kripya list mein se sahi package ka naam likhein ya fir ek number (*1 se 5*) bheinje.";
+                            let fallbackMsg = isUSDTrack ? "❌ Invalid choice. Reply from *1 to 6*." : "❌ Samajh nahi paye. Kripya list mein se ek number (*1 se 5*) bheinje.";
                             return sendWhatsAppMessage(from, fallbackMsg);
                         }
                     }
@@ -485,49 +539,39 @@ app.post('/webhook', async (req, res) => {
                         let isAutomateMatch = false;
                         let dynamicCategory = "";
 
-                        if (userText === '1' || userText.includes("bot") || userText.includes("sync") || userText.includes("ai")) {
-                            dynamicCategory = "WhatsApp AI Chatbot & Lead Sync";
-                            isAutomateMatch = true;
-                        } else if (userText === '2' || userText.includes("crm") || userText.includes("workflow")) {
-                            dynamicCategory = "Custom CRM Workflow Hub";
-                            isAutomateMatch = true;
-                        } else if (userText === '3' || userText.includes("enterprise") || userText.includes("suite")) {
-                            dynamicCategory = "Enterprise AI Suite (Tailored Architecture)";
-                            isAutomateMatch = true;
-                        }
+                        if (userText === '1' || userText.includes("bot")) { dynamicCategory = "WhatsApp AI Chatbot & Lead Sync"; isAutomateMatch = true; }
+                        else if (userText === '2' || userText.includes("crm")) { dynamicCategory = "Custom CRM Workflow Hub"; isAutomateMatch = true; }
+                        else if (userText === '3' || userText.includes("enterprise")) { dynamicCategory = "Enterprise AI Suite (Tailored Architecture)"; isAutomateMatch = true; }
 
                         if (isAutomateMatch) {
                             userSessions[from].step = 'ask_name_email';
                             userSessions[from].projectScope = dynamicCategory;
-
                             let askDetailsText = (userLang === 'EN')
                                 ? `Excellent Selection: *${dynamicCategory}*. 🤖 📝 Kindly reply with your **Full Name** and **Email Address** to proceed.`
-                                : `Excellent Selection! Aapne *${dynamicCategory}* choose kiya hai. 🤖 📝 Ab kripya apna **Full Name** aur **Email ID** reply mein bheinje taaki aapka discount tracking slot link kiya ja sake.`;
+                                : `Excellent Selection! Aapne *${dynamicCategory}* choose kiya hai. 🤖 📝 Ab kripya apna **Full Name** aur **Email ID** reply mein bheinje.`;
                             return sendWhatsAppMessage(from, askDetailsText);
                         } else {
-                            let fallbackMsg = (userLang === 'EN')
-                                ? "❌ Invalid selection. Please reply with a valid number from *1 to 3* or suite category name."
-                                : "❌ Kripya list mein se sirf *1, 2 ya 3* hi likhein ya category module ka naam reply karein.";
+                            let fallbackMsg = (userLang === 'EN') ? "❌ Invalid selection. Reply from *1 to 3*." : "❌ Kripya list mein se sirf *1, 2 ya 3* hi likhein.";
                             return sendWhatsAppMessage(from, fallbackMsg);
                         }
                     }
 
                     // 🎯 STATE 6: CONSULTATION FIXED SLOTS ROUTING
                     if (currentStep === 'awaiting_consultation_slot') {
-                        if (userText === 'a' || userText.includes("today") || userText.includes("aaj") || userText.includes("5")) {
+                        if (userText === 'a' || userText.includes("today") || userText.includes("5")) {
                             userSessions[from].step = 'collect_consultation_identity'; 
                             userSessions[from].projectScope = "Direct Consultation Slot: Today at 5:00 PM";
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: Today at 5:00 PM`);
-                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍️ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍️ *Apna profile register karein:* Kripya apna *Full Name* aur *Email ID* reply mein bhejien.");
-                        } else if (userText === 'b' || userText.includes("tomorrow") || userText.includes("kal") || userText.includes("12")) {
+                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍ *Apna profile register karein:* Kripya apna *Full Name* aur *Email ID* reply mein bhejien.");
+                        } else if (userText === 'b' || userText.includes("tomorrow") || userText.includes("12")) {
                             userSessions[from].step = 'collect_consultation_identity'; 
                             userSessions[from].projectScope = "Direct Consultation Slot: Tomorrow at 12:00 PM";
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: Tomorrow at 12:00 PM`);
-                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍️ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍️ *Apna profile register karein:* Kripya apna *Full Name* aur *Email ID* reply mein bhejien.");
-                        } else if (userText === 'c' || userText.includes("custom") || userText.includes("time") || userText.includes("mere")) {
+                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍ *Apna profile register karein:* Kripya apna *Full Name* aur *Email ID* reply mein bhejien.");
+                        } else if (userText === 'c' || userText.includes("custom")) {
                             userSessions[from].step = 'collect_consultation_identity';
                             userSessions[from].projectScope = "Direct Consultation Slot: Custom Time Input Required";
-                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍️ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍️ *Apna profile register karein:* Kripya apna *Full Name* aur *Email ID* reply mein bhejien.");
+                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍ *Apna profile register karein:* Kripya apna *Full Name* aur *Email ID* reply mein bhejien.");
                         }
                     }
 
@@ -538,22 +582,11 @@ app.post('/webhook', async (req, res) => {
                         let isCoreMatch = false;
                         let targetMenuRoute = userText;
 
-                        if (userText === '1' || userText.includes("web") || userText.includes("dev") || userText.includes("site") || userText.includes("website") || userText.includes("package") || userText.includes("custom") || userText.includes("standard")) {
-                            targetMenuRoute = '1';
-                            isCoreMatch = true;
-                        } else if (userText === '2' || userText.includes("automation") || userText.includes("bot") || userText.includes("demo") || userText.includes("crm")) {
-                            targetMenuRoute = '2';
-                            isCoreMatch = true;
-                        } else if (userText === '3' || userText.includes("deal") || userText.includes("launch") || userText.includes("offer") || userText.includes("discount") || userText.includes("flat") || userText.includes("20%") || userText.includes("off") || userText.includes("coupon")) {
-                            targetMenuRoute = '3';
-                            isCoreMatch = true;
-                        } else if (userText === '4' || userText.includes("book") || userText.includes("token") || userText.includes("payment") || userText.includes("razorpay")) {
-                            targetMenuRoute = '4';
-                            isCoreMatch = true;
-                        } else if (userText === '5' || userText.includes("shahid") || userText.includes("talk") || userText.includes("consultation") || userText.includes("direct")) {
-                            targetMenuRoute = '5';
-                            isCoreMatch = true;
-                        }
+                        if (userText === '1' || userText.includes("web") || userText.includes("site")) { targetMenuRoute = '1'; isCoreMatch = true; }
+                        else if (userText === '2' || userText.includes("automation") || userText.includes("bot")) { targetMenuRoute = '2'; isCoreMatch = true; }
+                        else if (userText === '3' || userText.includes("deal") || userText.includes("discount")) { targetMenuRoute = '3'; isCoreMatch = true; }
+                        else if (userText === '4' || userText.includes("book") || userText.includes("token")) { targetMenuRoute = '4'; isCoreMatch = true; }
+                        else if (userText === '5' || userText.includes("shahid") || userText.includes("talk")) { targetMenuRoute = '5'; isCoreMatch = true; }
 
                         let replyText = "";
                         if (!isCoreMatch) {

@@ -84,7 +84,7 @@ setInterval(() => {
                 ? "Hi! I noticed you were exploring our premium development options. Do you have any questions or need help locking in your slot? 😊"
                 : "Hi! Maine dekha aap Shahid Creatives ki services explore kar rahe the. Kya aapko koi sawal hai ya coupon lock karne me koi help chahiye? 😊";
             
-            // Update step state to handle direct user replies smoothly
+            // Switch state status securely to wait for reply handles
             session.step = 'nudge_sent_waiting_reply';
             sendWhatsAppMessage(from, nudgeMessage);
             session.nudgeSent = true; 
@@ -298,10 +298,10 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, courtesyReply);
                     }
 
-                    // 🎯 NEW INTERCEPTOR: HANDLING USER REPLIES TO AUTOMATED FOLLOW-UP NUDGES
+                    // 🎯 HIGH-PRIORITY INTERCEPTOR STATE: HANDLING USER REPLIES TO AUTOMATED FOLLOW-UP NUDGES
                     if (currentStep === 'nudge_sent_waiting_reply') {
-                        const positiveTriggers = ['yes', 'yeah', 'yup', 'haan', 'ji', 'help', 'ok', 'okay', 'sure'];
-                        if (positiveTriggers.includes(userText) || userText.length > 2) {
+                        const positiveTriggers = ['yes', 'yeah', 'yup', 'haan', 'ji', 'help', 'ok', 'okay', 'sure', 'help chahiye', 'bataiye'];
+                        if (positiveTriggers.includes(userText) || userText.length >= 2) {
                             userSessions[from].step = 'awaiting_consultation_slot';
                             const currentHourIST = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Kolkata"})).getHours();
                             
@@ -342,6 +342,7 @@ app.post('/webhook', async (req, res) => {
 
                     // 🎯 DEDICATED CAPTURE ROUTE FOR CUSTOM SCHEDULING TEXT
                     if (currentStep === 'awaiting_custom_time_input') {
+                        let cleanInputTime = userText.replace(/[cCc🅲🅲️\-\*•\(\)]/g, '').trim();
                         userSessions[from].step = 'collect_consultation_identity';
                         userSessions[from].requestedSlot = rawText; 
                         userSessions[from].projectScope = `Custom Slot Input ("${rawText}")`;
@@ -387,12 +388,12 @@ app.post('/webhook', async (req, res) => {
                     if (currentStep === 'collect_custom_query_and_time') {
                         const isUSDTrack = (userLang === 'EN');
 
-                        if (userText === '1' || userText === '2') {
+                        if (userText === '1' || userText === '2' || userText === 'type 1' || userText === 'type 2') {
                             userSessions[from].step = 'awaiting_specific_service_selection';
                             
-                            let interceptorReply = (userText === '1')
-                                ? (isUSDTrack ? "⚠️ Please be specific! Which Web scope do you need? \n\n👉 Type one: *Starter Plan* ($199), *Basic Plan* ($299), *Starter Business Site* ($499), or *E-Commerce Hub* ($899)" : "⚠️ Kripya clear batayein! Aapko hamare active modules mein se kis tarah ki website chahiye? \n\n👉 Niche diye gaye active plans mein se ek naam type karein:\n🔹 *Landing Page/Funnel* (₹12,300)\n🔹 *Business/Corporate Website* (₹25,500)\n🔹 *E-commerce Website (Online Store)* (₹47,500)")
-                                : (isUSDTrack ? "⚠️ Please be specific! What architecture do you want? \n\n👉 Type one: *WhatsApp Chatbot* ($110) or *Custom CRM Workflow Hub* ($220)" : "⚠️ Kripya clear batayein! Aapko kis tarah ka automation stack design karwana hai? \n\n👉 Niche diye gaye models mein se ek naam type karein:\n🤖 *WhatsApp Bot & Lead Sync* (₹8,713)\n💼 *Custom CRM Workflow Hub* (₹18,000)");
+                            let interceptorReply = (userText.includes('1'))
+                                ? (isUSDTrack ? "⚠️ Please be specific! Which Web scope do you need? \n\n👉 Type one: *Starter Plan* ($199), *Basic Plan* ($299), *Starter Business Site* ($499), or *E-Commerce Hub* ($899)" : "⚠️ Kripya clear batayein! Aapko hamare active modules mein se kis tarah ki website chahiye? \n\n👉 Niche diye gaye active plans mein se ek naam type karein:\n🔹 *Landing Page/Funnel* (₹12,300)\n🔹 *Business/Corporate Website* (₹25,500)\n🔹 *E-commerce Website (Online Store)* (₹47,500)\n🔹 *Custom Web Application* (₹1,45,000+)")
+                                : (isUSDTrack ? "⚠️ Please be specific! What architecture do you want? \n\n👉 Type one: *WhatsApp Chatbot* ($110) or *Custom CRM Workflow Hub* ($220)" : "⚠️ Kripya clear batayein! Aapko kis tarah ka automation stack design karwana hai? \n\n👉 Niche diye gaye models mein se ek naam type karein:\n🤖 *WhatsApp Bot & Lead Sync* (₹8,713)\n💼 *Custom CRM Workflow Hub* (₹18,000)\n🌐 *Enterprise AI Suite* (Custom Structure)");
                             return sendWhatsAppMessage(from, interceptorReply);
                         }
 
@@ -529,8 +530,9 @@ app.post('/webhook', async (req, res) => {
                     // 🎯 STATE 6: CONSULTATION FIXED SLOTS ROUTING (IST REALTIME EXPIRE VALUE ENGINE)
                     if (currentStep === 'awaiting_consultation_slot') {
                         const currentHourIST = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Kolkata"})).getHours();
+                        let chosenOptionClean = userText.replace(/[\-\*•\(\)]/g, '').trim();
                         
-                        if (userText === 'a' || userText.includes("today") || userText.includes("5")) {
+                        if (chosenOptionClean === 'a' || chosenOptionClean.includes("today") || chosenOptionClean.includes("5")) {
                             userSessions[from].step = 'collect_consultation_identity'; 
                             const dynamicSlotLabel = (currentHourIST >= 17) ? "Tomorrow at 5:00 PM" : "Today at 5:00 PM";
                             
@@ -538,7 +540,7 @@ app.post('/webhook', async (req, res) => {
                             userSessions[from].projectScope = `Direct Consultation Slot: ${dynamicSlotLabel}`;
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: ${dynamicSlotLabel}`);
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address* (separated by a comma, e.g. John Doe, john@email.com)." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma (,) lagakar ek sath bhejien (jaise: Sarfaraj Khan, sarfaraj@gmail.com).");
-                        } else if (userText === 'b' || userText.includes("tomorrow") || userText.includes("12")) {
+                        } else if (chosenOptionClean === 'b' || chosenOptionClean.includes("tomorrow") || chosenOptionClean.includes("12")) {
                             userSessions[from].step = 'collect_consultation_identity'; 
                             const dynamicSlotLabel = (currentHourIST >= 17) ? "Day After Tomorrow at 12:00 PM" : "Tomorrow at 12:00 PM";
                             
@@ -546,7 +548,7 @@ app.post('/webhook', async (req, res) => {
                             userSessions[from].projectScope = `Direct Consultation Slot: ${dynamicSlotLabel}`;
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: ${dynamicSlotLabel}`);
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address* (separated by a comma, e.g. John Doe, john@email.com)." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma (,) lagakar ek sath bhejien (jaise: Sarfaraj Khan, sarfaraj@gmail.com).");
-                        } else if (userText === 'c' || userText.includes("custom")) {
+                        } else if (chosenOptionClean === 'c' || chosenOptionClean.includes("custom")) {
                             userSessions[from].step = 'awaiting_custom_time_input';
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "📅 *Custom Scheduling Activated!* \n\nPlease type your preferred **Date and Time** below (e.g., *Monday at 3 PM*):" : "📅 *Custom Scheduling Active!* \n\nKripya jis **Date aur Time** par aap call chahte hain, use niche type karke send karein (jaise: *Kal dopahar 3 baje*):");
                         }

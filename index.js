@@ -146,20 +146,18 @@ app.post('/webhook', async (req, res) => {
                         let clientName = "Valued Client";
                         let clientEmail = "Not Provided";
                         let projectScope = "Website Custom Estimate";
-                        let parsedBasePrice = "199"; 
+                        let parsedBasePrice = 0; 
                         
                         try {
                             const nameMatch = rawText.match(/(?:Client Name|👤[^:]*):\s*([^\n\r]+)/i);
                             const scopeMatch = rawText.match(/(?:Plan Chosen|Category Model|Specifications[^:]*):\s*([^\n\r]+)/i);
-                            
-                            // 🛠️ CRITICAL REGEX FIX: Alphanumeric aur Comma safe numerical string capture framework
                             const priceMatch = rawText.match(/(?:Estimated Price|Base Price|Price|Grand Total[^:]*):\s*\$([0-9.,]+)/i);
                             
                             if (nameMatch) clientName = nameMatch[1].split('\n')[0].split(',')[0].trim();
                             if (scopeMatch) projectScope = scopeMatch[1].replace(/[\*•\-]/g, '').trim();
                             if (priceMatch) {
-                                // Strip out any numeric commas to safely process mathematical logic
-                                parsedBasePrice = priceMatch[1].replace(/,/g, '').trim();
+                                // Strip commas and parse directly as the absolute final price without modifying it
+                                parsedBasePrice = Math.round(parseFloat(priceMatch[1].replace(/,/g, '').trim()));
                             }
                             
                             const globalEmailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/i;
@@ -189,7 +187,7 @@ app.post('/webhook', async (req, res) => {
                                     client_name: clientName,
                                     whatsapp_number: from,
                                     project_scope: `${projectScope} (Status: Fully Paid Portal Form)`,
-                                    calculated_price: calculateTotalPayable(parsedBasePrice, isInternationalNumber),
+                                    calculated_price: parsedBasePrice, // ⚡ FIXED: Added raw absolute value directly
                                     email: clientEmail
                                 });
                             } catch (err) { console.error("Paid lead API sync error:", err.message); }
@@ -212,7 +210,8 @@ app.post('/webhook', async (req, res) => {
                             nudgeSent: false
                         };
 
-                        const calculatedPrice = calculateTotalPayable(parsedBasePrice, true);
+                        // ⚡ FIXED: Yahan se billing calculation engine bypass kiya hai website leads ke liye
+                        const calculatedPrice = parsedBasePrice; 
                         const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n📝 *Plan:* ${projectScope}\n💰 *Price:* $${calculatedPrice}`;
                         await sendWhatsAppMessage("917529839762", adminNotification);
 

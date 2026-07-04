@@ -48,7 +48,7 @@ function getBasePriceByPlan(planScope, isUSD = false) {
     }
 }
 
-// 🤖 BACKGROUND TIMEOUT ENGINE: 10-Minute Automated Nudge Follow-up (Except during custom time setups)
+// 🤖 BACKGROUND TIMEOUT ENGINE: 10-Minute Automated Nudge Follow-up
 setInterval(() => {
     const now = Date.now();
     for (const from in userSessions) {
@@ -296,13 +296,11 @@ app.post('/webhook', async (req, res) => {
                         let cleanName = "Valued Client";
                         let cleanEmail = "Not Provided";
                         
-                        // Parse name and email from comma separation if provided
                         if (rawText.includes(",")) {
                             const parts = rawText.split(",");
                             cleanName = parts[0].trim();
                             cleanEmail = parts[1].trim();
                         } else {
-                            // Extract email if floating inside plain text string
                             const globalEmailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/i;
                             const emailMatch = rawText.match(globalEmailRegex);
                             if (emailMatch) {
@@ -320,19 +318,34 @@ app.post('/webhook', async (req, res) => {
                         if (userLang === 'EN') {
                             descriptivePrompt = `Thank you *${cleanName}*! 🙏\n\nTo lock a high-converting strategy blueprint, please share your goals in the next reply:\n\n🌐 **1. Website Development:**\nWhich dynamic plan fits your vision? (Starter Plan, Basic Plan, Starter Business Site, or E-Commerce Hub?)\n\n🤖 **2. AI Automation Goals:**\nWhat precise processes do you want to automate?`;
                         } else {
-                            descriptivePrompt = `Thank you *${cleanName}*! 🙏\n\nStrategy call ko 100% efficient banane ke liye, kripya agle message mein niche di gayi details batayein:\n\n🌐 **1. Website Development:**\nAap kis tarah ka plan model ya scope dekh rahe hain? (Landing Page, Corporate Layout Showcase, ya Product Selling E-commerce Store?)\n\n🤖 **2. AI Automation Goals:**\nAapko business architecture me kya karwana hai?`;
+                            descriptivePrompt = `Thank you *${cleanName}*! 🙏\n\nStrategy call ko 100% efficient banane ke liye, kripya agle message mein niche di gayi details batayein:\n\n🌐 **Type 1:** Agar aapko Website chahiye toh specific type likhein (e.g., Landing Page, Corporate Showcase, ya Online Store).\n\n🤖 **Type 2:** Agar AI Architecture/Bot chahiye toh details likhein (e.g., WhatsApp Lead Bot, Sheets Sync).`;
                         }
                         return sendWhatsAppMessage(from, descriptivePrompt);
                     }
 
                     // 🎯 STATE 2: DISPATCH CUSTOM QUERY & TIME TO DASHBOARD (EMAIL ATTACHED FIXED ROW)
                     if (currentStep === 'collect_custom_query_and_time') {
-                        userSessions[from].step = 'post_registration';
                         const cleanName = userSessions[from].clientName;
                         const finalScope = userSessions[from].projectScope;
                         const clientEmail = userSessions[from].clientEmail || "Not Provided";
 
-                        // 🔍 FIXED LOGIC: Email parameter integrated here securely inside alert block
+                        // 🔍 CRITICAL FIX FOR SINGLE '1' OR '2' RESPONSES
+                        if (userText === '1' || userText === '2') {
+                            let interceptorReply = "";
+                            if (userText === '1') {
+                                interceptorReply = (userLang === 'EN')
+                                    ? "⚠️ Please be specific! Which Website layout do you need? (Starter Plan, Basic Plan, or E-Commerce Store?)"
+                                    : "⚠️ Kripya clear batayein! Aapko kis tarah ki website chahiye? \n\n👉 Type kijiye: *Landing Page*, *Business Corporate Showcase*, ya *Online Store*";
+                            } else {
+                                interceptorReply = (userLang === 'EN')
+                                    ? "⚠️ Please be specific! What do you want to automate? (WhatsApp Chatbot, Lead Sync, or Custom CRM?)"
+                                    : "⚠️ Kripya clear batayein! Aapko AI automation mein kya karwana hai? \n\n👉 Type kijiye: *WhatsApp Bot*, *Auto Google Sheets Sync*, ya *Custom CRM Workflow*";
+                            }
+                            return sendWhatsAppMessage(from, interceptorReply);
+                        }
+
+                        // If input is text/specific, finish processing safely
+                        userSessions[from].step = 'post_registration';
                         const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details & Parameters:* ${finalScope}\n💬 *User Stated Objectives:* "${rawText}"\n\n🤖 *Status:* Live details captured securely!`;
                         await sendWhatsAppMessage("917529839762", comprehensiveAdminAlert);
 

@@ -139,7 +139,7 @@ app.post('/webhook', async (req, res) => {
                         userSessions[from] = null;
                     }
 
-                    // WEBSITE INBOUND FORM SYNC INTERCEPTOR
+                    // 🎯 TOP PRIORITY INTERCEPTOR: WEBSITE INBOUND FORM SYNC
                     if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate") || rawText.includes("Estimated Price:") || rawText.includes("Grand Total:")) {
                         if (userSessions[from] && userSessions[from].lastSubmitedTime && (Date.now() - userSessions[from].lastSubmitedTime < 15000)) { return; }
                         
@@ -151,17 +151,23 @@ app.post('/webhook', async (req, res) => {
                         try {
                             const nameMatch = rawText.match(/(?:Client Name|👤[^:]*):\s*([^\n\r]+)/i);
                             const scopeMatch = rawText.match(/(?:Plan Chosen|Category Model|Specifications[^:]*):\s*([^\n\r]+)/i);
-                            const priceMatch = rawText.match(/(?:Estimated Price|Base Price|Price|Grand Total[^:]*):\s*\$([0-9.]+)/i);
+                            
+                            // 🛠️ CRITICAL REGEX FIX: Alphanumeric aur Comma safe numerical string capture framework
+                            const priceMatch = rawText.match(/(?:Estimated Price|Base Price|Price|Grand Total[^:]*):\s*\$([0-9.,]+)/i);
                             
                             if (nameMatch) clientName = nameMatch[1].split('\n')[0].split(',')[0].trim();
                             if (scopeMatch) projectScope = scopeMatch[1].replace(/[\*•\-]/g, '').trim();
-                            if (priceMatch) parsedBasePrice = priceMatch[1].trim();
+                            if (priceMatch) {
+                                // Strip out any numeric commas to safely process mathematical logic
+                                parsedBasePrice = priceMatch[1].replace(/,/g, '').trim();
+                            }
                             
                             const globalEmailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/i;
                             const emailMatch = rawText.match(globalEmailRegex);
                             if (emailMatch) clientEmail = emailMatch[1].trim();
                         } catch (parseError) { console.error("Parser failure exception inside landing template."); }
 
+                        // 🛑 CRITICAL PAID FILTER
                         if (userText.includes("paid the full amount") || userText.includes("advance amount paid") || userText.includes("paid the full") || userText.includes("i just paid")) {
                             
                             userSessions[from] = {
@@ -315,7 +321,6 @@ app.post('/webhook', async (req, res) => {
                         userSessions[from].clientName = cleanName;
                         userSessions[from].clientEmail = cleanEmail;
 
-                        // 🛑 FIXED: Yahan se Admin API Post call bilkul delete kar di hai taaki early data push na ho.
                         let descriptivePrompt = "";
                         if (userLang === 'EN') {
                             descriptivePrompt = `Thank you *${cleanName}*! 🙏\n\nTo lock a high-converting strategy blueprint, please share your goals in the next reply:\n\n🌐 **1. Website Development:**\nWhich plan fits your vision? (Starter Plan, Basic Plan, Starter Business Site, or E-Commerce Hub?)\n\n🤖 **2. AI Automation Goals:**\nWhat precise processes do you want to automate?`;
@@ -486,13 +491,13 @@ app.post('/webhook', async (req, res) => {
                             userSessions[from].requestedSlot = "Today at 5:00 PM";
                             userSessions[from].projectScope = "Direct Consultation Slot: Today at 5:00 PM";
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: Today at 5:00 PM`);
-                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein bhejien (Separated by Comma).");
+                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma lagakar bhejien.");
                         } else if (userText === 'b' || userText.includes("tomorrow") || userText.includes("12")) {
                             userSessions[from].step = 'collect_consultation_identity'; 
                             userSessions[from].requestedSlot = "Tomorrow at 12:00 PM";
                             userSessions[from].projectScope = "Direct Consultation Slot: Tomorrow at 12:00 PM";
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: Tomorrow at 12:00 PM`);
-                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein bhejien (Separated by Comma).");
+                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma lagakar bhejien.");
                         } else if (userText === 'c' || userText.includes("custom")) {
                             userSessions[from].step = 'awaiting_custom_time_input';
                             let triggerCustomTimeMsg = (userLang === 'EN')
@@ -568,7 +573,6 @@ async function finalizeConsultationLead(from, textInput, res) {
     const dynamicSlot = session.requestedSlot || "Direct Scheduled Request";
     const userLang = session.lang;
 
-    // 🚀 ONE TIME SECURED API POST ENGINE (Triggers ONLY when user submits final explicit plan)
     const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details & Parameters:* Direct Consultation Slot: ${dynamicSlot}\n💬 *User Stated Objectives:* "${textInput}"\n\n🤖 *Status:* Live details captured securely!`;
     await sendWhatsAppMessage("917529839762", comprehensiveAdminAlert);
 

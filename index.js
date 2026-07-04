@@ -2,7 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const axios = require('axios');
 
-const app = express();
+const app = report = express();
 app.use(bodyParser.json());
 
 // 🟢 LIGHTWEIGHT IN-MEMORY STORAGE (Render Safe)
@@ -328,18 +328,19 @@ app.post('/webhook', async (req, res) => {
                         const cleanName = userSessions[from].clientName;
                         const finalScope = userSessions[from].projectScope;
                         const clientEmail = userSessions[from].clientEmail || "Not Provided";
+                        const isUSDTrack = (userLang === 'EN');
 
-                        // 🔍 CRITICAL FIX FOR SINGLE '1' OR '2' RESPONSES
+                        // 🔍 UPDATED SUB-MENU PROMPTS TO SHOW ACTUAL PLAN NAMES & PRICES INSTEAD OF PLACEHOLDERS
                         if (userText === '1' || userText === '2') {
                             let interceptorReply = "";
                             if (userText === '1') {
-                                interceptorReply = (userLang === 'EN')
-                                    ? "⚠️ Please be specific! Which Website layout do you need? (Starter Plan, Basic Plan, or E-Commerce Store?)"
-                                    : "⚠️ Kripya clear batayein! Aapko kis tarah ki website chahiye? \n\n👉 Type kijiye: *Landing Page*, *Business Corporate Showcase*, ya *Online Store*";
+                                interceptorReply = isUSDTrack
+                                    ? "⚠️ Please be specific! Which Web scope do you need? \n\n👉 Type one: *Starter Plan* ($199), *Basic Plan* ($299), *Starter Business Site* ($499), or *E-Commerce Hub* ($899)"
+                                    : "⚠️ Kripya clear batayein! Aapko hamare active modules mein se kis tarah ki website chahiye? \n\n👉 Niche diye gaye actual plans mein se ek naam type karein:\n🔹 *Landing Page/Funnel* (₹12,300)\n🔹 *Business/Corporate Website* (₹25,500)\n🔹 *E-commerce Website (Online Store)* (₹47,500)\n🔹 *Custom Web Application* (₹1,45,000+)";
                             } else {
-                                interceptorReply = (userLang === 'EN')
-                                    ? "⚠️ Please be specific! What do you want to automate? (WhatsApp Chatbot, Lead Sync, or Custom CRM?)"
-                                    : "⚠️ Kripya clear batayein! Aapko AI automation mein kya karwana hai? \n\n👉 Type kijiye: *WhatsApp Bot*, *Auto Google Sheets Sync*, ya *Custom CRM Workflow*";
+                                interceptorReply = isUSDTrack
+                                    ? "⚠️ Please be specific! What architecture do you want? \n\n👉 Type one: *WhatsApp Chatbot* ($110) or *Custom CRM Workflow Hub* ($220)"
+                                    : "⚠️ Kripya clear batayein! Aapko kis tarah ka automation stack design karwana hai? \n\n👉 Niche diye gaye models mein se ek naam type karein:\n🤖 *WhatsApp Bot & Lead Sync* (₹8,713)\n💼 *Custom CRM Workflow Hub* (₹18,000)\n🌐 *Enterprise AI Suite* (Custom Structure)";
                             }
                             return sendWhatsAppMessage(from, interceptorReply);
                         }

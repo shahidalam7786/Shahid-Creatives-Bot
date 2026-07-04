@@ -32,44 +32,20 @@ function getBasePriceByPlan(planScope, isUSD = false) {
     const text = String(planScope).toLowerCase().trim();
     
     if (isUSD) {
-        if (text.includes("whatsapp chatbot") || text.includes("chatbot") || text.includes("bot")) {
-            return "110";
-        }
-        if (text.includes("starter plan") || text.includes("visiting card") || text.includes("starter / visiting card site")) {
-            return "199";
-        }
-        if (text.includes("basic plan") || text.includes("landing page")) {
-            return "299";
-        }
-        if (text.includes("starter business") || text.includes("business website")) {
-            return "499";
-        }
-        if (text.includes("e-commerce hub") || text.includes("ecommerce")) {
-            return "899";
-        }
-        if (text.includes("custom enterprise") || text.includes("software")) {
-            return "2499";
-        }
+        if (text.includes("whatsapp chatbot") || text.includes("chatbot") || text.includes("bot")) return "110";
+        if (text.includes("starter plan") || text.includes("visiting card") || text.includes("starter / visiting card site")) return "199";
+        if (text.includes("basic plan") || text.includes("landing page")) return "299";
+        if (text.includes("starter business") || text.includes("business website")) return "499";
+        if (text.includes("e-commerce hub") || text.includes("ecommerce")) return "899";
+        if (text.includes("custom enterprise") || text.includes("software")) return "2499";
         return "110";
     } else {
-        if (text.includes("whatsapp bot") || text.includes("lead sync")) {
-            return "8713";
-        }
-        if (text.includes("landing page") || text.includes("funnel")) {
-            return "12300";
-        }
-        if (text.includes("crm workflow") || text.includes("workflow hub")) {
-            return "18000";
-        }
-        if (text.includes("business") || text.includes("corporate")) {
-            return "25500";
-        }
-        if (text.includes("e-commerce") || text.includes("store")) {
-            return "47500";
-        }
-        if (text.includes("saas") || text.includes("software")) {
-            return "145000";
-        }
+        if (text.includes("whatsapp ai chatbot") || text.includes("whatsapp bot") || text.includes("lead sync") || text.includes("automation")) return "8713";
+        if (text.includes("landing page") || text.includes("funnel")) return "12300";
+        if (text.includes("crm workflow") || text.includes("workflow hub")) return "18000";
+        if (text.includes("business") || text.includes("corporate") || text.includes("showcase")) return "25500";
+        if (text.includes("e-commerce website") || text.includes("online store") || text.includes("store")) return "47500";
+        if (text.includes("saas") || text.includes("software") || text.includes("custom web application")) return "145000";
         return "8713"; 
     }
 }
@@ -286,6 +262,7 @@ app.post('/webhook', async (req, res) => {
                     }
                     
                     userSessions[from].lastInteractionTime = Date.now();
+                    userSessions[from].nudgeSent = false;
                     const userLang = userSessions[from].lang;
                     const currentStep = userSessions[from].step;
 
@@ -305,14 +282,14 @@ app.post('/webhook', async (req, res) => {
                             userSessions[from].step = 'awaiting_consultation_slot';
                             const currentHourIST = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Kolkata"})).getHours();
                             
-                            const optionA = (currentHourIST >= 17) ? "A) *Kal Shaam 5:00 Baje*" : "A) *Aaj Shaam 5:00 Baje*";
-                            const optionB = (currentHourIST >= 17) ? "B) *Parso Dopahar 12:00 Baje*" : "B) *Kal Dopahar 12:00 Baje*";
-                            const optionA_EN = (currentHourIST >= 17) ? "A) *Tomorrow at 5:00 PM*" : "A) *Today at 5:00 PM*";
-                            const optionB_EN = (currentHourIST >= 17) ? "B) *Day After Tomorrow at 12:00 PM*" : "B) *Tomorrow at 12:00 PM*";
+                            const optionA = (currentHourIST >= 17) ? "🅰️ *Kal Shaam 5:00 Baje*" : "🅰️ *Aaj Shaam 5:00 Baje*";
+                            const optionB = (currentHourIST >= 17) ? "🅱️ *Parso Dopahar 12:00 Baje*" : "🅱️ *Kal Dopahar 12:00 Baje*";
+                            const optionA_EN = (currentHourIST >= 17) ? "🅰️ *Tomorrow at 5:00 PM*" : "🅰️ *Today at 5:00 PM*";
+                            const optionB_EN = (currentHourIST >= 17) ? "🅱️ *Day After Tomorrow at 12:00 PM*" : "🅱️ *Tomorrow at 12:00 PM*";
 
                             let nudgeResponse = (userLang === 'EN')
-                                ? `Awesome! Let's get you connected for a free strategy call. Please choose your slot:\n\n${optionA_EN}\n${optionB_EN}\nC) *Custom Time (Type preferred time below)*\n\n👉 Reply with A, B, or C!`
-                                : `Ji bilkul! Aaiye aapka free consulting strategy slot lock kar dete hain. Kripya niche se ek option choose karein:\n\n${optionA}\n${optionB}\nC) *Custom Time (Apna secure timing niche type karein)*\n\n👉 Kripya **A, B, ya C** likh kar reply kijiye!`;
+                                ? `Awesome! Let's get you connected for a free strategy call. Please choose your slot:\n\n${optionA_EN}\n${optionB_EN}\n🅲️ *Custom Time (Type preferred time below)*\n\n👉 Reply with A, B, or C!`
+                                : `Ji bilkul! Aaiye aapka free consulting strategy slot lock kar dete hain. Kripya niche se ek option choose karein:\n\n${optionA}\n${optionB}\n🅲️ *Custom Time (Apna secure timing niche type karein)*\n\n👉 Kripya **A, B, ya C** likh kar reply kijiye!`;
                             return sendWhatsAppMessage(from, nudgeResponse);
                         }
                     }
@@ -342,13 +319,13 @@ app.post('/webhook', async (req, res) => {
 
                     // 🎯 DEDICATED CAPTURE ROUTE FOR CUSTOM SCHEDULING TEXT
                     if (currentStep === 'awaiting_custom_time_input') {
-                        let cleanInputTime = userText.replace(/[cCc🅲🅲️\-\*•\(\)]/g, '').trim();
+                        let cleanInputTime = rawText.replace(/[cCc🅲🅲️\-\*•\(\)]/g, '').trim();
                         userSessions[from].step = 'collect_consultation_identity';
-                        userSessions[from].requestedSlot = rawText; 
-                        userSessions[from].projectScope = `Custom Slot Input ("${rawText}")`;
+                        userSessions[from].requestedSlot = cleanInputTime; 
+                        userSessions[from].projectScope = `Custom Slot Input ("${cleanInputTime}")`;
                         return sendWhatsAppMessage(from, (userLang === 'EN') 
-                            ? `Got it! Custom slot parameters recorded: *"${rawText}"*\n\n✍ *Please complete your profile:* Kindly reply with your *Full Name* and *Email Address* (separated by comma, e.g. John Doe, john@example.com).` 
-                            : `Noted! Aapka preferred date/time save ho gaya hai: *"${rawText}"*\n\n✍ *Apna profile register karein:* Kripya reply mein apna *Full Name* aur *Email ID* comma (,) lagakar bheinjein (jaise: Sarfaraj Khan, sarfaraj@example.com).`);
+                            ? `Got it! Custom slot parameters recorded: *"${cleanInputTime}"*\n\n✍ *Please complete your profile:* Kindly reply with your *Full Name* and *Email Address* (separated by comma, e.g. John Doe, john@example.com).` 
+                            : `Noted! Aapka preferred date/time save ho gaya hai: *"${cleanInputTime}"*\n\n✍ *Apna profile register karein:* Kripya reply mein apna *Full Name* aur *Email ID* comma (,) lagakar bheinjein (jaise: Sarfaraj Khan, sarfaraj@example.com).`);
                     }
 
                     // 🎯 STATE 1: COLLECT IDENTITY (STRICT MANDATORY NAME & EMAIL CHECK)
@@ -384,7 +361,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, descriptivePrompt);
                     }
 
-                    // 🎯 STATE 2: INTERCEPTOR FOR SELECTIONS (1 OR 2 VALIDATION ENGINE)
+                    // 🎯 STATE 2: INTERCEPTOR FOR SELECTIONS (1 OR 2 VALIDATION ENGINE - NOW WITH DYNAMIC EXPLICIT PRICES MAP)
                     if (currentStep === 'collect_custom_query_and_time') {
                         const isUSDTrack = (userLang === 'EN');
 
@@ -392,8 +369,8 @@ app.post('/webhook', async (req, res) => {
                             userSessions[from].step = 'awaiting_specific_service_selection';
                             
                             let interceptorReply = (userText.includes('1'))
-                                ? (isUSDTrack ? "⚠️ Please be specific! Which Web scope do you need? \n\n👉 Type one: *Starter Plan* ($199), *Basic Plan* ($299), *Starter Business Site* ($499), or *E-Commerce Hub* ($899)" : "⚠️ Kripya clear batayein! Aapko hamare active modules mein se kis tarah ki website chahiye? \n\n👉 Niche diye gaye active plans mein se ek naam type karein:\n🔹 *Landing Page/Funnel* (₹12,300)\n🔹 *Business/Corporate Website* (₹25,500)\n🔹 *E-commerce Website (Online Store)* (₹47,500)\n🔹 *Custom Web Application* (₹1,45,000+)")
-                                : (isUSDTrack ? "⚠️ Please be specific! What architecture do you want? \n\n👉 Type one: *WhatsApp Chatbot* ($110) or *Custom CRM Workflow Hub* ($220)" : "⚠️ Kripya clear batayein! Aapko kis tarah ka automation stack design karwana hai? \n\n👉 Niche diye gaye models mein se ek naam type karein:\n🤖 *WhatsApp Bot & Lead Sync* (₹8,713)\n💼 *Custom CRM Workflow Hub* (₹18,000)\n🌐 *Enterprise AI Suite* (Custom Structure)");
+                                ? (isUSDTrack ? "⚠️ Please be specific! Which Web scope do you need? \n\n👉 Type one: *Starter Plan* ($199), *Basic Plan* ($299), or *E-Commerce Hub* ($899)" : "⚠️ Kripya clear batayein! Aapko hamare active modules mein se kis tarah ki website chahiye? \n\n👉 Niche diye gaye active plans mein se ek naam type karein:\n🔹 *Landing Page/Funnel* (₹12,300)\n🔹 *Business/Corporate Website* (₹25,500)\n🔹 *E-commerce Website (Online Store)* (₹47,500)\n🔹 *Custom Web Application / Software* (₹1,45,000+)")
+                                : (isUSDTrack ? "⚠️ Please be specific! What architecture do you want? \n\n👉 Type one: *WhatsApp Chatbot* ($110) or *Custom CRM Workflow Hub* ($220)" : "⚠️ Kripya clear batayein! Aapko kis tarah ka automation stack design karwana hai? \n\n👉 Niche diye gaye models mein se ek naam type karein:\n🤖 *WhatsApp AI Chatbot & Automation* (Base: ₹8,713)\n💼 *Custom CRM Workflow Hub* (Base: ₹18,000)\n🌐 *Enterprise AI Suite* (Custom Structure)");
                             return sendWhatsAppMessage(from, interceptorReply);
                         }
 
@@ -490,8 +467,8 @@ app.post('/webhook', async (req, res) => {
                             else if (userText === '6' || userText.includes("custom enterprise")) { dynamicCategory = "Custom Enterprise App"; isMatchFound = true; }
                         } else {
                             if (userText === '1' || userText === 'ai' || userText.includes("chatbot")) { dynamicCategory = "WhatsApp AI Chatbot & Automation"; isMatchFound = true; }
-                            else if (userText === '2' || userText.includes("landing")) { dynamicCategory = "Landing Page/Funnel (Single Page Lead Gen)"; isMatchFound = true; }
-                            else if (userText === '3' || userText.includes("business")) { dynamicCategory = "Business/Corporate Website (Brand Showcase)"; isMatchFound = true; }
+                            else if (userText === '2' || userText.includes("landing")) { dynamicCategory = "Landing Page/Funnel"; isMatchFound = true; }
+                            else if (userText === '3' || userText.includes("business")) { dynamicCategory = "Business/Corporate Website"; isMatchFound = true; }
                             else if (userText === '4' || userText.includes("e-commerce")) { dynamicCategory = "E-commerce Website (Online Store)"; isMatchFound = true; }
                             else if (userText === '5' || userText.includes("software")) { dynamicCategory = "Custom Web Application / Software"; isMatchFound = true; }
                         }
@@ -510,7 +487,7 @@ app.post('/webhook', async (req, res) => {
                         let isAutomateMatch = false;
                         let dynamicCategory = "";
 
-                        if (userText === '1' || userText.includes("bot")) { dynamicCategory = "WhatsApp AI Chatbot & Lead Sync"; isAutomateMatch = true; }
+                        if (userText === '1' || userText.includes("bot")) { dynamicCategory = "WhatsApp AI Chatbot & Automation"; isAutomateMatch = true; }
                         else if (userText === '2' || userText.includes("crm")) { dynamicCategory = "Custom CRM Workflow Hub"; isAutomateMatch = true; }
                         else if (userText === '3' || userText.includes("enterprise")) { dynamicCategory = "Enterprise AI Suite (Tailored Architecture)"; isAutomateMatch = true; }
 
@@ -623,7 +600,11 @@ async function finalizeConsultationLead(from, textInput, res) {
     const dynamicSlot = session.requestedSlot || "Direct Scheduled Request";
     const userLang = session.lang;
 
-    const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details & Parameters:* Direct Consultation Slot: ${dynamicSlot}\n💬 *User Stated Objectives:* "${textInput}"\n\n🤖 *Status:* Live details captured securely!`;
+    // 🔍 FETCH DYNAMIC BASE PRICE FROM THE UPDATED INR PRICING SCHEME
+    const matchedBasePrice = getBasePriceByPlan(textInput, false);
+    const finalCalculatedPrice = calculateTotalPayable(matchedBasePrice, false);
+
+    const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details & Parameters:* Direct Consultation Slot: ${dynamicSlot}\n💬 *User Stated Objectives:* "${textInput}"\n💰 *Mapped Plan Base Price:* ₹${matchedBasePrice} (${finalCalculatedPrice} incl GST/Gateway)\n\n🤖 *Status:* Live details captured securely!`;
     await sendWhatsAppMessage("917529839762", comprehensiveAdminAlert);
 
     try {
@@ -633,8 +614,8 @@ async function finalizeConsultationLead(from, textInput, res) {
             email: clientEmail,
             requested_slot: dynamicSlot,
             discussion_notes: `*User Stated Objectives:* "${textInput}"\n\n${comprehensiveAdminAlert}`,
-            project_scope: `Direct Consultation | Objective: "${textInput}"`,
-            calculated_price: 0
+            project_scope: textInput, // Explicitly pushes user plan name directly to panel "Stated Need / Proposed Plan"
+            calculated_price: finalCalculatedPrice // Pushes mapped absolute dynamic price token
         });
     } catch (apiErr) { 
         console.error("Dashboard parameters execution failure handler."); 

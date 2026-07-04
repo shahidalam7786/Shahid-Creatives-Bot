@@ -162,7 +162,7 @@ app.post('/webhook', async (req, res) => {
                             if (emailMatch) clientEmail = emailMatch[1].trim();
                         } catch (parseError) { console.error("Parser failure exception inside landing template."); }
 
-                        // 🛑 CRITICAL PAID FILTER: Check if user has already paid the amount
+                        // 🛑 CRITICAL PAID FILTER
                         if (userText.includes("paid the full amount") || userText.includes("advance amount paid") || userText.includes("paid the full") || userText.includes("i just paid")) {
                             
                             userSessions[from] = {
@@ -176,7 +176,6 @@ app.post('/webhook', async (req, res) => {
                                 nudgeSent: true
                             };
 
-                            // Notify Admin Panel
                             const paidAdminAlert = `✅ *PAID CLIENT REGISTERED!* ✅\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail}\n📝 *Plan Scope:* ${projectScope}\n💳 *Status:* Fully Paid via Portal Gateway!`;
                             await sendWhatsAppMessage("917529839762", paidAdminAlert);
 
@@ -191,13 +190,12 @@ app.post('/webhook', async (req, res) => {
                             } catch (err) { console.error("Paid lead API sync error:", err.message); }
 
                             let paidSuccessReply = (userSessions[from].lang === 'EN')
-                                ? `Thank you *${clientName}*! 🙏 Your paid booking has been successfully verified on our dashboard.\n\n⚡ *Status:* **Project Consultation Stage Activated!**\n\nShahid has been notified and we are setting up your development blueprint environment. We will connect with you shortly for the strategic sync session! 🚀`
-                                : `Mubarak ho *${clientName}*! 🙏 Aapki payment received data hamare dashboard par successfully sync ho gayi hai.\n\n⚡ *Status:* **Project Consultation Stage Active!**\n\nShahid bhai aapke project parameters verify kar rahe hain. Hamari team strategy aur architecture mapping discovery call ke liye aapse bohot jald raabta karegi! 🚀`;
+                                ? `Thank you *${clientName}*! 🙏 Your paid booking has been successfully verified on our dashboard.\n\n⚡ *Status:* **Project Consultation Stage Activated!**`
+                                : `Mubarak ho *${clientName}*! 🙏 Aapki payment received data hamare dashboard par successfully sync ho gayi hai.\n\n⚡ *Status:* **Project Consultation Stage Active!**`;
                             
                             return sendWhatsAppMessage(from, paidSuccessReply);
                         }
 
-                        // Otherwise execute normal link flow if unpaid lead arrives
                         userSessions[from] = {
                             step: 'awaiting_website_action',
                             lang: 'EN', 
@@ -220,11 +218,10 @@ app.post('/webhook', async (req, res) => {
                         const uniqueProjectId = `SC-${Math.floor(10000 + Math.random() * 90000)}`;
                         const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=49&currency=USD&totalPrice=${calculatedPrice}&name=${encodeURIComponent(clientName)}&email=${encodeURIComponent(clientEmail)}&phone=${from}&plan=${encodeURIComponent(projectScope)}&coupon=LAUNCH20`;
 
-                        let clientReply = `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved to our dashboard.\n\n🔥 *Exclusive Reward Activated:* Launch code **LAUNCH20** secures a **Flat 20% OFF** discount linked directly to your project value.\n\n🔗 *Pay Securely Here (USD Slot Guarantee):* ${selfPayLink}`;
+                        let clientReply = `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved to our dashboard.\n\n🔗 *Pay Securely Here (USD Slot Guarantee):* ${selfPayLink}`;
                         return sendWhatsAppMessage(from, clientReply);
                     }
 
-                    // Fallback initialization if session is clean
                     if (!userSessions[from]) {
                         userSessions[from] = { 
                             step: 'region_check', 
@@ -244,7 +241,6 @@ app.post('/webhook', async (req, res) => {
                     const userLang = userSessions[from].lang;
                     const currentStep = userSessions[from].step;
 
-                    // 🎯 FIXED GLOBAL PRIORITY STATE 0: COURTESY REPLIES RESET BUFFER
                     const courtesyTriggers = ['thanks', 'thank you', 'ok', 'okay', 'ji', 'shukriya', 'thx'];
                     if (courtesyTriggers.includes(userText)) {
                         userSessions[from] = null; 
@@ -273,7 +269,7 @@ app.post('/webhook', async (req, res) => {
                             if (userSessions[from].lang === 'EN') {
                                 replyText = "Hello! Welcome to *Shahid Creatives*. 🚀\nWe design premium agile web ecosystems and high-converting automation workflows.\n\nSelect a professional stack tier via option number:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI Business Automation Hub**\n3️⃣ **🔥 Exclusive Launch Deal**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid (Direct Consultation)**";
                             } else {
-                                replyText = "Hello! Welcome to *Shahid Creatives* (Ludhiana, Punjab). 🚀\nHum engineer karte hain high-performance websites aur AI automation frameworks.\n\nKoshish ko aage badhane ke liye ek option number reply kijiye:\n\n1️⃣ *Web Development Tiers* (Saare Standard Custom Packages)\n2️⃣ *AI Business Automation & B2B Wholesale Demo*\n3️⃣ *🔥 Exclusive Launch Deal* (Flat 20% OFF Status)\n4️⃣ *💳 Direct Booking & Token System* (₹999 Secure Path)\n5️⃣ *👤 Talk to Shahid* (Direct Consultation)";
+                                replyText = "Hello! Welcome to *Shahid Creatives* (Ludhiana, Punjab). 🚀\nHum engineer karte hain high-performance websites aur AI automation frameworks.\n\nKoshish ko aage badhane ke liye ek option number reply kijiye:\n\n1️⃣ *Web Development Tiers*\n2️⃣ *AI Business Automation & B2B Wholesale Demo*\n3️⃣ *🔥 Exclusive Launch Deal*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid* (Direct Consultation)";
                             }
                             return sendWhatsAppMessage(from, replyText);
                         } else {
@@ -288,33 +284,56 @@ app.post('/webhook', async (req, res) => {
                         userSessions[from].projectScope = `Direct Consultation Slot: Custom Input ("${rawText}")`;
                         
                         let askIdentityText = (userLang === 'EN')
-                            ? `Got it! Custom slot parameters recorded: *"${rawText}"*\n\n✍ *Please complete your profile:* Kindly reply with your *Full Name* and *Email Address*.`
-                            : `Noted! Aapka preferred date/time save ho gaya hai: *"${rawText}"*\n\n✍ *Apna profile register karein:* Kripya reply mein apna *Full Name* aur *Email ID* bheinjein.`;
+                            ? `Got it! Custom slot parameters recorded: *"${rawText}"*\n\n✍ *Please complete your profile:* Kindly reply with your *Full Name* and *Email Address* (e.g. John Doe, john@example.com).`
+                            : `Noted! Aapka preferred date/time save ho gaya hai: *"${rawText}"*\n\n✍ *Apna profile register karein:* Kripya reply mein apna *Full Name* aur *Email ID* likh kar bheinjein (jaise: Sarfaraj Khan, sarfaraj@example.com).`;
                         return sendWhatsAppMessage(from, askIdentityText);
                     }
 
                     // 🎯 STATE 1: COLLECT IDENTITY (DEEP DETAILED EXPLORATION QUESTIONNAIRE)
                     if (currentStep === 'collect_consultation_identity') {
                         userSessions[from].step = 'collect_custom_query_and_time'; 
-                        let cleanName = rawText.split('\n')[0].split(',')[0].trim();
+                        
+                        let cleanName = "Valued Client";
+                        let cleanEmail = "Not Provided";
+                        
+                        // Parse name and email from comma separation if provided
+                        if (rawText.includes(",")) {
+                            const parts = rawText.split(",");
+                            cleanName = parts[0].trim();
+                            cleanEmail = parts[1].trim();
+                        } else {
+                            // Extract email if floating inside plain text string
+                            const globalEmailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/i;
+                            const emailMatch = rawText.match(globalEmailRegex);
+                            if (emailMatch) {
+                                cleanEmail = emailMatch[1].trim();
+                                cleanName = rawText.replace(cleanEmail, "").replace(/[,]/g, "").trim() || "Valued Client";
+                            } else {
+                                cleanName = rawText.split('\n')[0].trim();
+                            }
+                        }
+                        
                         userSessions[from].clientName = cleanName;
+                        userSessions[from].clientEmail = cleanEmail;
 
                         let descriptivePrompt = "";
                         if (userLang === 'EN') {
-                            descriptivePrompt = `Thank you *${cleanName}*! 🙏\n\nTo lock a high-converting strategy blueprint, please share your goals in the next reply:\n\n🌐 **1. Website Development:**\nWhich dynamic plan fits your vision? (Starter Plan, Basic Plan, Starter Business Site, or E-Commerce Hub?)\n\n🤖 **2. AI Automation Goals:**\nWhat precise processes do you want to automate? (WhatsApp Chatbots, Custom CRM workflows, or Auto Sheet Database logging?)`;
+                            descriptivePrompt = `Thank you *${cleanName}*! 🙏\n\nTo lock a high-converting strategy blueprint, please share your goals in the next reply:\n\n🌐 **1. Website Development:**\nWhich dynamic plan fits your vision? (Starter Plan, Basic Plan, Starter Business Site, or E-Commerce Hub?)\n\n🤖 **2. AI Automation Goals:**\nWhat precise processes do you want to automate?`;
                         } else {
-                            descriptivePrompt = `Thank you *${cleanName}*! 🙏\n\nStrategy call ko 100% efficient banane ke liye, kripya agle message mein niche di gayi details batayein:\n\n🌐 **1. Website Development:**\nAap kis tarah ka plan model ya scope dekh rahe hain? (Landing Page, Corporate Layout Showcase, ya Product Selling E-commerce Store?)\n\n🤖 **2. AI Automation Goals:**\nAapko business architecture me kya karwana hai? (Auto Lead Generation system, Automated CRM follow-ups, ya custom Google Sheets sync workflows?)`;
+                            descriptivePrompt = `Thank you *${cleanName}*! 🙏\n\nStrategy call ko 100% efficient banane ke liye, kripya agle message mein niche di gayi details batayein:\n\n🌐 **1. Website Development:**\nAap kis tarah ka plan model ya scope dekh rahe hain? (Landing Page, Corporate Layout Showcase, ya Product Selling E-commerce Store?)\n\n🤖 **2. AI Automation Goals:**\nAapko business architecture me kya karwana hai?`;
                         }
                         return sendWhatsAppMessage(from, descriptivePrompt);
                     }
 
-                    // 🎯 STATE 2: DISPATCH CUSTOM QUERY & TIME TO DASHBOARD
+                    // 🎯 STATE 2: DISPATCH CUSTOM QUERY & TIME TO DASHBOARD (EMAIL ATTACHED FIXED ROW)
                     if (currentStep === 'collect_custom_query_and_time') {
                         userSessions[from].step = 'post_registration';
                         const cleanName = userSessions[from].clientName;
                         const finalScope = userSessions[from].projectScope;
+                        const clientEmail = userSessions[from].clientEmail || "Not Provided";
 
-                        const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n📝 *Slot Details & Parameters:* ${finalScope}\n💬 *User Stated Objectives:* "${rawText}"\n\n🤖 *Status:* Live details captured securely!`;
+                        // 🔍 FIXED LOGIC: Email parameter integrated here securely inside alert block
+                        const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details & Parameters:* ${finalScope}\n💬 *User Stated Objectives:* "${rawText}"\n\n🤖 *Status:* Live details captured securely!`;
                         await sendWhatsAppMessage("917529839762", comprehensiveAdminAlert);
 
                         try {
@@ -323,7 +342,7 @@ app.post('/webhook', async (req, res) => {
                                 whatsapp_number: from,
                                 project_scope: `${finalScope} | Goals: "${rawText}"`,
                                 calculated_price: 0,
-                                email: userSessions[from].clientEmail || "Not Provided"
+                                email: clientEmail
                             });
                         } catch (apiErr) { console.error("Admin Dashboard tracking pipeline err."); }
 
@@ -361,7 +380,7 @@ app.post('/webhook', async (req, res) => {
                         const currencySymbol = isUSDTrack ? '$' : '₹';
                         const taxLabel = isUSDTrack ? 'incl Gateway Fees' : 'incl GST';
 
-                        const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n📝 *Plan Scope:* ${userSessions[from].projectScope}\n💰 *Calculated Price (${taxLabel}):* ${currencySymbol}${finalPayable}`;
+                        const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${cleanEmail}\n📝 *Plan Scope:* ${userSessions[from].projectScope}\n💰 *Calculated Price (${taxLabel}):* ${currencySymbol}${finalPayable}`;
                         await sendWhatsAppMessage("917529839762", chatAdminNotification);
 
                         try {
@@ -377,11 +396,11 @@ app.post('/webhook', async (req, res) => {
                         if (isUSDTrack) {
                             const tokenAmountUSD = "49";
                             const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountUSD}&currency=USD&totalPrice=${finalPayable}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
-                            replyText = `Thank you, your profile is secure! 🤝\n\n🔥 *Launch Discount Applied:* Your code **LAUNCH20** (Flat 20% OFF) is successfully linked to your project estimate of $${finalPayable}.\n\n🔗 *Pay Securely Here (USD Slot Guarantee):* ${selfPayLink}`;
+                            replyText = `Thank you, your profile is secure! 🤝\n\n🔗 *Pay Securely Here (USD Slot Guarantee):* ${selfPayLink}`;
                         } else {
                             const tokenAmountINR = "999";
                             const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmountINR}&currency=INR&totalPrice=${finalPayable}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
-                            replyText = `Mubarak ho! Aapki requirement *${userSessions[from].projectScope}* register ho gayi hai! 🤝\n\n🔥 *Launch Discount Applied:* Coupon code **LAUNCH20** active ho gaya hai aapke ₹${finalPayable} estimate par. Aap niche diye gaye link se **₹999 Token Booking** complete karke discount slot lock karein:\n\n🔗 *Direct Pay Gateway Link:* ${selfPayLink}`;
+                            replyText = `Mubarak ho! Aapki requirement *${userSessions[from].projectScope}* register ho gayi hai! 🤝\n\n🔗 *Direct Pay Gateway Link:* ${selfPayLink}`;
                         }
                         return sendWhatsAppMessage(from, replyText);
                     }
@@ -463,18 +482,17 @@ app.post('/webhook', async (req, res) => {
                             userSessions[from].step = 'collect_consultation_identity'; 
                             userSessions[from].projectScope = "Direct Consultation Slot: Today at 5:00 PM";
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: Today at 5:00 PM`);
-                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍ *Apna profile register karein:* Kripya apna *Full Name* aur *Email ID* reply mein bhejien.");
+                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address* (separated by comma)." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma lagakar bhejien.");
                         } else if (userText === 'b' || userText.includes("tomorrow") || userText.includes("12")) {
                             userSessions[from].step = 'collect_consultation_identity'; 
                             userSessions[from].projectScope = "Direct Consultation Slot: Tomorrow at 12:00 PM";
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: Tomorrow at 12:00 PM`);
-                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍ *Apna profile register karein:* Kripya apna *Full Name* aur *Email ID* reply mein bhejien.");
+                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address* (separated by comma)." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma lagakar bhejien.");
                         } else if (userText === 'c' || userText.includes("custom")) {
-                            // 🚀 REDIRECTING USER TO A DEDICATED INPUT FIELD FIRST
                             userSessions[from].step = 'awaiting_custom_time_input';
                             let triggerCustomTimeMsg = (userLang === 'EN')
-                                ? "📅 *Custom Scheduling Activated!* \n\nPlease type your preferred **Date and Time** below (e.g., *Monday at 3 PM* or *06th July, 4:00 PM*):"
-                                : "📅 *Custom Scheduling Active!* \n\nKripya jis **Date aur Time** par aap call chahte hain, use niche type karke send karein (jaise: *Kal dopahar 3 baje* ya *6 July, shaam 4 baje*):";
+                                ? "📅 *Custom Scheduling Activated!* \n\nPlease type your preferred **Date and Time** below (e.g., *Monday at 3 PM*):"
+                                : "📅 *Custom Scheduling Active!* \n\nKripya jis **Date aur Time** par aap call chahte hain, use niche type karke send karein (jaise: *Kal dopahar 3 baje*):";
                             return sendWhatsAppMessage(from, triggerCustomTimeMsg);
                         }
                     }
@@ -497,7 +515,7 @@ app.post('/webhook', async (req, res) => {
                             if (userLang === 'EN') {
                                 replyText = "Hello! Welcome to *Shahid Creatives*. 🚀\nWe design premium agile web ecosystems and high-converting automation workflows.\n\nSelect a professional stack tier via number:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI Business Automation & B2B Wholesale Demo**\n3️⃣ **🔥 Exclusive Launch Deal**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid**";
                             } else {
-                                replyText = "Hello! Welcome to *Shahid Creatives* (Ludhiana, Punjab). 🚀\nHum engineer karte hain high-performance websites aur AI automation frameworks.\n\nKoshish ko aage badhane ke liye niche se ek option text ya number reply kijiye:\n\n1️⃣ *Web Development Tiers* (Saare Standard Custom Packages)\n2️⃣ *AI Business Automation & B2B Wholesale Demo* (Bots & CRM Flows)\n3️⃣ *🔥 Exclusive Launch Deal* (Flat 20% OFF Status)\n4️⃣ *💳 Direct Booking & Token System* (₹999 Secure Path)\n5️⃣ *👤 Talk to Shahid* (Direct Consultation)";
+                                replyText = "Hello! Welcome to *Shahid Creatives* (Ludhiana, Punjab). 🚀\nHum engineer karte hain high-performance websites aur AI automation frameworks.\n\nKoshish ko aage badhane ke liye niche se ek option text ya number reply kijiye:\n\n1️⃣ *Web Development Tiers*\n2️⃣ *AI Business Automation & B2B Wholesale Demo*\n3️⃣ *🔥 Exclusive Launch Deal*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid* (Direct Consultation)";
                             }
                             return sendWhatsAppMessage(from, replyText);
                         }

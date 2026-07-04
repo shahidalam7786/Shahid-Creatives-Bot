@@ -48,12 +48,12 @@ function getBasePriceByPlan(planScope, isUSD = false) {
     }
 }
 
-// 🤖 BACKGROUND TIMEOUT ENGINE: 10-Minute Automated Nudge Follow-up
+// 🤖 BACKGROUND TIMEOUT ENGINE: 10-Minute Automated Nudge Follow-up (Except during custom time setups)
 setInterval(() => {
     const now = Date.now();
     for (const from in userSessions) {
         const session = userSessions[from];
-        if (session && session.step !== 'completed' && session.step !== 'post_registration' && (now - session.lastInteractionTime > 600000) && !session.nudgeSent) {
+        if (session && session.step !== 'completed' && session.step !== 'post_registration' && session.step !== 'awaiting_custom_time_input' && (now - session.lastInteractionTime > 600000) && !session.nudgeSent) {
             const nudgeMessage = (session.lang === 'EN')
                 ? "Hi! I noticed you were exploring our premium development options. Do you have any questions or need help locking in your slot? 😊"
                 : "Hi! Maine dekha aap Shahid Creatives ki services explore kar rahe the. Kya aapko koi sawal hai ya coupon lock karne me koi help chahiye? 😊";
@@ -165,7 +165,6 @@ app.post('/webhook', async (req, res) => {
                         // 🛑 CRITICAL PAID FILTER: Check if user has already paid the amount
                         if (userText.includes("paid the full amount") || userText.includes("advance amount paid") || userText.includes("paid the full") || userText.includes("i just paid")) {
                             
-                            // Initialize session as completed immediately to prevent nudge triggers
                             userSessions[from] = {
                                 step: 'post_registration',
                                 lang: isInternationalNumber ? 'EN' : 'HINGLISH',
@@ -174,7 +173,7 @@ app.post('/webhook', async (req, res) => {
                                 projectScope: projectScope,
                                 lastSubmitedTime: Date.now(),
                                 lastInteractionTime: Date.now(),
-                                nudgeSent: true // Block automated background follow-ups
+                                nudgeSent: true
                             };
 
                             // Notify Admin Panel
@@ -191,7 +190,6 @@ app.post('/webhook', async (req, res) => {
                                 });
                             } catch (err) { console.error("Paid lead API sync error:", err.message); }
 
-                            // Send clean onboarding success message
                             let paidSuccessReply = (userSessions[from].lang === 'EN')
                                 ? `Thank you *${clientName}*! 🙏 Your paid booking has been successfully verified on our dashboard.\n\n⚡ *Status:* **Project Consultation Stage Activated!**\n\nShahid has been notified and we are setting up your development blueprint environment. We will connect with you shortly for the strategic sync session! 🚀`
                                 : `Mubarak ho *${clientName}*! 🙏 Aapki payment received data hamare dashboard par successfully sync ho gayi hai.\n\n⚡ *Status:* **Project Consultation Stage Active!**\n\nShahid bhai aapke project parameters verify kar rahe hain. Hamari team strategy aur architecture mapping discovery call ke liye aapse bohot jald raabta karegi! 🚀`;
@@ -284,7 +282,18 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // 🎯 STATE 1: COLLECT IDENTITY
+                    // 🎯 DEDICATED CAPTURE ROUTE FOR CUSTOM SCHEDULING TEXT
+                    if (currentStep === 'awaiting_custom_time_input') {
+                        userSessions[from].step = 'collect_consultation_identity';
+                        userSessions[from].projectScope = `Direct Consultation Slot: Custom Input ("${rawText}")`;
+                        
+                        let askIdentityText = (userLang === 'EN')
+                            ? `Got it! Custom slot parameters recorded: *"${rawText}"*\n\n✍ *Please complete your profile:* Kindly reply with your *Full Name* and *Email Address*.`
+                            : `Noted! Aapka preferred date/time save ho gaya hai: *"${rawText}"*\n\n✍ *Apna profile register karein:* Kripya reply mein apna *Full Name* aur *Email ID* bheinjein.`;
+                        return sendWhatsAppMessage(from, askIdentityText);
+                    }
+
+                    // 🎯 STATE 1: COLLECT IDENTITY (DEEP DETAILED EXPLORATION QUESTIONNAIRE)
                     if (currentStep === 'collect_consultation_identity') {
                         userSessions[from].step = 'collect_custom_query_and_time'; 
                         let cleanName = rawText.split('\n')[0].split(',')[0].trim();
@@ -303,15 +312,16 @@ app.post('/webhook', async (req, res) => {
                     if (currentStep === 'collect_custom_query_and_time') {
                         userSessions[from].step = 'post_registration';
                         const cleanName = userSessions[from].clientName;
+                        const finalScope = userSessions[from].projectScope;
 
-                        const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n📝 *Custom Time & Query:* "${rawText}"\n\n🤖 *Status:* Live details captured securely!`;
+                        const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n📝 *Slot Details & Parameters:* ${finalScope}\n💬 *User Stated Objectives:* "${rawText}"\n\n🤖 *Status:* Live details captured securely!`;
                         await sendWhatsAppMessage("917529839762", comprehensiveAdminAlert);
 
                         try {
                             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
                                 client_name: cleanName,
                                 whatsapp_number: from,
-                                project_scope: `Direct Consultation Slot Details: "${rawText}"`,
+                                project_scope: `${finalScope} | Goals: "${rawText}"`,
                                 calculated_price: 0,
                                 email: userSessions[from].clientEmail || "Not Provided"
                             });
@@ -323,7 +333,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, confirmationText);
                     }
 
-                    // 🎯 STATE 3: INBOUND SEQUENCE - DETAILS ACQUISITION
+                    // 🎯 STATE 3: INBOUND SEQUENCE - DETAILS ACQUISITION (Fallback)
                     if (currentStep === 'collect_details') {
                         userSessions[from].projectScope = rawText;
                         userSessions[from].step = 'ask_name_email';
@@ -460,9 +470,12 @@ app.post('/webhook', async (req, res) => {
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: Tomorrow at 12:00 PM`);
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍ *Apna profile register karein:* Kripya apna *Full Name* aur *Email ID* reply mein bhejien.");
                         } else if (userText === 'c' || userText.includes("custom")) {
-                            userSessions[from].step = 'collect_consultation_identity';
-                            userSessions[from].projectScope = "Direct Consultation Slot: Custom Time Input Required";
-                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍ *Apna profile register karein:* Kripya apna *Full Name* aur *Email ID* reply mein bhejien.");
+                            // 🚀 REDIRECTING USER TO A DEDICATED INPUT FIELD FIRST
+                            userSessions[from].step = 'awaiting_custom_time_input';
+                            let triggerCustomTimeMsg = (userLang === 'EN')
+                                ? "📅 *Custom Scheduling Activated!* \n\nPlease type your preferred **Date and Time** below (e.g., *Monday at 3 PM* or *06th July, 4:00 PM*):"
+                                : "📅 *Custom Scheduling Active!* \n\nKripya jis **Date aur Time** par aap call chahte hain, use niche type karke send karein (jaise: *Kal dopahar 3 baje* ya *6 July, shaam 4 baje*):";
+                            return sendWhatsAppMessage(from, triggerCustomTimeMsg);
                         }
                     }
 

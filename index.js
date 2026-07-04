@@ -2,7 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const axios = require('axios');
 
-const app = report = express();
+const app = express();
 app.use(bodyParser.json());
 
 // 🟢 LIGHTWEIGHT IN-MEMORY STORAGE (Render Safe)
@@ -229,6 +229,7 @@ app.post('/webhook', async (req, res) => {
                             clientName: "Valued Client", 
                             clientEmail: "", 
                             projectScope: "Custom Project Development",
+                            requestedSlot: "N/A",
                             lastSubmitedTime: 0,
                             lastInteractionTime: Date.now(),
                             nudgeSent: false
@@ -281,6 +282,7 @@ app.post('/webhook', async (req, res) => {
                     // 🎯 DEDICATED CAPTURE ROUTE FOR CUSTOM SCHEDULING TEXT
                     if (currentStep === 'awaiting_custom_time_input') {
                         userSessions[from].step = 'collect_consultation_identity';
+                        userSessions[from].requestedSlot = rawText; // Saves custom raw clean string
                         userSessions[from].projectScope = `Direct Consultation Slot: Custom Input ("${rawText}")`;
                         
                         let askIdentityText = (userLang === 'EN')
@@ -305,7 +307,7 @@ app.post('/webhook', async (req, res) => {
                             const emailMatch = rawText.match(globalEmailRegex);
                             if (emailMatch) {
                                 cleanEmail = emailMatch[1].trim();
-                                cleanName = rawText.replace(cleanEmail, "").replace(/[,]/g, "").trim() || "Valued Client";
+                                cleanName = rawText.replace(emailMatch[0], "").replace(/[,]/g, "").trim() || "Valued Client";
                             } else {
                                 cleanName = rawText.split('\n')[0].trim();
                             }
@@ -323,14 +325,14 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, descriptivePrompt);
                     }
 
-                    // 🎯 STATE 2: DISPATCH CUSTOM QUERY & TIME TO DASHBOARD (EMAIL ATTACHED FIXED ROW)
+                    // 🎯 STATE 2: DISPATCH CUSTOM QUERY & TIME TO DASHBOARD (ROUTED TO CORRECT LEDGER MATCHING)
                     if (currentStep === 'collect_custom_query_and_time') {
                         const cleanName = userSessions[from].clientName;
-                        const finalScope = userSessions[from].projectScope;
                         const clientEmail = userSessions[from].clientEmail || "Not Provided";
+                        const dynamicSlot = userSessions[from].requestedSlot || "Direct Consultation Slot";
                         const isUSDTrack = (userLang === 'EN');
 
-                        // 🔍 UPDATED SUB-MENU PROMPTS TO SHOW ACTUAL PLAN NAMES & PRICES INSTEAD OF PLACEHOLDERS
+                        // Interceptor for plain 1 or 2 options selection
                         if (userText === '1' || userText === '2') {
                             let interceptorReply = "";
                             if (userText === '1') {
@@ -345,20 +347,24 @@ app.post('/webhook', async (req, res) => {
                             return sendWhatsAppMessage(from, interceptorReply);
                         }
 
-                        // If input is text/specific, finish processing safely
                         userSessions[from].step = 'post_registration';
-                        const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details & Parameters:* ${finalScope}\n💬 *User Stated Objectives:* "${rawText}"\n\n🤖 *Status:* Live details captured securely!`;
+                        
+                        // 🚀 RESTRUCTURED ADMIN NOTIFICATION ALERT
+                        const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details & Parameters:* ${dynamicSlot}\n💬 *User Stated Objectives:* "${rawText}"\n\n🤖 *Status:* Live details captured securely!`;
                         await sendWhatsAppMessage("917529839762", comprehensiveAdminAlert);
 
+                        // ⚡ API SYNC ENGINE: Routes specific parameters directly into matching JSON nodes for dashboard rendering
                         try {
                             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
                                 client_name: cleanName,
                                 whatsapp_number: from,
-                                project_scope: `${finalScope} | Goals: "${rawText}"`,
-                                calculated_price: 0,
-                                email: clientEmail
+                                email: clientEmail,
+                                requested_slot: dynamicSlot, // Maps text directly into "Requested Slot" key field
+                                discussion_notes: `Interactive Discussion Notes:\n"${rawText}"`, // Maps objectives directly into the dashboard note view layer
+                                project_scope: `Direct Consultation | Objective: "${rawText}"`,
+                                calculated_price: 0
                             });
-                        } catch (apiErr) { console.error("Admin Dashboard tracking pipeline err."); }
+                        } catch (apiErr) { console.error("Dashboard engine parameters pipeline handling exception."); }
 
                         let confirmationText = (userLang === 'EN')
                             ? `✅ *Booking Profile Complete!* \n\nThank you *${cleanName}*! Your specifications have been securely routed to Shahid. We will connect with you shortly! 🚀`
@@ -494,11 +500,13 @@ app.post('/webhook', async (req, res) => {
                     if (currentStep === 'awaiting_consultation_slot') {
                         if (userText === 'a' || userText.includes("today") || userText.includes("5")) {
                             userSessions[from].step = 'collect_consultation_identity'; 
+                            userSessions[from].requestedSlot = "Today at 5:00 PM";
                             userSessions[from].projectScope = "Direct Consultation Slot: Today at 5:00 PM";
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: Today at 5:00 PM`);
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address* (separated by comma)." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma lagakar bhejien.");
                         } else if (userText === 'b' || userText.includes("tomorrow") || userText.includes("12")) {
                             userSessions[from].step = 'collect_consultation_identity'; 
+                            userSessions[from].requestedSlot = "Tomorrow at 12:00 PM";
                             userSessions[from].projectScope = "Direct Consultation Slot: Tomorrow at 12:00 PM";
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: Tomorrow at 12:00 PM`);
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address* (separated by comma)." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma lagakar bhejien.");
@@ -511,7 +519,7 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // 🎯 STATE 8: CORE ENGINE - HYBRID GLOBAL PARSER
+                    // 🎯 STATE 8: CORE ENGINE - MAIN MENU ROUTER
                     if (currentStep === 'welcome' || currentStep === 'main_menu') {
                         userSessions[from].step = 'main_menu';
                         

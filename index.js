@@ -108,117 +108,8 @@ app.get('/webhook', (req, res) => {
         return res.status(200).send(req.query['hub.challenge']);
     }
     res.sendStatus(403);
-});const express = require('express');
-const bodyParser = require('body-parser');
-const axios = require('axios');
-
-const app = express();
-app.use(bodyParser.json());
-
-// 🟢 LIGHTWEIGHT IN-MEMORY STORAGE (Render Safe)
-const userSessions = {};
-
-// 📈 DYNAMIC PRICING LEDGER MAPPING WITH +3.5% GATEWAY FEES FOR USD / +18% GST FOR INR
-function calculateTotalPayable(basePrice, isUSD = false) {
-    const cleanBase = parseFloat(basePrice.toString().replace(/[^0-9.]/g, ''));
-    if (isNaN(cleanBase)) return 0;
-    
-    if (isUSD) {
-        // Base Plan + 3.5% Stripe/PayPal Gateway Processor Processing Fee
-        const totalUSD = cleanBase * 1.035;
-        return Math.round(totalUSD);
-    } else {
-        // Standard Indian domestic structure (Base + 18% GST + 2.5% Portal Gateway)
-        const withGST = cleanBase * 1.18; 
-        const totalPayable = withGST * 1.025; 
-        return Math.round(totalPayable);
-    }
-}
-
-// 🎯 ROBUST PLAN PRICE MAPPER (Strictly Ordered by USD & INR Specifications)
-function getBasePriceByPlan(planScope, isUSD = false) {
-    const text = String(planScope).toLowerCase().trim();
-    
-    if (isUSD) {
-        if (text.includes("whatsapp chatbot") || text.includes("chatbot") || text.includes("bot")) return "110";
-        if (text.includes("starter plan") || text.includes("visiting card") || text.includes("starter / visiting card site")) return "199";
-        if (text.includes("basic plan") || text.includes("landing page")) return "299";
-        if (text.includes("starter business") || text.includes("business website")) return "499";
-        if (text.includes("e-commerce hub") || text.includes("ecommerce")) return "899";
-        if (text.includes("custom enterprise") || text.includes("software")) return "2499";
-        return "110";
-    } else {
-        if (text.includes("whatsapp bot") || text.includes("lead sync")) return "8713";
-        if (text.includes("landing page") || text.includes("funnel")) return "12300";
-        if (text.includes("crm workflow") || text.includes("workflow hub")) return "18000";
-        if (text.includes("business") || text.includes("corporate")) return "25500";
-        if (text.includes("e-commerce") || text.includes("store")) return "47500";
-        if (text.includes("saas") || text.includes("software")) return "145000";
-        return "8713"; 
-    }
-}
-
-// 🤖 BACKGROUND TIMEOUT ENGINE: 10-Minute Automated Nudge Follow-up
-setInterval(() => {
-    const now = Date.now();
-    for (const from in userSessions) {
-        const session = userSessions[from];
-        if (session && session.step !== 'completed' && session.step !== 'post_registration' && (now - session.lastInteractionTime > 600000) && !session.nudgeSent) {
-            const nudgeMessage = (session.lang === 'EN')
-                ? "Hi! I noticed you were exploring our premium development options. Do you have any questions or need help locking in your slot? 😊"
-                : "Hi! Maine dekha aap Shahid Creatives ki services explore kar rahe the. Kya aapko koi sawal hai ya coupon lock karne me koi help chahiye? 😊";
-            
-            sendWhatsAppMessage(from, nudgeMessage);
-            session.nudgeSent = true; 
-        }
-    }
-}, 60000);
-
-// 🤖 SERVER HEALTH CHECK
-app.get('/', (req, res) => {
-    res.status(200).send("Shahid Creatives Bot Server is Live on Render with Secured Credentials! 🚀");
 });
 
-// 🟢 ROUTE HANDLER: Client Credentials Logs Delivery
-app.post('/send-client-credentials', async (req, res) => {
-    try {
-        const payload = req.body;
-        await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
-            client_name: payload.name || payload.client_name || "API Inbound Portal Lead",
-            whatsapp_number: payload.phone || payload.whatsapp_number || "0000000000",
-            project_scope: payload.plan || payload.project_scope || "Credentials Sync Event",
-            calculated_price: payload.price || payload.calculated_price || 0,
-            email: payload.email || "Not Provided"
-        });
-        res.status(200).json({ success: true, message: "Credentials Packet routed securely!" });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
-
-// 🟢 ROUTE HANDLER: Payment Reminders Dispatch Engine
-app.post('/send-payment-reminder', async (req, res) => {
-    try {
-        const payload = req.body;
-        const clientPhone = payload.phone || payload.whatsapp_number;
-        if (!clientPhone) return res.status(400).json({ success: false, error: "Missing number" });
-
-        const reminderMessage = `⚠️ *Payment Pending Reminder - Shahid Creatives* 🚀\n\nHello,\n\nThis is a quick reminder regarding your slot confirmation booking using your dynamic pay gateway dashboard link to avoid slot cancellation. 👍`;
-        await sendWhatsAppMessage(clientPhone, reminderMessage);
-        res.status(200).json({ success: true });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
-
-// Meta Webhook Verification
-app.get('/webhook', (req, res) => {
-    const VERIFY_TOKEN = "shahid_creatives_secret_token_123";
-    if (req.query['hub.mode'] === 'subscribe' && req.query['hub.verify_token'] === VERIFY_TOKEN) {
-        return res.status(200).send(req.query['hub.challenge']);
-    }
-    res.sendStatus(403);
-});
 // Main Webhook Logic for Processing Messages
 app.post('/webhook', async (req, res) => {
     res.sendStatus(200); 
@@ -300,7 +191,7 @@ app.post('/webhook', async (req, res) => {
                                 });
                             } catch (err) { console.error("Paid lead API sync error:", err.message); }
 
-                            // Send clean onboarding success message without any payment links or discount codes
+                            // Send clean onboarding success message
                             let paidSuccessReply = (userSessions[from].lang === 'EN')
                                 ? `Thank you *${clientName}*! 🙏 Your paid booking has been successfully verified on our dashboard.\n\n⚡ *Status:* **Project Consultation Stage Activated!**\n\nShahid has been notified and we are setting up your development blueprint environment. We will connect with you shortly for the strategic sync session! 🚀`
                                 : `Mubarak ho *${clientName}*! 🙏 Aapki payment received data hamare dashboard par successfully sync ho gayi hai.\n\n⚡ *Status:* **Project Consultation Stage Active!**\n\nShahid bhai aapke project parameters verify kar rahe hain. Hamari team strategy aur architecture mapping discovery call ke liye aapse bohot jald raabta karegi! 🚀`;
@@ -393,7 +284,7 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // 🎯 STATE 1: COLLECT IDENTITY (DEEP DETAILED EXPLORATION QUESTIONNAIRE)
+                    // 🎯 STATE 1: COLLECT IDENTITY
                     if (currentStep === 'collect_consultation_identity') {
                         userSessions[from].step = 'collect_custom_query_and_time'; 
                         let cleanName = rawText.split('\n')[0].split(',')[0].trim();
@@ -432,7 +323,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, confirmationText);
                     }
 
-                    // 🎯 STATE 3: INBOUND SEQUENCE - DETAILS ACQUISITION (Fallback)
+                    // 🎯 STATE 3: INBOUND SEQUENCE - DETAILS ACQUISITION
                     if (currentStep === 'collect_details') {
                         userSessions[from].projectScope = rawText;
                         userSessions[from].step = 'ask_name_email';

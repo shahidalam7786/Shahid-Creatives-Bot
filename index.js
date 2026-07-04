@@ -156,7 +156,6 @@ app.post('/webhook', async (req, res) => {
                             if (nameMatch) clientName = nameMatch[1].split('\n')[0].split(',')[0].trim();
                             if (scopeMatch) projectScope = scopeMatch[1].replace(/[\*•\-]/g, '').trim();
                             if (priceMatch) {
-                                // Strip commas and parse directly as the absolute final price without modifying it
                                 parsedBasePrice = Math.round(parseFloat(priceMatch[1].replace(/,/g, '').trim()));
                             }
                             
@@ -165,7 +164,7 @@ app.post('/webhook', async (req, res) => {
                             if (emailMatch) clientEmail = emailMatch[1].trim();
                         } catch (parseError) { console.error("Parser failure exception inside landing template."); }
 
-                        // 🛑 CRITICAL PAID FILTER
+                        // Paid filter logic
                         if (userText.includes("paid the full amount") || userText.includes("advance amount paid") || userText.includes("paid the full") || userText.includes("i just paid")) {
                             
                             userSessions[from] = {
@@ -187,7 +186,7 @@ app.post('/webhook', async (req, res) => {
                                     client_name: clientName,
                                     whatsapp_number: from,
                                     project_scope: `${projectScope} (Status: Fully Paid Portal Form)`,
-                                    calculated_price: parsedBasePrice, // ⚡ FIXED: Added raw absolute value directly
+                                    calculated_price: parsedBasePrice, 
                                     email: clientEmail
                                 });
                             } catch (err) { console.error("Paid lead API sync error:", err.message); }
@@ -210,7 +209,6 @@ app.post('/webhook', async (req, res) => {
                             nudgeSent: false
                         };
 
-                        // ⚡ FIXED: Yahan se billing calculation engine bypass kiya hai website leads ke liye
                         const calculatedPrice = parsedBasePrice; 
                         const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n📝 *Plan:* ${projectScope}\n💰 *Price:* $${calculatedPrice}`;
                         await sendWhatsAppMessage("917529839762", adminNotification);
@@ -290,33 +288,41 @@ app.post('/webhook', async (req, res) => {
                         userSessions[from].projectScope = `Custom Slot Input ("${rawText}")`;
                         
                         let askIdentityText = (userLang === 'EN')
-                            ? `Got it! Custom slot parameters recorded: *"${rawText}"*\n\n✍ *Please complete your profile:* Kindly reply with your *Full Name* and *Email Address* (e.g. John Doe, john@example.com).`
-                            : `Noted! Aapka preferred date/time save ho gaya hai: *"${rawText}"*\n\n✍ *Apna profile register karein:* Kripya reply mein apna *Full Name* aur *Email ID* likh kar bheinjein (jaise: Sarfaraj Khan, sarfaraj@example.com).`;
+                            ? `Got it! Custom slot parameters recorded: *"${rawText}"*\n\n✍ *Please complete your profile:* Kindly reply with your *Full Name* and *Email Address* (separated by comma, e.g. John Doe, john@example.com).`
+                            : `Noted! Aapka preferred date/time save ho gaya hai: *"${rawText}"*\n\n✍ *Apna profile register karein:* Kripya reply mein apna *Full Name* aur *Email ID* comma (,) lagakar bheinjein (jaise: Sarfaraj Khan, sarfaraj@example.com).`;
                         return sendWhatsAppMessage(from, askIdentityText);
                     }
 
-                    // 🎯 STATE 1: COLLECT IDENTITY
+                    // 🎯 STATE 1: COLLECT IDENTITY (STRICT MANDATORY NAME & EMAIL FORMAT CHECK)
                     if (currentStep === 'collect_consultation_identity') {
-                        userSessions[from].step = 'collect_custom_query_and_time'; 
+                        let cleanName = "";
+                        let cleanEmail = "";
                         
-                        let cleanName = "Valued Client";
-                        let cleanEmail = "Not Provided";
-                        
+                        // Parse strategy check with explicit comma filter
                         if (rawText.includes(",")) {
                             const parts = rawText.split(",");
                             cleanName = parts[0].trim();
                             cleanEmail = parts[1].trim();
                         } else {
+                            // Secondary fallback parser regex extraction layer
                             const globalEmailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/i;
                             const emailMatch = rawText.match(globalEmailRegex);
                             if (emailMatch) {
                                 cleanEmail = emailMatch[1].trim();
-                                cleanName = rawText.replace(emailMatch[0], "").replace(/[,]/g, "").trim() || "Valued Client";
-                            } else {
-                                cleanName = rawText.split('\n')[0].trim();
+                                cleanName = rawText.replace(emailMatch[0], "").replace(/[,]/g, "").trim();
                             }
                         }
+
+                        // 🛑 STRICT VALIDATION REJECTION BLOCK: If name is short or email format doesn't have @
+                        if (!cleanName || cleanName.length < 2 || !cleanEmail || !cleanEmail.includes("@") || !cleanEmail.includes(".")) {
+                            let errorWarning = (userLang === 'EN')
+                                ? "⚠️ *Format Error!* Both **Full Name** and a valid **Email ID** are strictly mandatory.\n\n👉 Please reply again in this exact structure: *Your Name, your-email@example.com*"
+                                : "⚠️ *Registration Error!* Profile lock karne ke liye **Full Name** aur ek valid **Email ID** dono zaroori hain.\n\n👉 Kripya dubara is tarah likh kar bhejin: *Aapka Name, aapkaemail@gmail.com*";
+                            return sendWhatsAppMessage(from, errorWarning);
+                        }
                         
+                        // Secure credentials once inputs are verified
+                        userSessions[from].step = 'collect_custom_query_and_time'; 
                         userSessions[from].clientName = cleanName;
                         userSessions[from].clientEmail = cleanEmail;
 
@@ -340,7 +346,7 @@ app.post('/webhook', async (req, res) => {
                             if (userText === '1') {
                                 interceptorReply = isUSDTrack
                                     ? "⚠️ Please be specific! Which Web scope do you need? \n\n👉 Type one: *Starter Plan* ($199), *Basic Plan* ($299), *Starter Business Site* ($499), or *E-Commerce Hub* ($899)"
-                                    : "⚠️ Kripya clear batayein! Aapko hamare active modules mein se kis tarah ki website chahiye? \n\n👉 Niche diye gaye actual plans mein se ek naam type karein:\n🔹 *Landing Page/Funnel* (₹12,300)\n🔹 *Business/Corporate Website* (₹25,500)\n🔹 *E-commerce Website (Online Store)* (₹47,500)\n🔹 *Custom Web Application* (₹1,45,000+)";
+                                    : "⚠️ Kripya clear batayein! Aapko hamare active modules mein se kis tarah ki website chahiye? \n\n👉 Niche diye gaye active plans mein se ek naam type karein:\n🔹 *Landing Page/Funnel* (₹12,300)\n🔹 *Business/Corporate Website* (₹25,500)\n🔹 *E-commerce Website (Online Store)* (₹47,500)\n🔹 *Custom Web Application* (₹1,45,000+)";
                             } else {
                                 interceptorReply = isUSDTrack
                                     ? "⚠️ Please be specific! What architecture do you want? \n\n👉 Type one: *WhatsApp Chatbot* ($110) or *Custom CRM Workflow Hub* ($220)"
@@ -490,13 +496,13 @@ app.post('/webhook', async (req, res) => {
                             userSessions[from].requestedSlot = "Today at 5:00 PM";
                             userSessions[from].projectScope = "Direct Consultation Slot: Today at 5:00 PM";
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: Today at 5:00 PM`);
-                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma lagakar bhejien.");
+                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name, Email Address* (separated by a comma, e.g. John Doe, john@email.com)." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma (,) lagakar ek sath bhejien (jaise: Sarfaraj Khan, sarfaraj@gmail.com).");
                         } else if (userText === 'b' || userText.includes("tomorrow") || userText.includes("12")) {
                             userSessions[from].step = 'collect_consultation_identity'; 
                             userSessions[from].requestedSlot = "Tomorrow at 12:00 PM";
                             userSessions[from].projectScope = "Direct Consultation Slot: Tomorrow at 12:00 PM";
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: Tomorrow at 12:00 PM`);
-                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma lagakar bhejien.");
+                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name, Email Address* (separated by a comma, e.g. John Doe, john@email.com)." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma (,) lagakar ek sath bhejien (jaise: Sarfaraj Khan, sarfaraj@gmail.com).");
                         } else if (userText === 'c' || userText.includes("custom")) {
                             userSessions[from].step = 'awaiting_custom_time_input';
                             let triggerCustomTimeMsg = (userLang === 'EN')

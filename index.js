@@ -229,7 +229,7 @@ app.post('/webhook', async (req, res) => {
                             clientName: "Valued Client", 
                             clientEmail: "", 
                             projectScope: "Custom Project Development",
-                            requestedSlot: "N/A",
+                            requestedSlot: "Not Selected",
                             lastSubmitedTime: 0,
                             lastInteractionTime: Date.now(),
                             nudgeSent: false
@@ -282,8 +282,8 @@ app.post('/webhook', async (req, res) => {
                     // 🎯 DEDICATED CAPTURE ROUTE FOR CUSTOM SCHEDULING TEXT
                     if (currentStep === 'awaiting_custom_time_input') {
                         userSessions[from].step = 'collect_consultation_identity';
-                        userSessions[from].requestedSlot = rawText; // Saves custom raw clean string
-                        userSessions[from].projectScope = `Direct Consultation Slot: Custom Input ("${rawText}")`;
+                        userSessions[from].requestedSlot = rawText; 
+                        userSessions[from].projectScope = `Custom Slot Input ("${rawText}")`;
                         
                         let askIdentityText = (userLang === 'EN')
                             ? `Got it! Custom slot parameters recorded: *"${rawText}"*\n\n✍ *Please complete your profile:* Kindly reply with your *Full Name* and *Email Address* (e.g. John Doe, john@example.com).`
@@ -291,7 +291,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, askIdentityText);
                     }
 
-                    // 🎯 STATE 1: COLLECT IDENTITY (DEEP DETAILED EXPLORATION QUESTIONNAIRE)
+                    // 🎯 STATE 1: COLLECT IDENTITY
                     if (currentStep === 'collect_consultation_identity') {
                         userSessions[from].step = 'collect_custom_query_and_time'; 
                         
@@ -318,22 +318,21 @@ app.post('/webhook', async (req, res) => {
 
                         let descriptivePrompt = "";
                         if (userLang === 'EN') {
-                            descriptivePrompt = `Thank you *${cleanName}*! 🙏\n\nTo lock a high-converting strategy blueprint, please share your goals in the next reply:\n\n🌐 **1. Website Development:**\nWhich dynamic plan fits your vision? (Starter Plan, Basic Plan, Starter Business Site, or E-Commerce Hub?)\n\n🤖 **2. AI Automation Goals:**\nWhat precise processes do you want to automate?`;
+                            descriptivePrompt = `Thank you *${cleanName}*! 🙏\n\nTo lock a high-converting strategy blueprint, please share your goals in the next reply:\n\n🌐 **1. Website Development:**\nWhich plan fits your vision? (Starter Plan, Basic Plan, Starter Business Site, or E-Commerce Hub?)\n\n🤖 **2. AI Automation Goals:**\nWhat precise processes do you want to automate?`;
                         } else {
                             descriptivePrompt = `Thank you *${cleanName}*! 🙏\n\nStrategy call ko 100% efficient banane ke liye, kripya agle message mein niche di gayi details batayein:\n\n🌐 **Type 1:** Agar aapko Website chahiye toh specific type likhein (e.g., Landing Page, Corporate Showcase, ya Online Store).\n\n🤖 **Type 2:** Agar AI Architecture/Bot chahiye toh details likhein (e.g., WhatsApp Lead Bot, Sheets Sync).`;
                         }
                         return sendWhatsAppMessage(from, descriptivePrompt);
                     }
 
-                    // 🎯 STATE 2: DISPATCH CUSTOM QUERY & TIME TO DASHBOARD (ROUTED TO CORRECT LEDGER MATCHING)
+                    // 🎯 STATE 2: INTERCEPTOR FOR SELECTIONS (1 OR 2 VALIDATION ENGINE)
                     if (currentStep === 'collect_custom_query_and_time') {
-                        const cleanName = userSessions[from].clientName;
-                        const clientEmail = userSessions[from].clientEmail || "Not Provided";
-                        const dynamicSlot = userSessions[from].requestedSlot || "Direct Consultation Slot";
                         const isUSDTrack = (userLang === 'EN');
 
-                        // Interceptor for plain 1 or 2 options selection
                         if (userText === '1' || userText === '2') {
+                            // Move user into a safe selection waiting state instead of instant completion loop hole
+                            userSessions[from].step = 'awaiting_specific_service_selection';
+                            
                             let interceptorReply = "";
                             if (userText === '1') {
                                 interceptorReply = isUSDTrack
@@ -347,32 +346,18 @@ app.post('/webhook', async (req, res) => {
                             return sendWhatsAppMessage(from, interceptorReply);
                         }
 
+                        // If user answers text/specific requirements directly at first shot
                         userSessions[from].step = 'post_registration';
-                        
-                        // 🚀 RESTRUCTURED ADMIN NOTIFICATION ALERT
-                        const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details & Parameters:* ${dynamicSlot}\n💬 *User Stated Objectives:* "${rawText}"\n\n🤖 *Status:* Live details captured securely!`;
-                        await sendWhatsAppMessage("917529839762", comprehensiveAdminAlert);
-
-                        // ⚡ API SYNC ENGINE: Routes specific parameters directly into matching JSON nodes for dashboard rendering
-                        try {
-                            await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
-                                client_name: cleanName,
-                                whatsapp_number: from,
-                                email: clientEmail,
-                                requested_slot: dynamicSlot, // Maps text directly into "Requested Slot" key field
-                                discussion_notes: `Interactive Discussion Notes:\n"${rawText}"`, // Maps objectives directly into the dashboard note view layer
-                                project_scope: `Direct Consultation | Objective: "${rawText}"`,
-                                calculated_price: 0
-                            });
-                        } catch (apiErr) { console.error("Dashboard engine parameters pipeline handling exception."); }
-
-                        let confirmationText = (userLang === 'EN')
-                            ? `✅ *Booking Profile Complete!* \n\nThank you *${cleanName}*! Your specifications have been securely routed to Shahid. We will connect with you shortly! 🚀`
-                            : `✅ *Booking Profile Complete!* \n\nThank you *${cleanName}*! Aapka requirement details Shahid bhai tak pahunch gaya hai. Hamari team aapse jald hi raabta karegi! 🚀`;
-                        return sendWhatsAppMessage(from, confirmationText);
+                        return finalizeConsultationLead(from, rawText, res);
                     }
 
-                    // 🎯 STATE 3: INBOUND SEQUENCE - DETAILS ACQUISITION (Fallback)
+                    // 🎯 NEW BLOCKING STATE: CAPTURES PLAN SELECTIONS AFTER POPUP AND DISPATCH SAFELY
+                    if (currentStep === 'awaiting_specific_service_selection') {
+                        userSessions[from].step = 'post_registration';
+                        return finalizeConsultationLead(from, rawText, res);
+                    }
+
+                    // 🎯 STATE 3: INBOUND SEQUENCE (Fallback)
                     if (currentStep === 'collect_details') {
                         userSessions[from].projectScope = rawText;
                         userSessions[from].step = 'ask_name_email';
@@ -503,13 +488,13 @@ app.post('/webhook', async (req, res) => {
                             userSessions[from].requestedSlot = "Today at 5:00 PM";
                             userSessions[from].projectScope = "Direct Consultation Slot: Today at 5:00 PM";
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: Today at 5:00 PM`);
-                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address* (separated by comma)." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma lagakar bhejien.");
+                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma lagakar bhejien.");
                         } else if (userText === 'b' || userText.includes("tomorrow") || userText.includes("12")) {
                             userSessions[from].step = 'collect_consultation_identity'; 
                             userSessions[from].requestedSlot = "Tomorrow at 12:00 PM";
                             userSessions[from].projectScope = "Direct Consultation Slot: Tomorrow at 12:00 PM";
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: Tomorrow at 12:00 PM`);
-                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address* (separated by comma)." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma lagakar bhejien.");
+                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma lagakar bhejien.");
                         } else if (userText === 'c' || userText.includes("custom")) {
                             userSessions[from].step = 'awaiting_custom_time_input';
                             let triggerCustomTimeMsg = (userLang === 'EN')
@@ -576,6 +561,35 @@ app.post('/webhook', async (req, res) => {
         } catch (error) { console.error("Webhook processing logic error."); }
     }
 });
+
+// 🛠️ REUSABLE LOGIC: FINALIZE CONSULTATION ENTRY DISPATCH SECURELY TO PANEL
+async function finalizeConsultationLead(from, textInput, res) {
+    const session = userSessions[from];
+    const cleanName = session.clientName || "Valued Client";
+    const clientEmail = session.clientEmail || "Not Provided";
+    const dynamicSlot = session.requestedSlot || "Direct Scheduled Request";
+    const userLang = session.lang;
+
+    const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details & Parameters:* ${dynamicSlot}\n💬 *User Stated Objectives:* "${textInput}"\n\n🤖 *Status:* Live details captured securely!`;
+    await sendWhatsAppMessage("917529839762", comprehensiveAdminAlert);
+
+    try {
+        await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
+            client_name: cleanName,
+            whatsapp_number: from,
+            email: clientEmail,
+            requested_slot: dynamicSlot,
+            discussion_notes: `Interactive Discussion Notes:\n"${textInput}"`,
+            project_scope: `Direct Consultation | Objective: "${textInput}"`,
+            calculated_price: 0
+        });
+    } catch (apiErr) { console.error("Dashboard engine parameters pipeline error."); }
+
+    let confirmationText = (userLang === 'EN')
+        ? `✅ *Booking Profile Complete!* \n\nThank you *${cleanName}*! Your specifications have been securely routed to Shahid. We will connect with you shortly! 🚀`
+        : `✅ *Booking Profile Complete!* \n\nThank you *${cleanName}*! Aapka requirement details Shahid bhai tak pahunch gaya hai. Hamari team aapse jald hi raabta karegi! 🚀`;
+    return sendWhatsAppMessage(from, confirmationText);
+}
 
 async function sendWhatsAppMessage(to, text) {
     const SECURED_ACCESS_TOKEN = process.env.WHATSAPP_TOKEN; 

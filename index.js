@@ -133,13 +133,13 @@ app.post('/webhook', async (req, res) => {
                     const isInternationalNumber = !from.startsWith("91");
                     const isGlobalWebsiteTemplate = rawText.includes("Global USD") || rawText.includes("Worldwide") || rawText.includes("$") || rawText.includes("lock in my custom website estimate");
 
-                    // ⚡ Reset mechanism for fallback restart
+                    // Reset mechanism
                     const resetTriggers = ['hi', 'hello', 'menu', 'start', 'hey'];
                     if (resetTriggers.includes(userText)) {
                         userSessions[from] = null;
                     }
 
-                    // 🎯 TOP PRIORITY INTERCEPTOR: WEBSITE INBOUND FORM SYNC
+                    // WEBSITE INBOUND FORM SYNC INTERCEPTOR
                     if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate") || rawText.includes("Estimated Price:") || rawText.includes("Grand Total:")) {
                         if (userSessions[from] && userSessions[from].lastSubmitedTime && (Date.now() - userSessions[from].lastSubmitedTime < 15000)) { return; }
                         
@@ -162,7 +162,6 @@ app.post('/webhook', async (req, res) => {
                             if (emailMatch) clientEmail = emailMatch[1].trim();
                         } catch (parseError) { console.error("Parser failure exception inside landing template."); }
 
-                        // 🛑 CRITICAL PAID FILTER
                         if (userText.includes("paid the full amount") || userText.includes("advance amount paid") || userText.includes("paid the full") || userText.includes("i just paid")) {
                             
                             userSessions[from] = {
@@ -316,6 +315,7 @@ app.post('/webhook', async (req, res) => {
                         userSessions[from].clientName = cleanName;
                         userSessions[from].clientEmail = cleanEmail;
 
+                        // 🛑 FIXED: Yahan se Admin API Post call bilkul delete kar di hai taaki early data push na ho.
                         let descriptivePrompt = "";
                         if (userLang === 'EN') {
                             descriptivePrompt = `Thank you *${cleanName}*! 🙏\n\nTo lock a high-converting strategy blueprint, please share your goals in the next reply:\n\n🌐 **1. Website Development:**\nWhich plan fits your vision? (Starter Plan, Basic Plan, Starter Business Site, or E-Commerce Hub?)\n\n🤖 **2. AI Automation Goals:**\nWhat precise processes do you want to automate?`;
@@ -330,7 +330,6 @@ app.post('/webhook', async (req, res) => {
                         const isUSDTrack = (userLang === 'EN');
 
                         if (userText === '1' || userText === '2') {
-                            // Move user into a safe selection waiting state instead of instant completion loop hole
                             userSessions[from].step = 'awaiting_specific_service_selection';
                             
                             let interceptorReply = "";
@@ -346,12 +345,11 @@ app.post('/webhook', async (req, res) => {
                             return sendWhatsAppMessage(from, interceptorReply);
                         }
 
-                        // If user answers text/specific requirements directly at first shot
                         userSessions[from].step = 'post_registration';
                         return finalizeConsultationLead(from, rawText, res);
                     }
 
-                    // 🎯 NEW BLOCKING STATE: CAPTURES PLAN SELECTIONS AFTER POPUP AND DISPATCH SAFELY
+                    // 🎯 STATE 2.1: FINAL DISPATCH AFTER POPUP SPECS MATCH
                     if (currentStep === 'awaiting_specific_service_selection') {
                         userSessions[from].step = 'post_registration';
                         return finalizeConsultationLead(from, rawText, res);
@@ -488,13 +486,13 @@ app.post('/webhook', async (req, res) => {
                             userSessions[from].requestedSlot = "Today at 5:00 PM";
                             userSessions[from].projectScope = "Direct Consultation Slot: Today at 5:00 PM";
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: Today at 5:00 PM`);
-                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma lagakar bhejien.");
+                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein bhejien (Separated by Comma).");
                         } else if (userText === 'b' || userText.includes("tomorrow") || userText.includes("12")) {
                             userSessions[from].step = 'collect_consultation_identity'; 
                             userSessions[from].requestedSlot = "Tomorrow at 12:00 PM";
                             userSessions[from].projectScope = "Direct Consultation Slot: Tomorrow at 12:00 PM";
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: Tomorrow at 12:00 PM`);
-                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma lagakar bhejien.");
+                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address*." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein bhejien (Separated by Comma).");
                         } else if (userText === 'c' || userText.includes("custom")) {
                             userSessions[from].step = 'awaiting_custom_time_input';
                             let triggerCustomTimeMsg = (userLang === 'EN')
@@ -562,7 +560,7 @@ app.post('/webhook', async (req, res) => {
     }
 });
 
-// 🛠️ REUSABLE LOGIC: FINALIZE CONSULTATION ENTRY DISPATCH SECURELY TO PANEL
+// 🎯 REUSABLE LOGIC: FINALIZE CONSULTATION ENTRY DISPATCH SECURELY TO PANEL
 async function finalizeConsultationLead(from, textInput, res) {
     const session = userSessions[from];
     const cleanName = session.clientName || "Valued Client";
@@ -570,7 +568,8 @@ async function finalizeConsultationLead(from, textInput, res) {
     const dynamicSlot = session.requestedSlot || "Direct Scheduled Request";
     const userLang = session.lang;
 
-    const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details & Parameters:* ${dynamicSlot}\n💬 *User Stated Objectives:* "${textInput}"\n\n🤖 *Status:* Live details captured securely!`;
+    // 🚀 ONE TIME SECURED API POST ENGINE (Triggers ONLY when user submits final explicit plan)
+    const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details & Parameters:* Direct Consultation Slot: ${dynamicSlot}\n💬 *User Stated Objectives:* "${textInput}"\n\n🤖 *Status:* Live details captured securely!`;
     await sendWhatsAppMessage("917529839762", comprehensiveAdminAlert);
 
     try {
@@ -579,11 +578,11 @@ async function finalizeConsultationLead(from, textInput, res) {
             whatsapp_number: from,
             email: clientEmail,
             requested_slot: dynamicSlot,
-            discussion_notes: `Interactive Discussion Notes:\n"${textInput}"`,
+            discussion_notes: `*User Stated Objectives:* "${textInput}"\n\n${comprehensiveAdminAlert}`,
             project_scope: `Direct Consultation | Objective: "${textInput}"`,
             calculated_price: 0
         });
-    } catch (apiErr) { console.error("Dashboard engine parameters pipeline error."); }
+    } catch (apiErr) { console.error("Dashboard parameters execution failure handler."); }
 
     let confirmationText = (userLang === 'EN')
         ? `✅ *Booking Profile Complete!* \n\nThank you *${cleanName}*! Your specifications have been securely routed to Shahid. We will connect with you shortly! 🚀`

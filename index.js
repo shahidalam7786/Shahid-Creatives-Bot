@@ -84,6 +84,8 @@ setInterval(() => {
                 ? "Hi! I noticed you were exploring our premium development options. Do you have any questions or need help locking in your slot? 😊"
                 : "Hi! Maine dekha aap Shahid Creatives ki services explore kar rahe the. Kya aapko koi sawal hai ya coupon lock karne me koi help chahiye? 😊";
             
+            // Update step state to handle direct user replies smoothly
+            session.step = 'nudge_sent_waiting_reply';
             sendWhatsAppMessage(from, nudgeMessage);
             session.nudgeSent = true; 
         }
@@ -284,7 +286,6 @@ app.post('/webhook', async (req, res) => {
                     }
                     
                     userSessions[from].lastInteractionTime = Date.now();
-                    userSessions[from].nudgeSent = false;
                     const userLang = userSessions[from].lang;
                     const currentStep = userSessions[from].step;
 
@@ -295,6 +296,25 @@ app.post('/webhook', async (req, res) => {
                             ? "You're most welcome! 👍 Glad to help. Type 'Menu' anytime if you want to explore again."
                             : "Aapka swagat hai! 👍 Milte hain aapse bohot jald discovery call par. Dobara shuru karne ke liye kisi bhi waqt 'Menu' ya 'Hi' bheinje.";
                         return sendWhatsAppMessage(from, courtesyReply);
+                    }
+
+                    // 🎯 NEW INTERCEPTOR: HANDLING USER REPLIES TO AUTOMATED FOLLOW-UP NUDGES
+                    if (currentStep === 'nudge_sent_waiting_reply') {
+                        const positiveTriggers = ['yes', 'yeah', 'yup', 'haan', 'ji', 'help', 'ok', 'okay', 'sure'];
+                        if (positiveTriggers.includes(userText) || userText.length > 2) {
+                            userSessions[from].step = 'awaiting_consultation_slot';
+                            const currentHourIST = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Kolkata"})).getHours();
+                            
+                            const optionA = (currentHourIST >= 17) ? "A) *Kal Shaam 5:00 Baje*" : "A) *Aaj Shaam 5:00 Baje*";
+                            const optionB = (currentHourIST >= 17) ? "B) *Parso Dopahar 12:00 Baje*" : "B) *Kal Dopahar 12:00 Baje*";
+                            const optionA_EN = (currentHourIST >= 17) ? "A) *Tomorrow at 5:00 PM*" : "A) *Today at 5:00 PM*";
+                            const optionB_EN = (currentHourIST >= 17) ? "B) *Day After Tomorrow at 12:00 PM*" : "B) *Tomorrow at 12:00 PM*";
+
+                            let nudgeResponse = (userLang === 'EN')
+                                ? `Awesome! Let's get you connected for a free strategy call. Please choose your slot:\n\n${optionA_EN}\n${optionB_EN}\nC) *Custom Time (Type preferred time below)*\n\n👉 Reply with A, B, or C!`
+                                : `Ji bilkul! Aaiye aapka free consulting strategy slot lock kar dete hain. Kripya niche se ek option choose karein:\n\n${optionA}\n${optionB}\nC) *Custom Time (Apna secure timing niche type karein)*\n\n👉 Kripya **A, B, ya C** likh kar reply kijiye!`;
+                            return sendWhatsAppMessage(from, nudgeResponse);
+                        }
                     }
 
                     // 🎯 STATE -1: REGION CHECK ENGINE

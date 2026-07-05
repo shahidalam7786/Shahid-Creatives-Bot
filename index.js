@@ -368,6 +368,7 @@ app.post('/webhook', async (req, res) => {
                             }
                         }
 
+                        // 🛑 STRICT VALIDATION REJECTION FILTER FOR CONSULTATION
                         if (!cleanName || cleanName.length < 2 || !cleanEmail || !cleanEmail.includes("@") || !cleanEmail.includes(".")) {
                             return sendWhatsAppMessage(from, (userLang === 'EN') 
                                 ? "⚠️ *Format Error!* Both **Full Name** and a valid **Email ID** are strictly mandatory.\n\n👉 Please reply again in this exact structure: *Your Name, your-email@example.com*" 
@@ -414,20 +415,35 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, (userLang === 'EN') ? "Awesome! 📝 Kindly reply with your **Full Name** and **Email Address**." : "Awesome! 📝 Kripya apna **Full Name** aur **Email ID** bhej lijiye.");
                     }
 
-                    // 🎯 STATE 4: INBOUND CHAT REGISTRATION COMPLETED
+                    // 🎯 STATE 4: INBOUND CHAT REGISTRATION COMPLETED (STRICT MANDATORY EMAIL VALIDATION FOR MAIN MENU TRACK)
                     if (currentStep === 'ask_name_email') {
-                        userSessions[from].step = 'completed'; 
-                        let cleanName = rawText.split('\n')[0].split(',')[0].trim(); 
-                        let cleanEmail = "Not Provided";
+                        let cleanName = ""; 
+                        let cleanEmail = "";
                         
-                        const globalEmailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/i;
-                        const emailMatch = rawText.match(globalEmailRegex);
-                        if (emailMatch) {
-                            cleanEmail = emailMatch[1].trim();
+                        if (rawText.includes(",")) {
+                            const parts = rawText.split(","); 
+                            cleanName = parts[0].trim(); 
+                            cleanEmail = parts[1].trim();
+                        } else {
+                            const globalEmailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/i;
+                            const emailMatch = rawText.match(globalEmailRegex);
+                            if (emailMatch) { 
+                                cleanEmail = emailMatch[1].trim(); 
+                                cleanName = rawText.replace(emailMatch[0], "").replace(/[,]/g, "").trim(); 
+                            }
                         }
 
+                        // 🛑 STRICT VALIDATION REJECTION FILTER: Direct menu users ko bina email ke rokne ka engine
+                        if (!cleanName || cleanName.length < 2 || !cleanEmail || !cleanEmail.includes("@") || !cleanEmail.includes(".")) {
+                            return sendWhatsAppMessage(from, (userLang === 'EN') 
+                                ? "⚠️ *Format Error!* Both **Full Name** and a valid **Email ID** are strictly mandatory to generate the payment token.\n\n👉 Please reply again in this exact structure: *Your Name, your-email@example.com*" 
+                                : "⚠️ *Registration Error!* Link generate karne ke liye **Full Name** aur ek valid **Email ID** dono zaroori hain.\n\n👉 Kripya dubara is tarah likh kar bhejin: *Aapka Name, aapkaemail@gmail.com*");
+                        }
+
+                        userSessions[from].step = 'completed'; 
                         userSessions[from].clientName = cleanName; 
                         userSessions[from].clientEmail = cleanEmail;
+                        
                         const isUSDTrack = (userLang === 'EN');
                         const matchedBasePrice = getBasePriceByPlan(userSessions[from].projectScope, isUSDTrack);
                         const finalPayable = calculateTotalPayable(matchedBasePrice, isUSDTrack);
@@ -527,28 +543,27 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // 🎯 STATE 6: CONSULTATION FIXED SLOTS ROUTING (IST REALTIME EXPIRE VALUE ENGINE)
+                    // 🎯 STATE 6: CONSULTATION FIXED SLOTS ROUTING
                     if (currentStep === 'awaiting_consultation_slot') {
                         const currentHourIST = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Kolkata"})).getHours();
-                        let chosenOptionClean = userText.replace(/[\-\*•\(\)]/g, '').trim();
                         
-                        if (chosenOptionClean === 'a' || chosenOptionClean.includes("today") || chosenOptionClean.includes("5")) {
+                        if (userText === 'a' || userText.includes("today") || userText.includes("5")) {
                             userSessions[from].step = 'collect_consultation_identity'; 
                             const dynamicSlotLabel = (currentHourIST >= 17) ? "Tomorrow at 5:00 PM" : "Today at 5:00 PM";
                             
-                            userSessions[from].requestedSlot = dynamicSlotLabel;
+                            userSessions[from].requestedSlot = dynamicSlotLabel; 
                             userSessions[from].projectScope = `Direct Consultation Slot: ${dynamicSlotLabel}`;
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: ${dynamicSlotLabel}`);
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address* (separated by a comma, e.g. John Doe, john@email.com)." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma (,) lagakar ek sath bhejien (jaise: Sarfaraj Khan, sarfaraj@gmail.com).");
-                        } else if (chosenOptionClean === 'b' || chosenOptionClean.includes("tomorrow") || chosenOptionClean.includes("12")) {
+                        } else if (userText === 'b' || userText.includes("tomorrow") || userText.includes("12")) {
                             userSessions[from].step = 'collect_consultation_identity'; 
                             const dynamicSlotLabel = (currentHourIST >= 17) ? "Day After Tomorrow at 12:00 PM" : "Tomorrow at 12:00 PM";
                             
-                            userSessions[from].requestedSlot = dynamicSlotLabel;
+                            userSessions[from].requestedSlot = dynamicSlotLabel; 
                             userSessions[from].projectScope = `Direct Consultation Slot: ${dynamicSlotLabel}`;
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: ${dynamicSlotLabel}`);
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address* (separated by a comma, e.g. John Doe, john@email.com)." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma (,) lagakar ek sath bhejien (jaise: Sarfaraj Khan, sarfaraj@gmail.com).");
-                        } else if (chosenOptionClean === 'c' || chosenOptionClean.includes("custom")) {
+                        } else if (userText === 'c' || userText.includes("custom")) {
                             userSessions[from].step = 'awaiting_custom_time_input';
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "📅 *Custom Scheduling Activated!* \n\nPlease type your preferred **Date and Time** below (e.g., *Monday at 3 PM*):" : "📅 *Custom Scheduling Active!* \n\nKripya jis **Date aur Time** par aap call chahte hain, use niche type karke send karein (jaise: *Kal dopahar 3 baje*):");
                         }
@@ -557,8 +572,7 @@ app.post('/webhook', async (req, res) => {
                     // 🎯 STATE 8: CORE ENGINE - MAIN MENU ROUTER
                     if (currentStep === 'welcome' || currentStep === 'main_menu') {
                         userSessions[from].step = 'main_menu';
-                        let isCoreMatch = false; 
-                        let targetMenuRoute = userText;
+                        let isCoreMatch = false; let targetMenuRoute = userText;
 
                         if (userText === '1' || userText.includes("web") || userText.includes("site")) { targetMenuRoute = '1'; isCoreMatch = true; }
                         else if (userText === '2' || userText.includes("automation") || userText.includes("bot")) { targetMenuRoute = '2'; isCoreMatch = true; }
@@ -609,9 +623,7 @@ app.post('/webhook', async (req, res) => {
                     }
                 }
             }
-        } catch (error) { 
-            console.error("Webhook processing logic error."); 
-        }
+        } catch (error) { console.error("Webhook processing logic error."); }
     }
 });
 
@@ -623,7 +635,10 @@ async function finalizeConsultationLead(from, textInput, res) {
     const dynamicSlot = session.requestedSlot || "Direct Scheduled Request";
     const userLang = session.lang;
 
-    const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details & Parameters:* Direct Consultation Slot: ${dynamicSlot}\n💬 *User Stated Objectives:* "${textInput}"\n\n🤖 *Status:* Live details captured securely!`;
+    const matchedBasePrice = getBasePriceByPlan(textInput, false);
+    const finalCalculatedPrice = calculateTotalPayable(matchedBasePrice, false);
+
+    const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details & Parameters:* Direct Consultation Slot: ${dynamicSlot}\n💬 *User Stated Objectives:* "${textInput}"\n💰 *Mapped Plan Base Price:* ₹${matchedBasePrice} (${finalCalculatedPrice} incl GST/Gateway)\n\n🤖 *Status:* Live details captured securely!`;
     await sendWhatsAppMessage("917529839762", comprehensiveAdminAlert);
 
     try {
@@ -633,12 +648,10 @@ async function finalizeConsultationLead(from, textInput, res) {
             email: clientEmail,
             requested_slot: dynamicSlot,
             discussion_notes: `*User Stated Objectives:* "${textInput}"\n\n${comprehensiveAdminAlert}`,
-            project_scope: `Direct Consultation | Objective: "${textInput}"`,
-            calculated_price: 0
+            project_scope: textInput, 
+            calculated_price: finalCalculatedPrice 
         });
-    } catch (apiErr) { 
-        console.error("Dashboard parameters execution failure handler."); 
-    }
+    } catch (apiErr) { console.error("Dashboard parameters execution failure handler."); }
 
     let confirmationText = (userLang === 'EN')
         ? `✅ *Booking Profile Complete!* \n\nThank you *${cleanName}*! Your specifications have been securely routed to Shahid. We will connect with you shortly! 🚀`
@@ -656,9 +669,7 @@ async function sendWhatsAppMessage(to, text) {
             data: { messaging_product: "whatsapp", to: to, type: "text", text: { body: text } },
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${SECURED_ACCESS_TOKEN}` }
         });
-    } catch (e) { 
-        console.error("WhatsApp API dispatch error:", e.response ? e.response.data : e.message); 
-    }
+    } catch (e) { console.error("WhatsApp API dispatch error:", e.message); }
 }
 
 const PORT = process.env.PORT || 10000;

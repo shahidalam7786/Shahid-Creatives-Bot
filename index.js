@@ -368,7 +368,6 @@ app.post('/webhook', async (req, res) => {
                             }
                         }
 
-                        // 🛑 STRICT VALIDATION REJECTION FILTER FOR CONSULTATION
                         if (!cleanName || cleanName.length < 2 || !cleanEmail || !cleanEmail.includes("@") || !cleanEmail.includes(".")) {
                             return sendWhatsAppMessage(from, (userLang === 'EN') 
                                 ? "⚠️ *Format Error!* Both **Full Name** and a valid **Email ID** are strictly mandatory.\n\n👉 Please reply again in this exact structure: *Your Name, your-email@example.com*" 
@@ -415,7 +414,7 @@ app.post('/webhook', async (req, res) => {
                         return sendWhatsAppMessage(from, (userLang === 'EN') ? "Awesome! 📝 Kindly reply with your **Full Name** and **Email Address**." : "Awesome! 📝 Kripya apna **Full Name** aur **Email ID** bhej lijiye.");
                     }
 
-                    // 🎯 STATE 4: INBOUND CHAT REGISTRATION COMPLETED (STRICT MANDATORY EMAIL VALIDATION FOR MAIN MENU TRACK)
+                    // 🎯 STATE 4: INBOUND CHAT REGISTRATION COMPLETED
                     if (currentStep === 'ask_name_email') {
                         let cleanName = ""; 
                         let cleanEmail = "";
@@ -433,7 +432,6 @@ app.post('/webhook', async (req, res) => {
                             }
                         }
 
-                        // 🛑 STRICT VALIDATION REJECTION FILTER: Direct menu users ko bina email ke rokne ka engine
                         if (!cleanName || cleanName.length < 2 || !cleanEmail || !cleanEmail.includes("@") || !cleanEmail.includes(".")) {
                             return sendWhatsAppMessage(from, (userLang === 'EN') 
                                 ? "⚠️ *Format Error!* Both **Full Name** and a valid **Email ID** are strictly mandatory to generate the payment token.\n\n👉 Please reply again in this exact structure: *Your Name, your-email@example.com*" 
@@ -472,8 +470,8 @@ app.post('/webhook', async (req, res) => {
                         const encodedPlan = encodeURIComponent(userSessions[from].projectScope);
 
                         let replyText = isUSDTrack 
-                            ? `Thank you, your profile is secure! 🤝\n\n🔗 *Pay Securely Here (USD Slot Guarantee):* https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=49&currency=USD&totalPrice=${finalPayable}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`
-                            : `Mubarak ho! Aapki requirement *${userSessions[from].projectScope}* register ho gayi hai! 🤝\n\n🔗 *Direct Pay Gateway Link:* https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=999&currency=INR&totalPrice=${finalPayable}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
+                            ? `🎉 *Success!* Your requirement for *${userSessions[from].projectScope}* is formally registered.\n\n*Next Steps:*\nTo initiate your project development slot, please process the standard booking token ($49 USD) via our secure gateway below:\n\n🔗 *Secure Checkout Portal:* https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=49&currency=USD&totalPrice=${finalPayable}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20\n\n_Note: Shahid's core team will reach out immediately upon confirmation!_`
+                            : `🎉 *Mubarak ho!* Aapki requirement (*${userSessions[from].projectScope}*) successfully hamare dashboard mein register ho gayi hai.\n\n*Next Steps:*\nApna slot pakka karne aur project shuru karne ke liye kripya apna Token Amount (₹999 INR) niche diye gaye secure payment link par clear karein:\n\n🔗 *Secure Checkout Portal:* https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=999&currency=INR&totalPrice=${finalPayable}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20\n\n_Note: Payment verify hote hi Shahid bhai ki team seedha aapse sampark karegi!_`;
                         return sendWhatsAppMessage(from, replyText);
                     }
 
@@ -546,24 +544,23 @@ app.post('/webhook', async (req, res) => {
                     // 🎯 STATE 6: CONSULTATION FIXED SLOTS ROUTING
                     if (currentStep === 'awaiting_consultation_slot') {
                         const currentHourIST = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Kolkata"})).getHours();
+                        let chosenOptionClean = userText.replace(/[\-\*•\(\)]/g, '').trim();
                         
-                        if (userText === 'a' || userText.includes("today") || userText.includes("5")) {
+                        if (chosenOptionClean === 'a' || chosenOptionClean.includes("today") || chosenOptionClean.includes("5")) {
                             userSessions[from].step = 'collect_consultation_identity'; 
                             const dynamicSlotLabel = (currentHourIST >= 17) ? "Tomorrow at 5:00 PM" : "Today at 5:00 PM";
                             
-                            userSessions[from].requestedSlot = dynamicSlotLabel; 
-                            userSessions[from].projectScope = `Direct Consultation Slot: ${dynamicSlotLabel}`;
+                            userSessions[from].requestedSlot = dynamicSlotLabel; userSessions[from].projectScope = `Direct Consultation Slot: ${dynamicSlotLabel}`;
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: ${dynamicSlotLabel}`);
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address* (separated by a comma, e.g. John Doe, john@email.com)." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma (,) lagakar ek sath bhejien (jaise: Sarfaraj Khan, sarfaraj@gmail.com).");
-                        } else if (userText === 'b' || userText.includes("tomorrow") || userText.includes("12")) {
+                        } else if (chosenOptionClean === 'b' || chosenOptionClean.includes("tomorrow") || chosenOptionClean.includes("12")) {
                             userSessions[from].step = 'collect_consultation_identity'; 
                             const dynamicSlotLabel = (currentHourIST >= 17) ? "Day After Tomorrow at 12:00 PM" : "Tomorrow at 12:00 PM";
                             
-                            userSessions[from].requestedSlot = dynamicSlotLabel; 
-                            userSessions[from].projectScope = `Direct Consultation Slot: ${dynamicSlotLabel}`;
+                            userSessions[from].requestedSlot = dynamicSlotLabel; userSessions[from].projectScope = `Direct Consultation Slot: ${dynamicSlotLabel}`;
                             await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: ${dynamicSlotLabel}`);
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address* (separated by a comma, e.g. John Doe, john@email.com)." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma (,) lagakar ek sath bhejien (jaise: Sarfaraj Khan, sarfaraj@gmail.com).");
-                        } else if (userText === 'c' || userText.includes("custom")) {
+                        } else if (chosenOptionClean === 'c' || chosenOptionClean.includes("custom")) {
                             userSessions[from].step = 'awaiting_custom_time_input';
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "📅 *Custom Scheduling Activated!* \n\nPlease type your preferred **Date and Time** below (e.g., *Monday at 3 PM*):" : "📅 *Custom Scheduling Active!* \n\nKripya jis **Date aur Time** par aap call chahte hain, use niche type karke send karein (jaise: *Kal dopahar 3 baje*):");
                         }

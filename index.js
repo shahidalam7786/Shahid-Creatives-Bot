@@ -182,7 +182,7 @@ app.post('/webhook', async (req, res) => {
                         try {
                             const nameMatch = rawText.match(/(?:Client Name|👤[^:]*):\s*([^\n\r]+)/i);
                             const scopeMatch = rawText.match(/(?:Plan Chosen|Category Model|Specifications[^:]*):\s*([^\n\r]+)/i);
-                            const priceMatch = rawText.match(/(?:Estimated Price|Base Price|Price|Grand Total[^:]*):\s*\$([0-9.,]+)/i);
+                            const priceMatch = rawText.match(/(?:Estimated Price|Base Price|Price|Grand Total[^:]*):\s*[₹\$]?\s*([0-9.,]+)/i);
                             
                             if (nameMatch) {
                                 clientName = nameMatch[1].split('\n')[0].split(',')[0].trim();
@@ -265,9 +265,16 @@ app.post('/webhook', async (req, res) => {
                         }
 
                         const uniqueProjectId = `SC-${Math.floor(10000 + Math.random() * 90000)}`;
-                        const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=49&currency=USD&totalPrice=${calculatedPrice}&name=${encodeURIComponent(clientName)}&email=${encodeURIComponent(clientEmail)}&phone=${from}&plan=${encodeURIComponent(projectScope)}&coupon=LAUNCH20`;
+                        
+                        // Dynamic Currency Logic setup for USD/INR Link
+                        const isINRLead = rawText.includes('₹') || rawText.includes('INR') || !isInternationalNumber;
+                        const tokenAmount = isINRLead ? 999 : 49;
+                        const tokenCurrency = isINRLead ? 'INR' : 'USD';
+                        const guaranteeText = isINRLead ? 'INR Slot Guarantee' : 'USD Slot Guarantee';
 
-                        let clientReply = `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved to our dashboard.\n\n🔗 *Pay Securely Here (USD Slot Guarantee):* ${selfPayLink}`;
+                        const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmount}&currency=${tokenCurrency}&totalPrice=${calculatedPrice}&name=${encodeURIComponent(clientName)}&email=${encodeURIComponent(clientEmail)}&phone=${from}&plan=${encodeURIComponent(projectScope)}&coupon=LAUNCH20`;
+
+                        let clientReply = `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved to our dashboard.\n\n🔗 *Pay Securely Here (${guaranteeText}):* ${selfPayLink}`;
                         return sendWhatsAppMessage(from, clientReply);
                     }
 

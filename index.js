@@ -229,8 +229,11 @@ app.post('/webhook', async (req, res) => {
                             }
                         } catch (e) { }
 
-                        const isINRLead = rawText.includes('₹') || rawText.includes('INR') || !isInternationalNumber;
-                        const isUSDTrack = !isINRLead;
+                        // ✅ EXPLICIT LANGUAGE/CURRENCY DETECTION FIX
+                        const isExplicitUSD = rawText.includes('USD') || rawText.includes('$');
+                        const isExplicitINR = rawText.includes('INR') || rawText.includes('₹');
+                        const isUSDTrack = isExplicitUSD ? true : (isExplicitINR ? false : isInternationalNumber);
+                        const isINRLead = !isUSDTrack;
 
                         const tokenAmount = isINRLead ? 999 : 49;
                         const tokenCurrency = isINRLead ? 'INR' : 'USD';
@@ -244,7 +247,7 @@ app.post('/webhook', async (req, res) => {
 
                         userSessions[from] = { 
                             step: 'payment_failed_resolution', // Ask if debit or failed
-                            lang: isInternationalNumber ? 'EN' : 'HINGLISH', 
+                            lang: isUSDTrack ? 'EN' : 'HINGLISH', // ✅ BUGS FIXED: Prioritize Explicit Text Detection
                             clientName: clientName, 
                             clientEmail: clientEmail,
                             projectScope: projectScope, 
@@ -387,12 +390,17 @@ app.post('/webhook', async (req, res) => {
                         } catch (parseError) { 
                             console.error("Parser failure exception inside landing template."); 
                         }
+                        
+                        // ✅ EXPLICIT LANGUAGE/CURRENCY DETECTION FOR FORM FIX
+                        const isExplicitUSDForm = rawText.includes('USD') || rawText.includes('$');
+                        const isExplicitINRForm = rawText.includes('INR') || rawText.includes('inr') || rawText.includes('₹');
+                        const formIsUSDTrack = isExplicitUSDForm ? true : (isExplicitINRForm ? false : isInternationalNumber);
 
                         if (userText.includes("paid the full amount") || userText.includes("advance amount paid") || userText.includes("paid the full") || userText.includes("i just paid")) {
                             
                             userSessions[from] = { 
                                 step: 'post_registration', 
-                                lang: isInternationalNumber ? 'EN' : 'HINGLISH', 
+                                lang: formIsUSDTrack ? 'EN' : 'HINGLISH', 
                                 clientName: clientName, 
                                 clientEmail: clientEmail, 
                                 projectScope: projectScope, 
@@ -424,7 +432,7 @@ app.post('/webhook', async (req, res) => {
 
                         userSessions[from] = { 
                             step: 'awaiting_website_action', 
-                            lang: 'EN', 
+                            lang: formIsUSDTrack ? 'EN' : 'HINGLISH', 
                             clientName: clientName, 
                             clientEmail: clientEmail, 
                             projectScope: projectScope, 
@@ -434,7 +442,7 @@ app.post('/webhook', async (req, res) => {
                         };
                         
                         const calculatedPrice = parsedBasePrice; 
-                        const isINRLead = rawText.includes('₹') || rawText.includes('inr') || rawText.includes('INR') || !isInternationalNumber;
+                        const isINRLead = !formIsUSDTrack;
                         const currencyAdmin = isINRLead ? '₹' : '$';
 
                         const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n📝 *Plan:* ${projectScope}\n💰 *Total Value:* ${currencyAdmin}${calculatedPrice}`;

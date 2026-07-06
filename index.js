@@ -203,6 +203,45 @@ app.post('/webhook', async (req, res) => {
                         userSessions[from] = null; 
                     }
 
+                    // 🚨 NEW INTERCEPTOR: PAYMENT FAILED SUPPORT (Catching website payment drop-offs)
+                    if (rawText.includes("payment transaction failed") || rawText.includes("Failed/Incomplete Booking") || rawText.includes("cancelled or was incomplete")) {
+                        let clientName = "Valued Client"; 
+                        let projectScope = "Project"; 
+                        let projectID = "N/A";
+                        
+                        try {
+                            const nameMatch = rawText.match(/Client Profile:\s*([^(\n]+)/i);
+                            const scopeMatch = rawText.match(/Project Category:\s*([^(\n]+)/i);
+                            const idMatch = rawText.match(/Project ID:\s*([^(\n]+)/i);
+                            
+                            if (nameMatch) clientName = nameMatch[1].replace(/[*_]/g, '').trim();
+                            if (scopeMatch) projectScope = scopeMatch[1].replace(/[*_\[\]]/g, '').trim();
+                            if (idMatch) projectID = idMatch[1].trim();
+                        } catch (e) { }
+
+                        userSessions[from] = { 
+                            step: 'post_registration', // Lock state so auto-menu doesn't trigger
+                            lang: isInternationalNumber ? 'EN' : 'HINGLISH', 
+                            clientName: clientName, 
+                            projectScope: projectScope, 
+                            lastInteractionTime: Date.now(), 
+                            nudgeSent: true 
+                        };
+
+                        const isINRLead = rawText.includes('₹') || rawText.includes('INR') || !isInternationalNumber;
+
+                        // Admin Alert for Emergency Assistance
+                        const alertMsg = `🚨 *URGENT: PAYMENT FAILED DROP-OFF!* 🚨\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n📝 *Plan:* ${projectScope}\n🆔 *Project ID:* ${projectID}\n\n⚠️ *Action Required:* Client attempted payment but failed. Please message them manually and provide alternative payment links (UPI/PayPal) immediately!`;
+                        sendWhatsAppMessage("917529839762", alertMsg);
+
+                        // Empathetic Support Reply to Client
+                        let replyMsg = isINRLead
+                            ? `Oh no! 😟 Maafi chahte hain *${clientName}*, lagta hai aapka *${projectScope}* ka online payment kisi technical issue ki wajah se fail/incomplete ho gaya hai. \n\nPar aap bilkul fikar na karein, aapka booking slot aur discount abhi bhi 100% safe aur reserved hai! 🛡️\n\n🚨 Hamari billing team ko aapka *Project ID (${projectID})* directly bhej diya gaya hai.\n\n🏦 *Next Step:*\nShahid bhai ki team aapse bas kuch hi der mein manual payment methods (UPI / Direct Bank Transfer) ke sath yahi par sampark karegi taaki aap apna token aasaani se pay kar sakein. Kripya thoda intezaar karein! ⚡`
+                            : `Oh no! 😟 I'm sorry to hear that your online payment for the *${projectScope}* was incomplete, *${clientName}*.\n\nDon't worry at all, your booking slot and discount deal are still perfectly safe and locked in! 🛡️\n\n🚨 Our billing team has immediately been notified with your *Project ID (${projectID})*.\n\n🏦 *Next Step:*\nA human agent will assist you here shortly with direct manual payment methods (PayPal / Bank Wire) so you can easily secure your slot. Please bear with us for a few minutes! ⚡`;
+                            
+                        return sendWhatsAppMessage(from, replyMsg);
+                    }
+
                     // 🎯 TOP PRIORITY INTERCEPTOR: WEBSITE INBOUND FORM SYNC
                     if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate") || rawText.includes("Estimated Price:") || rawText.includes("Grand Total:") || rawText.includes("Project/Category:")) {
                         if (userSessions[from] && userSessions[from].lastSubmitedTime && (Date.now() - userSessions[from].lastSubmitedTime < 15000)) { 

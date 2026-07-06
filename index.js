@@ -9,6 +9,7 @@ app.use(bodyParser.json());
 const userSessions = {};
 
 // 📈 DYNAMIC PRICING LEDGER MAPPING WITH +3.5% GATEWAY FEES FOR USD / +18% GST FOR INR
+// Note: Base price passed here is already DISCOUNTED (if applicable) before adding taxes.
 function calculateTotalPayable(basePrice, isUSD = false) {
     const cleanBase = parseFloat(basePrice.toString().replace(/[^0-9.]/g, ''));
     if (isNaN(cleanBase)) {
@@ -212,11 +213,17 @@ app.post('/webhook', async (req, res) => {
                         let clientEmail = "Not Provided"; 
                         let projectScope = "Website Custom Estimate"; 
                         let parsedBasePrice = 0; 
+                        let savedAmountWeb = 0; // Captures exact saving from website form
                         
                         try {
                             const nameMatch = rawText.match(/(?:Client Name|Name|👤)[^:]*:\s*([^\n\r]+)/i);
-                            // Robust Plan Parser (Stops before price brackets)
                             const scopeMatch = rawText.match(/(?:Project\/Category|Plan Chosen|Category Model|Specifications|Plan)[^:]*:\s*([^\n\r(₹$]+)/i);
+                            
+                            // Exact Save Amount Extraction: (Saved ₹5,100)
+                            const savedMatch = rawText.match(/\(Saved\s*[₹\$]?\s*([0-9.,]+)\)/i);
+                            if (savedMatch) {
+                                savedAmountWeb = Math.round(parseFloat(savedMatch[1].replace(/,/g, '')));
+                            }
                             
                             if (nameMatch) {
                                 clientName = nameMatch[1].replace(/[*_]/g, '').split(',')[0].trim();
@@ -257,7 +264,7 @@ app.post('/webhook', async (req, res) => {
                             sendWhatsAppMessage("917529839762", paidAdminAlert); // Non-blocking dispatch
 
                             try {
-                                await axios.post('https://shahcreatives.com/api/whatsapp-leads', { 
+                                await axios.post('https://shahidcreatives.com/api/whatsapp-leads', { 
                                     client_name: clientName, 
                                     whatsapp_number: from, 
                                     project_scope: `${projectScope} (Status: Fully Paid Portal Form)`, 
@@ -289,7 +296,6 @@ app.post('/webhook', async (req, res) => {
                         const calculatedPrice = parsedBasePrice; 
                         const isINRLead = rawText.includes('₹') || rawText.includes('inr') || rawText.includes('INR') || !isInternationalNumber;
                         const currencyAdmin = isINRLead ? '₹' : '$';
-                        const savingAmount = Math.round(calculatedPrice * 0.20); // 20% Dynamic Saving Calculation
 
                         // Admin Notification Fix (Non-blocking dispatch)
                         const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n📝 *Plan:* ${projectScope}\n💰 *Total Value:* ${currencyAdmin}${calculatedPrice}`;
@@ -314,10 +320,10 @@ app.post('/webhook', async (req, res) => {
 
                         const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmount}&currency=${tokenCurrency}&totalPrice=${calculatedPrice}&name=${encodeURIComponent(clientName)}&email=${encodeURIComponent(clientEmail)}&phone=${from}&plan=${encodeURIComponent(projectScope)}&coupon=LAUNCH20`;
 
-                        // 🎯 FOMO APPLIED HERE FOR WEBSITE INBOUND WITH SAVING AMOUNT
+                        // 🎯 FOMO APPLIED HERE FOR WEBSITE INBOUND EXACT SAVING AMOUNT AND T&C
                         let clientReply = isINRLead
-                            ? `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved to our dashboard.\n\n🔥 *URGENT:* Aapka **Flat 20% OFF (LAUNCH20)** coupon apply ho chuka hai! Aapne is deal par sidha **₹${savingAmount}** save kar liya hai. Ye limited-time offer expire hone se pehle apna slot lock karein.\n\n🔗 *Pay Securely Here (${guaranteeText}):* ${selfPayLink}\n\n_Note: Payment verify hote hi Shahid bhai ki team seedha aapse sampark karegi!_`
-                            : `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved to our dashboard.\n\n🔥 *URGENT:* Your **Flat 20% OFF (LAUNCH20)** coupon is currently applied! You just saved **$${savingAmount}** on this deal. Lock your slot before this limited-time offer expires.\n\n🔗 *Pay Securely Here (${guaranteeText}):* ${selfPayLink}\n\n_Note: Shahid's core team will reach out immediately upon confirmation!_`;
+                            ? `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved to our dashboard.\n\n🔥 *URGENT:* Aapka **Flat 20% OFF (LAUNCH20)** coupon apply ho chuka hai! Aapne is deal par sidha **₹${savedAmountWeb > 0 ? savedAmountWeb : '20%'}** save kar liya hai. Ye limited-time offer expire hone se pehle apna slot lock karein. (*T&C Apply*)\n\n🔗 *Pay Securely Here (${guaranteeText}):* ${selfPayLink}\n\n_Note: Payment verify hote hi Shahid bhai ki team seedha aapse sampark karegi!_`
+                            : `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved to our dashboard.\n\n🔥 *URGENT:* Your **Flat 20% OFF (LAUNCH20)** coupon is currently applied! You just saved **$${savedAmountWeb > 0 ? savedAmountWeb : '20%'}** on this deal. Lock your slot before this limited-time offer expires. (*T&C Apply*)\n\n🔗 *Pay Securely Here (${guaranteeText}):* ${selfPayLink}\n\n_Note: Shahid's core team will reach out immediately upon confirmation!_`;
                         
                         return sendWhatsAppMessage(from, clientReply);
                     }
@@ -382,7 +388,7 @@ app.post('/webhook', async (req, res) => {
                         }
 
                         if (processedRoute) {
-                            let replyText = (userSessions[from].lang === 'EN')
+                            let replyText = (userLang === 'EN')
                                 ? "Hello! Welcome to *Shahid Creatives*. 🚀\nSelect a professional stack tier via option number:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI Business Automation Hub**\n3️⃣ **🔥 Exclusive Launch Deal**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid (Direct Consultation)**"
                                 : "Hello! Welcome to *Shahid Creatives*. 🚀\nKoshish ko aage badhane ke liye ek option number reply kijiye:\n\n1️⃣ *Web Development Tiers*\n2️⃣ *AI Business Automation & B2B Wholesale Demo*\n3️⃣ *🔥 Exclusive Launch Deal*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid* (Direct Consultation)";
                             return sendWhatsAppMessage(from, replyText);
@@ -494,15 +500,21 @@ app.post('/webhook', async (req, res) => {
                         userSessions[from].clientEmail = cleanEmail;
                         
                         const isUSDTrack = (userLang === 'EN');
-                        const matchedBasePrice = getBasePriceByPlan(userSessions[from].projectScope, isUSDTrack);
-                        const finalPayable = calculateTotalPayable(matchedBasePrice, isUSDTrack);
-                        const savingAmount = Math.round(finalPayable * 0.20); // 20% Dynamic Saving Calculation
+                        const matchedBasePriceStr = getBasePriceByPlan(userSessions[from].projectScope, isUSDTrack);
+                        const matchedBasePrice = parseFloat(matchedBasePriceStr);
+
+                        // 🎯 20% DISCOUNT STRICTLY ON BASE PRICE ONLY
+                        const savingAmount = Math.round(matchedBasePrice * 0.20); 
+                        const discountedBasePrice = matchedBasePrice - savingAmount;
+
+                        // 🎯 GST + GATEWAY ON THE DISCOUNTED BASE PRICE
+                        const finalPayable = calculateTotalPayable(discountedBasePrice, isUSDTrack);
                         
                         const currencySymbol = isUSDTrack ? '$' : '₹';
                         const taxLabel = isUSDTrack ? 'incl Gateway Fees' : 'incl GST';
 
                         // Admin Notification Fix (Non-blocking dispatch)
-                        const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${cleanEmail}\n📝 *Plan Scope:* ${userSessions[from].projectScope}\n💰 *Calculated Price (${taxLabel}):* ${currencySymbol}${finalPayable}`;
+                        const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${cleanEmail}\n📝 *Plan Scope:* ${userSessions[from].projectScope}\n🔥 *Discount Applied:* ${currencySymbol}${savingAmount} (20% OFF)\n💰 *Calculated Price (${taxLabel}):* ${currencySymbol}${finalPayable}`;
                         sendWhatsAppMessage("917529839762", chatAdminNotification);
 
                         try {
@@ -524,10 +536,10 @@ app.post('/webhook', async (req, res) => {
 
                         const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${isUSDTrack ? 49 : 999}&currency=${isUSDTrack ? 'USD' : 'INR'}&totalPrice=${finalPayable}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
 
-                        // 🎯 FOMO APPLIED HERE FOR DIRECT CHAT INBOUND WITH SAVING AMOUNT
+                        // 🎯 FOMO APPLIED HERE FOR DIRECT CHAT INBOUND WITH SAVING AMOUNT & T&C
                         let replyText = isUSDTrack 
-                            ? `🎉 *Success!* Your requirement for *${userSessions[from].projectScope}* is formally registered.\n\n🔥 *URGENT:* A special **Flat 20% OFF (LAUNCH20)** coupon has been automatically applied to your link! You are saving **$${savingAmount}** today. Lock your price now before the offer expires.\n\n*Next Steps:*\nTo initiate your project development slot, please process the standard booking token ($49 USD) via our secure gateway below:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Shahid's core team will reach out immediately upon confirmation!_`
-                            : `🎉 *Mubarak ho!* Aapki requirement (*${userSessions[from].projectScope}*) successfully hamare dashboard mein register ho gayi hai.\n\n🔥 *URGENT:* Aapke link par **Flat 20% OFF (LAUNCH20)** coupon automatically apply kar diya gaya hai! Aaj is deal par aap **₹${savingAmount}** bacha rahe hain. Offer expire hone se pehle apna price lock karein.\n\n*Next Steps:*\nApna slot pakka karne aur project shuru karne ke liye kripya apna Token Amount (₹999 INR) niche diye gaye secure payment link par clear karein:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Payment verify hote hi Shahid bhai ki team seedha aapse sampark karegi!_`;
+                            ? `🎉 *Success!* Your requirement for *${userSessions[from].projectScope}* is formally registered.\n\n🔥 *URGENT:* A special **Flat 20% OFF (LAUNCH20)** coupon has been automatically applied to your base price! You are saving **$${savingAmount}** today. Lock your price now before the offer expires. (*T&C Apply*)\n\n*Next Steps:*\nTo initiate your project development slot, please process the standard booking token ($49 USD) via our secure gateway below:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Shahid's core team will reach out immediately upon confirmation!_`
+                            : `🎉 *Mubarak ho!* Aapki requirement (*${userSessions[from].projectScope}*) successfully hamare dashboard mein register ho gayi hai.\n\n🔥 *URGENT:* Aapke base price par **Flat 20% OFF (LAUNCH20)** coupon automatically apply kar diya gaya hai! Aaj is deal par aap **₹${savingAmount}** bacha rahe hain. Offer expire hone se pehle apna price lock karein. (*T&C Apply*)\n\n*Next Steps:*\nApna slot pakka karne aur project shuru karne ke liye kripya apna Token Amount (₹999 INR) niche diye gaye secure payment link par clear karein:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Payment verify hote hi Shahid bhai ki team seedha aapse sampark karegi!_`;
                         
                         return sendWhatsAppMessage(from, replyText);
                     }
@@ -689,16 +701,19 @@ async function finalizeConsultationLead(from, textInput, res) {
     const dynamicSlot = session.requestedSlot || "Direct Scheduled Request";
     const userLang = session.lang;
 
-    // Fixed: Tracking actual user currency region for Admin Notification mapping
     const isUSDTrack = (userLang === 'EN'); 
-    const matchedBasePrice = getBasePriceByPlan(textInput, isUSDTrack);
-    const finalCalculatedPrice = calculateTotalPayable(matchedBasePrice, isUSDTrack);
+    const matchedBasePriceStr = getBasePriceByPlan(textInput, isUSDTrack);
+    const matchedBasePrice = parseFloat(matchedBasePriceStr);
+    
+    // 🎯 ADMIN NOTIFICATION UPDATE: Syncs with Base Price discount logic
+    const savingAmount = Math.round(matchedBasePrice * 0.20);
+    const discountedBasePrice = matchedBasePrice - savingAmount;
+    const finalCalculatedPrice = calculateTotalPayable(discountedBasePrice, isUSDTrack);
     
     const currency = isUSDTrack ? '$' : '₹';
     const taxLabel = isUSDTrack ? 'incl Gateway Fees' : 'incl GST';
 
-    // Admin Notification Fix
-    const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details & Parameters:* Direct Consultation Slot: ${dynamicSlot}\n💬 *User Stated Objectives:* "${textInput}"\n💰 *Mapped Plan Base Price:* ${currency}${matchedBasePrice} (${currency}${finalCalculatedPrice} ${taxLabel})\n\n🤖 *Status:* Live details captured securely!`;
+    const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details & Parameters:* Direct Consultation Slot: ${dynamicSlot}\n💬 *User Stated Objectives:* "${textInput}"\n💰 *Base Price:* ${currency}${matchedBasePrice}\n🔥 *Discount:* ${currency}${savingAmount} (20% OFF)\n💳 *Final Payable:* ${currency}${finalCalculatedPrice} (${taxLabel})\n\n🤖 *Status:* Live details captured securely!`;
     sendWhatsAppMessage("917529839762", comprehensiveAdminAlert); // Non-blocking dispatch
 
     try {

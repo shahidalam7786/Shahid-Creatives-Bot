@@ -32,24 +32,7 @@ function getBasePriceByPlan(planScope, isUSD = false) {
     const text = String(planScope).toLowerCase().trim();
     
     if (isUSD) {
-        // Web Plans
-        if (text.includes("starter plan") || text.includes("visiting card") || text.includes("starter / visiting card site")) {
-            return "199";
-        }
-        if (text.includes("basic plan") || text.includes("landing page")) {
-            return "299";
-        }
-        if (text.includes("starter business") || text.includes("business website")) {
-            return "499";
-        }
-        if (text.includes("e-commerce hub") || text.includes("ecommerce")) {
-            return "899";
-        }
-        if (text.includes("custom enterprise") || text.includes("software")) {
-            return "2499";
-        }
-        
-        // AI Automation Plans (UPDATED)
+        // 🚀 AI Automation Plans (Placed FIRST to strictly prevent overlap with Web Plans)
         if (text.includes("ai content") || text.includes("seo maintainer")) {
             return "77";
         }
@@ -66,23 +49,26 @@ function getBasePriceByPlan(planScope, isUSD = false) {
             return "311";
         }
         
-        return "110";
-    } else {
-        // Web Plans
-        if (text.includes("landing page") || text.includes("funnel")) {
-            return "12300";
+        // 🌐 Web Plans
+        if (text.includes("starter plan") || text.includes("visiting card") || text.includes("starter / visiting card site")) {
+            return "199";
         }
-        if (text.includes("business") || text.includes("corporate")) {
-            return "25500";
+        if (text.includes("basic plan") || text.includes("landing page")) {
+            return "299";
         }
-        if (text.includes("e-commerce") || text.includes("store") && !text.includes("sales automation")) {
-            return "47500";
+        if (text.includes("starter business") || text.includes("business website")) {
+            return "499";
         }
-        if (text.includes("saas") || text.includes("software") || text.includes("custom web application")) {
-            return "145000";
+        if (text.includes("e-commerce hub") || text.includes("ecommerce")) {
+            return "899";
+        }
+        if (text.includes("custom enterprise") || text.includes("software")) {
+            return "2499";
         }
         
-        // AI Automation Plans (UPDATED)
+        return "110";
+    } else {
+        // 🚀 AI Automation Plans (Placed FIRST to strictly prevent overlap with Web Plans)
         if (text.includes("ai content") || text.includes("seo maintainer")) {
             return "4999";
         }
@@ -97,6 +83,20 @@ function getBasePriceByPlan(planScope, isUSD = false) {
         }
         if (text.includes("complete digital sales") || text.includes("digital sales engine")) {
             return "18999";
+        }
+        
+        // 🌐 Web Plans
+        if (text.includes("landing page") || text.includes("funnel")) {
+            return "12300";
+        }
+        if (text.includes("business") || text.includes("corporate")) {
+            return "25500";
+        }
+        if (text.includes("e-commerce") || text.includes("store")) {
+            return "47500";
+        }
+        if (text.includes("saas") || text.includes("software") || text.includes("custom web application")) {
+            return "145000";
         }
         
         return "8713"; 
@@ -126,10 +126,15 @@ app.get('/', (req, res) => {
     res.status(200).send("Shahid Creatives Bot Server is Live on Render with Secured Credentials! 🚀");
 });
 
-// 🟢 ROUTE HANDLER: Client Credentials Logs Delivery
+// 🟢 ROUTE HANDLER: Client Credentials Logs Delivery & Admin Alert Sync
 app.post('/send-client-credentials', async (req, res) => {
     try {
         const payload = req.body;
+        
+        // Admin Alert for API Inbound Event
+        const adminAlertText = `🌟 *NEW API PORTAL LEAD!* 🌟\n\n👤 *Name:* ${payload.name || payload.client_name || "Unknown"}\n📱 *Phone:* ${payload.phone || payload.whatsapp_number || "0000"}\n✉️ *Email:* ${payload.email || "Not Provided"}\n📝 *Plan:* ${payload.plan || payload.project_scope || "N/A"}\n💰 *Price Calculated:* ${payload.price || payload.calculated_price || 0}`;
+        await sendWhatsAppMessage("917529839762", adminAlertText);
+
         await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
             client_name: payload.name || payload.client_name || "API Inbound Portal Lead",
             whatsapp_number: payload.phone || payload.whatsapp_number || "0000000000",
@@ -278,7 +283,11 @@ app.post('/webhook', async (req, res) => {
                         };
                         
                         const calculatedPrice = parsedBasePrice; 
-                        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n📝 *Plan:* ${projectScope}\n💰 *Price:* $${calculatedPrice}`;
+                        const isINRLead = rawText.includes('₹') || rawText.includes('inr') || !isInternationalNumber;
+                        const currencyAdmin = isINRLead ? '₹' : '$';
+
+                        // Admin Notification Fix
+                        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n📝 *Plan:* ${projectScope}\n💰 *Price Base:* ${currencyAdmin}${calculatedPrice}`;
                         await sendWhatsAppMessage("917529839762", adminNotification);
 
                         try {
@@ -294,8 +303,6 @@ app.post('/webhook', async (req, res) => {
                         }
 
                         const uniqueProjectId = `SC-${Math.floor(10000 + Math.random() * 90000)}`;
-                        
-                        const isINRLead = rawText.includes('₹') || rawText.includes('inr') || !isInternationalNumber;
                         const tokenAmount = isINRLead ? 999 : 49;
                         const tokenCurrency = isINRLead ? 'INR' : 'USD';
                         const guaranteeText = isINRLead ? 'INR Slot Guarantee' : 'USD Slot Guarantee';
@@ -484,6 +491,7 @@ app.post('/webhook', async (req, res) => {
                         const currencySymbol = isUSDTrack ? '$' : '₹';
                         const taxLabel = isUSDTrack ? 'incl Gateway Fees' : 'incl GST';
 
+                        // Admin Notification Fix
                         const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${cleanEmail}\n📝 *Plan Scope:* ${userSessions[from].projectScope}\n💰 *Calculated Price (${taxLabel}):* ${currencySymbol}${finalPayable}`;
                         await sendWhatsAppMessage("917529839762", chatAdminNotification);
 
@@ -667,10 +675,16 @@ async function finalizeConsultationLead(from, textInput, res) {
     const dynamicSlot = session.requestedSlot || "Direct Scheduled Request";
     const userLang = session.lang;
 
-    const matchedBasePrice = getBasePriceByPlan(textInput, false);
-    const finalCalculatedPrice = calculateTotalPayable(matchedBasePrice, false);
+    // Fixed: Tracking actual user currency region for Admin Notification mapping
+    const isUSDTrack = (userLang === 'EN'); 
+    const matchedBasePrice = getBasePriceByPlan(textInput, isUSDTrack);
+    const finalCalculatedPrice = calculateTotalPayable(matchedBasePrice, isUSDTrack);
+    
+    const currency = isUSDTrack ? '$' : '₹';
+    const taxLabel = isUSDTrack ? 'incl Gateway Fees' : 'incl GST';
 
-    const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details & Parameters:* Direct Consultation Slot: ${dynamicSlot}\n💬 *User Stated Objectives:* "${textInput}"\n💰 *Mapped Plan Base Price:* ₹${matchedBasePrice} (${finalCalculatedPrice} incl GST/Gateway)\n\n🤖 *Status:* Live details captured securely!`;
+    // Admin Notification Fix
+    const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details & Parameters:* Direct Consultation Slot: ${dynamicSlot}\n💬 *User Stated Objectives:* "${textInput}"\n💰 *Mapped Plan Base Price:* ${currency}${matchedBasePrice} (${currency}${finalCalculatedPrice} ${taxLabel})\n\n🤖 *Status:* Live details captured securely!`;
     await sendWhatsAppMessage("917529839762", comprehensiveAdminAlert);
 
     try {
@@ -701,7 +715,10 @@ async function sendWhatsAppMessage(to, text) {
             data: { messaging_product: "whatsapp", to: to, type: "text", text: { body: text } },
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${SECURED_ACCESS_TOKEN}` }
         });
-    } catch (e) { console.error("WhatsApp API dispatch error:", e.message); }
+    } catch (e) { 
+        // Improved Error Logging for dispatch failures
+        console.error("WhatsApp API dispatch error:", e.response ? JSON.stringify(e.response.data) : e.message); 
+    }
 }
 
 const PORT = process.env.PORT || 10000;

@@ -133,7 +133,7 @@ app.post('/send-client-credentials', async (req, res) => {
         
         // Admin Alert for API Inbound Event
         const adminAlertText = `🌟 *NEW API PORTAL LEAD!* 🌟\n\n👤 *Name:* ${payload.name || payload.client_name || "Unknown"}\n📱 *Phone:* ${payload.phone || payload.whatsapp_number || "0000"}\n✉️ *Email:* ${payload.email || "Not Provided"}\n📝 *Plan:* ${payload.plan || payload.project_scope || "N/A"}\n💰 *Price Calculated:* ${payload.price || payload.calculated_price || 0}`;
-        await sendWhatsAppMessage("917529839762", adminAlertText);
+        sendWhatsAppMessage("917529839762", adminAlertText); // Non-blocking dispatch
 
         await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
             client_name: payload.name || payload.client_name || "API Inbound Portal Lead",
@@ -254,7 +254,7 @@ app.post('/webhook', async (req, res) => {
                             };
                             
                             const paidAdminAlert = `✅ *PAID CLIENT REGISTERED!* ✅\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail}\n📝 *Plan Scope:* ${projectScope}\n💳 *Status:* Fully Paid via Portal Gateway!`;
-                            await sendWhatsAppMessage("917529839762", paidAdminAlert);
+                            sendWhatsAppMessage("917529839762", paidAdminAlert); // Non-blocking dispatch
 
                             try {
                                 await axios.post('https://shahidcreatives.com/api/whatsapp-leads', { 
@@ -290,9 +290,9 @@ app.post('/webhook', async (req, res) => {
                         const isINRLead = rawText.includes('₹') || rawText.includes('inr') || rawText.includes('INR') || !isInternationalNumber;
                         const currencyAdmin = isINRLead ? '₹' : '$';
 
-                        // Admin Notification Fix
+                        // Admin Notification Fix (Non-blocking dispatch)
                         const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n📝 *Plan:* ${projectScope}\n💰 *Total Value:* ${currencyAdmin}${calculatedPrice}`;
-                        await sendWhatsAppMessage("917529839762", adminNotification);
+                        sendWhatsAppMessage("917529839762", adminNotification);
 
                         try {
                             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', { 
@@ -313,7 +313,11 @@ app.post('/webhook', async (req, res) => {
 
                         const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmount}&currency=${tokenCurrency}&totalPrice=${calculatedPrice}&name=${encodeURIComponent(clientName)}&email=${encodeURIComponent(clientEmail)}&phone=${from}&plan=${encodeURIComponent(projectScope)}&coupon=LAUNCH20`;
 
-                        let clientReply = `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved to our dashboard.\n\n🔗 *Pay Securely Here (${guaranteeText}):* ${selfPayLink}`;
+                        // 🎯 FOMO APPLIED HERE FOR WEBSITE INBOUND
+                        let clientReply = isINRLead
+                            ? `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved to our dashboard.\n\n🔥 *URGENT:* Aapka **Flat 20% OFF (LAUNCH20)** coupon apply ho chuka hai! Ye limited-time offer expire hone se pehle apna slot lock karein.\n\n🔗 *Pay Securely Here (${guaranteeText}):* ${selfPayLink}\n\n_Note: Payment verify hote hi Shahid bhai ki team seedha aapse sampark karegi!_`
+                            : `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved to our dashboard.\n\n🔥 *URGENT:* Your **Flat 20% OFF (LAUNCH20)** coupon is currently applied! Lock your slot before this limited-time offer expires.\n\n🔗 *Pay Securely Here (${guaranteeText}):* ${selfPayLink}\n\n_Note: Shahid's core team will reach out immediately upon confirmation!_`;
+                        
                         return sendWhatsAppMessage(from, clientReply);
                     }
 
@@ -495,9 +499,9 @@ app.post('/webhook', async (req, res) => {
                         const currencySymbol = isUSDTrack ? '$' : '₹';
                         const taxLabel = isUSDTrack ? 'incl Gateway Fees' : 'incl GST';
 
-                        // Admin Notification Fix
+                        // Admin Notification Fix (Non-blocking dispatch)
                         const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${cleanEmail}\n📝 *Plan Scope:* ${userSessions[from].projectScope}\n💰 *Calculated Price (${taxLabel}):* ${currencySymbol}${finalPayable}`;
-                        await sendWhatsAppMessage("917529839762", chatAdminNotification);
+                        sendWhatsAppMessage("917529839762", chatAdminNotification);
 
                         try {
                             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', { 
@@ -516,9 +520,13 @@ app.post('/webhook', async (req, res) => {
                         const encodedEmail = encodeURIComponent(cleanEmail); 
                         const encodedPlan = encodeURIComponent(userSessions[from].projectScope);
 
+                        const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${isUSDTrack ? 49 : 999}&currency=${isUSDTrack ? 'USD' : 'INR'}&totalPrice=${finalPayable}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
+
+                        // 🎯 FOMO APPLIED HERE FOR DIRECT CHAT INBOUND
                         let replyText = isUSDTrack 
-                            ? `🎉 *Success!* Your requirement for *${userSessions[from].projectScope}* is formally registered.\n\n*Next Steps:*\nTo initiate your project development slot, please process the standard booking token ($49 USD) via our secure gateway below:\n\n🔗 *Secure Checkout Portal:* https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=49&currency=USD&totalPrice=${finalPayable}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20\n\n_Note: Shahid's core team will reach out immediately upon confirmation!_`
-                            : `🎉 *Mubarak ho!* Aapki requirement (*${userSessions[from].projectScope}*) successfully hamare dashboard mein register ho gayi hai.\n\n*Next Steps:*\nApna slot pakka karne aur project shuru karne ke liye kripya apna Token Amount (₹999 INR) niche diye gaye secure payment link par clear karein:\n\n🔗 *Secure Checkout Portal:* https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=999&currency=INR&totalPrice=${finalPayable}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20\n\n_Note: Payment verify hote hi Shahid bhai ki team seedha aapse sampark karegi!_`;
+                            ? `🎉 *Success!* Your requirement for *${userSessions[from].projectScope}* is formally registered.\n\n🔥 *URGENT:* A special **Flat 20% OFF (LAUNCH20)** coupon has been automatically applied to your link! Lock your price now before the offer expires.\n\n*Next Steps:*\nTo initiate your project development slot, please process the standard booking token ($49 USD) via our secure gateway below:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Shahid's core team will reach out immediately upon confirmation!_`
+                            : `🎉 *Mubarak ho!* Aapki requirement (*${userSessions[from].projectScope}*) successfully hamare dashboard mein register ho gayi hai.\n\n🔥 *URGENT:* Aapke link par **Flat 20% OFF (LAUNCH20)** coupon automatically apply kar diya gaya hai! Offer expire hone se pehle apna price lock karein.\n\n*Next Steps:*\nApna slot pakka karne aur project shuru karne ke liye kripya apna Token Amount (₹999 INR) niche diye gaye secure payment link par clear karein:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Payment verify hote hi Shahid bhai ki team seedha aapse sampark karegi!_`;
+                        
                         return sendWhatsAppMessage(from, replyText);
                     }
 
@@ -598,14 +606,14 @@ app.post('/webhook', async (req, res) => {
                             const dynamicSlotLabel = (currentHourIST >= 17) ? "Tomorrow at 5:00 PM" : "Today at 5:00 PM";
                             
                             userSessions[from].requestedSlot = dynamicSlotLabel; userSessions[from].projectScope = `Direct Consultation Slot: ${dynamicSlotLabel}`;
-                            await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: ${dynamicSlotLabel}`);
+                            sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: ${dynamicSlotLabel}`);
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address* (separated by a comma, e.g. John Doe, john@email.com)." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma (,) lagakar ek sath bhejien (jaise: Sarfaraj Khan, sarfaraj@gmail.com).");
                         } else if (chosenOptionClean === 'b' || chosenOptionClean.includes("tomorrow") || chosenOptionClean.includes("12")) {
                             userSessions[from].step = 'collect_consultation_identity'; 
                             const dynamicSlotLabel = (currentHourIST >= 17) ? "Day After Tomorrow at 12:00 PM" : "Tomorrow at 12:00 PM";
                             
                             userSessions[from].requestedSlot = dynamicSlotLabel; userSessions[from].projectScope = `Direct Consultation Slot: ${dynamicSlotLabel}`;
-                            await sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: ${dynamicSlotLabel}`);
+                            sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: ${dynamicSlotLabel}`);
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address* (separated by a comma, e.g. John Doe, john@email.com)." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma (,) lagakar ek sath bhejien (jaise: Sarfaraj Khan, sarfaraj@gmail.com).");
                         } else if (chosenOptionClean === 'c' || chosenOptionClean.includes("custom")) {
                             userSessions[from].step = 'awaiting_custom_time_input';
@@ -689,7 +697,7 @@ async function finalizeConsultationLead(from, textInput, res) {
 
     // Admin Notification Fix
     const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details & Parameters:* Direct Consultation Slot: ${dynamicSlot}\n💬 *User Stated Objectives:* "${textInput}"\n💰 *Mapped Plan Base Price:* ${currency}${matchedBasePrice} (${currency}${finalCalculatedPrice} ${taxLabel})\n\n🤖 *Status:* Live details captured securely!`;
-    await sendWhatsAppMessage("917529839762", comprehensiveAdminAlert);
+    sendWhatsAppMessage("917529839762", comprehensiveAdminAlert); // Non-blocking dispatch
 
     try {
         await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {

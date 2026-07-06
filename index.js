@@ -207,39 +207,144 @@ app.post('/webhook', async (req, res) => {
                     if (rawText.includes("payment transaction failed") || rawText.includes("Failed/Incomplete Booking") || rawText.includes("cancelled or was incomplete")) {
                         let clientName = "Valued Client"; 
                         let projectScope = "Project"; 
-                        let projectID = "N/A";
+                        let projectID = `SC-${Math.floor(1000 + Math.random() * 9000)}`;
+                        let clientEmail = "Not Provided";
                         
                         try {
                             const nameMatch = rawText.match(/Client Profile:\s*([^(\n]+)/i);
                             const scopeMatch = rawText.match(/Project Category:\s*([^(\n]+)/i);
                             const idMatch = rawText.match(/Project ID:\s*([^(\n]+)/i);
+                            const emailMatch = rawText.match(/Email:\s*([^\n\r]+)/i);
                             
                             if (nameMatch) clientName = nameMatch[1].replace(/[*_]/g, '').trim();
                             if (scopeMatch) projectScope = scopeMatch[1].replace(/[*_\[\]]/g, '').trim();
-                            if (idMatch) projectID = idMatch[1].trim();
+                            if (emailMatch) clientEmail = emailMatch[1].trim();
+                            
+                            if (idMatch) {
+                                let extractedId = idMatch[1].trim();
+                                // ✅ DYNAMIC ID FIX: Formats CREATIVE-XXXX to SC-XXXX
+                                projectID = extractedId.replace(/^[A-Za-z]+-/, 'SC-');
+                                if(!projectID.startsWith('SC-')) {
+                                    projectID = `SC-${projectID.replace(/\D/g, '') || Math.floor(1000 + Math.random() * 9000)}`;
+                                }
+                            }
                         } catch (e) { }
 
+                        const isINRLead = rawText.includes('₹') || rawText.includes('INR') || !isInternationalNumber;
+                        const isUSDTrack = !isINRLead;
+
+                        // Pre-calculate token link variables to save in session in case they choose "Retry"
+                        const tokenAmount = isINRLead ? 999 : 49;
+                        const tokenCurrency = isINRLead ? 'INR' : 'USD';
+                        const matchedBasePriceStr = getBasePriceByPlan(projectScope, isUSDTrack);
+                        const matchedBasePrice = parseFloat(matchedBasePriceStr) || (isINRLead ? 8713 : 110);
+                        const savingAmount = Math.round(matchedBasePrice * 0.20);
+                        const discountedBasePrice = matchedBasePrice - savingAmount;
+                        const finalPayable = calculateTotalPayable(discountedBasePrice, isUSDTrack);
+                        
+                        const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${projectID}&amount=${tokenAmount}&currency=${tokenCurrency}&totalPrice=${finalPayable}&name=${encodeURIComponent(clientName)}&email=${encodeURIComponent(clientEmail)}&phone=${from}&plan=${encodeURIComponent(projectScope)}&coupon=LAUNCH20`;
+
                         userSessions[from] = { 
-                            step: 'post_registration', // Lock state so auto-menu doesn't trigger
+                            step: 'payment_failed_resolution', // Ask if debit or failed
                             lang: isInternationalNumber ? 'EN' : 'HINGLISH', 
                             clientName: clientName, 
+                            clientEmail: clientEmail,
                             projectScope: projectScope, 
+                            projectID: projectID,
+                            payLink: selfPayLink, // Storing for Retry Action
                             lastInteractionTime: Date.now(), 
                             nudgeSent: true 
                         };
 
-                        const isINRLead = rawText.includes('₹') || rawText.includes('INR') || !isInternationalNumber;
-
                         // Admin Alert for Emergency Assistance
-                        const alertMsg = `🚨 *URGENT: PAYMENT FAILED DROP-OFF!* 🚨\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n📝 *Plan:* ${projectScope}\n🆔 *Project ID:* ${projectID}\n\n⚠️ *Action Required:* Client attempted payment but failed. Please message them manually and provide alternative payment links (UPI/PayPal) immediately!`;
+                        const alertMsg = `🚨 *URGENT: PAYMENT DROP-OFF REPORTED!* 🚨\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n📝 *Plan:* ${projectScope}\n🆔 *Client ID:* ${projectID}\n\n⚠️ *Action:* Client bot interaction active to check debit/cancel status.`;
                         sendWhatsAppMessage("917529839762", alertMsg);
 
-                        // Empathetic Support Reply to Client
+                        // Client Question Phase
                         let replyMsg = isINRLead
-                            ? `Oh no! 😟 Maafi chahte hain *${clientName}*, lagta hai aapka *${projectScope}* ka online payment kisi technical issue ki wajah se fail/incomplete ho gaya hai. \n\nPar aap bilkul fikar na karein, aapka booking slot aur discount abhi bhi 100% safe aur reserved hai! 🛡️\n\n🚨 Hamari billing team ko aapka *Project ID (${projectID})* directly bhej diya gaya hai.\n\n🏦 *Next Step:*\nShahid bhai ki team aapse bas kuch hi der mein manual payment methods (UPI / Direct Bank Transfer) ke sath yahi par sampark karegi taaki aap apna token aasaani se pay kar sakein. Kripya thoda intezaar karein! ⚡`
-                            : `Oh no! 😟 I'm sorry to hear that your online payment for the *${projectScope}* was incomplete, *${clientName}*.\n\nDon't worry at all, your booking slot and discount deal are still perfectly safe and locked in! 🛡️\n\n🚨 Our billing team has immediately been notified with your *Project ID (${projectID})*.\n\n🏦 *Next Step:*\nA human agent will assist you here shortly with direct manual payment methods (PayPal / Bank Wire) so you can easily secure your slot. Please bear with us for a few minutes! ⚡`;
+                            ? `Oh no! 😟 Maafi chahte hain *${clientName}*, lagta hai aapka *${projectScope}* ka transaction technical issue ki wajah se ruk gaya hai.\n\nKripya batayein ki aapke account ka status kya hai? Niche diye gaye options mein se ek (1 ya 2) chunein:\n\n1️⃣ **Payment account se kat gaya hai (Amount Debited)**\n2️⃣ **Payment fail ya cancel ho gaya tha (Failed/Cancelled)**`
+                            : `Oh no! 😟 I'm sorry to hear that your transaction for the *${projectScope}* encountered an issue, *${clientName}*.\n\nCould you please confirm your account status? Reply with 1 or 2:\n\n1️⃣ **The amount was debited from my account**\n2️⃣ **The payment failed or was cancelled**`;
                             
                         return sendWhatsAppMessage(from, replyMsg);
+                    }
+
+                    if (!userSessions[from]) {
+                        userSessions[from] = { 
+                            step: 'region_check', 
+                            lang: (isInternationalNumber || isGlobalWebsiteTemplate) ? 'EN' : 'HINGLISH', 
+                            clientName: "Valued Client", 
+                            clientEmail: "", 
+                            projectScope: "Custom Project Development", 
+                            requestedSlot: "Not Selected", 
+                            lastSubmitedTime: 0, 
+                            lastInteractionTime: Date.now(), 
+                            nudgeSent: false 
+                        };
+                    }
+                    
+                    userSessions[from].lastInteractionTime = Date.now();
+                    const userLang = userSessions[from].lang;
+                    const currentStep = userSessions[from].step;
+                    const session = userSessions[from]; // local reference
+
+                    // 🎯 NEW STATE: PAYMENT FAILED RESOLUTION - Check Debit Status
+                    if (currentStep === 'payment_failed_resolution') {
+                        const isINRLead = userLang !== 'EN';
+                        
+                        if (userText === '1' || userText.includes("debit") || userText.includes("kat gaya")) {
+                            userSessions[from].step = 'completed';
+                            let waitMsg = isINRLead
+                                ? `Dhanyawad *${session.clientName}*. 🙏 Agar amount debited ho gaya hai, to kripya 30 minute tak intezaar karein. System payment ko automatically verify kar raha hai. Agar koi dikkat hoti hai, to Shahid Creatives ki Team aapse jald hi manual verification ke liye sampark karegi. Aapka slot 100% safe hai! 🛡️`
+                                : `Thank you, *${session.clientName}*. 🙏 If the amount has been debited, please wait for up to 30 minutes. Our system is auto-verifying the payment. If there's any issue, Shahid Creatives' Team will contact you shortly for manual verification. Your slot is perfectly safe! 🛡️`;
+                            return sendWhatsAppMessage(from, waitMsg);
+                        } 
+                        else if (userText === '2' || userText.includes("fail") || userText.includes("cancel")) {
+                            userSessions[from].step = 'payment_failed_retry_options';
+                            let retryMsg = isINRLead
+                                ? `Koi baat nahi *${session.clientName}*! Aapka *${session.projectScope}* ka slot abhi bhi reserved hai. Aap apna token lock karne ke liye inme se koi ek option chun sakte hain:\n\n1️⃣ **Dubara Pay Karein (Retry Token Payment)**\n2️⃣ **Consultation Book Karein (Talk to Team)**\n\n👉 Kripya 1 ya 2 likh kar reply karein:`
+                                : `No worries, *${session.clientName}*! Your slot for *${session.projectScope}* is still reserved. You can secure your token by choosing one of the following:\n\n1️⃣ **Retry Token Payment**\n2️⃣ **Book a Consultation Call**\n\n👉 Please reply with 1 or 2:`;
+                            return sendWhatsAppMessage(from, retryMsg);
+                        } else {
+                            return sendWhatsAppMessage(from, isINRLead ? "❌ Kripya 1 ya 2 chunein." : "❌ Please reply with 1 or 2.");
+                        }
+                    }
+
+                    // 🎯 NEW STATE: PAYMENT FAILED RETRY OPTIONS - Process Link or Booking
+                    if (currentStep === 'payment_failed_retry_options') {
+                        const isINRLead = userLang !== 'EN';
+                        const payLink = session.payLink || "https://shahidcreatives.com";
+
+                        if (userText === '1' || userText.includes("pay") || userText.includes("retry") || userText.includes("dubara")) {
+                            userSessions[from].step = 'completed';
+                            let payReply = isINRLead
+                                ? `Great! Apna slot secure karne ke liye kripya niche diye gaye link ka upyog karein:\n\n🔗 *Secure Checkout Portal:* ${payLink}\n\n_Note: Payment successful hote hi Shahid Creatives ki Team aapko turant contact karegi!_`
+                                : `Great! Please use the secure link below to lock your slot:\n\n🔗 *Secure Checkout Portal:* ${payLink}\n\n_Note: Shahid Creatives' Team will reach out immediately upon confirmation!_`;
+                            return sendWhatsAppMessage(from, payReply);
+                        } 
+                        else if (userText === '2' || userText.includes("consult") || userText.includes("book") || userText.includes("talk")) {
+                            userSessions[from].step = 'awaiting_consultation_slot';
+                            const currentHourIST = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Kolkata"})).getHours();
+                            
+                            const optionA = (currentHourIST >= 17) ? "🅰️ *Kal Shaam 5:00 Baje*" : "🅰️ *Aaj Shaam 5:00 Baje*";
+                            const optionB = (currentHourIST >= 17) ? "🅱️ *Parso Dopahar 12:00 Baje*" : "🅱️ *Kal Dopahar 12:00 Baje*";
+                            const optionA_EN = (currentHourIST >= 17) ? "🅰️ *Tomorrow at 5:00 PM*" : "🅰️ *Today at 5:00 PM*";
+                            const optionB_EN = (currentHourIST >= 17) ? "🅱️ *Day After Tomorrow at 12:00 PM*" : "🅱️ *Tomorrow at 12:00 PM*";
+
+                            return sendWhatsAppMessage(from, (userLang === 'EN') 
+                                ? `👤 *Direct Consultation Setup:*\n\n${optionA_EN}\n${optionB_EN}\n🅲️ *Custom Time (Type preferred time below)*\n\n👉 Reply with A, B, or C!` 
+                                : `👤 *Direct Consultation Setup:*\n\n${optionA}\n${optionB}\n🅲️ *Custom Time (Apna secure timing niche type karein)*\n\n👉 Kripya **A, B, ya C** likh kar reply kijiye!`);
+                        } else {
+                            return sendWhatsAppMessage(from, isINRLead ? "❌ Kripya 1 ya 2 chunein." : "❌ Please reply with 1 or 2.");
+                        }
+                    }
+
+                    const courtesyTriggers = ['thanks', 'thank you', 'ok', 'okay', 'ji', 'shukriya', 'thx'];
+                    if (courtesyTriggers.includes(userText)) {
+                        userSessions[from] = null; 
+                        let courtesyReply = (userLang === 'EN')
+                            ? "You're most welcome! 👍 Glad to help. Type 'Menu' anytime if you want to explore again."
+                            : "Aapka swagat hai! 👍 Milte hain aapse bohot jald discovery call par. Dobara shuru karne ke liye kisi bhi waqt 'Menu' ya 'Hi' bheinje.";
+                        return sendWhatsAppMessage(from, courtesyReply);
                     }
 
                     // 🎯 TOP PRIORITY INTERCEPTOR: WEBSITE INBOUND FORM SYNC
@@ -252,13 +357,12 @@ app.post('/webhook', async (req, res) => {
                         let clientEmail = "Not Provided"; 
                         let projectScope = "Website Custom Estimate"; 
                         let parsedBasePrice = 0; 
-                        let savedAmountWeb = 0; // Captures exact saving from website form
+                        let savedAmountWeb = 0;
                         
                         try {
                             const nameMatch = rawText.match(/(?:Client Name|Name|👤)[^:]*:\s*([^\n\r]+)/i);
                             const scopeMatch = rawText.match(/(?:Project\/Category|Plan Chosen|Category Model|Specifications|Plan)[^:]*:\s*([^\n\r(₹$]+)/i);
                             
-                            // Exact Save Amount Extraction: (Saved ₹5,100)
                             const savedMatch = rawText.match(/\(Saved\s*[₹\$]?\s*([0-9.,]+)\)/i);
                             if (savedMatch) {
                                 savedAmountWeb = Math.round(parseFloat(savedMatch[1].replace(/,/g, '')));
@@ -271,7 +375,6 @@ app.post('/webhook', async (req, res) => {
                                 projectScope = scopeMatch[1].replace(/[*_\[\]]/g, '').trim();
                             }
                             
-                            // Highly precise absolute total extraction from website (Always grabs the FINAL calculated value)
                             const allPrices = [...rawText.matchAll(/[₹$]\s*([0-9.,]+)/g)];
                             if (allPrices.length > 0) {
                                 parsedBasePrice = Math.round(parseFloat(allPrices[allPrices.length - 1][1].replace(/,/g, '')));
@@ -300,7 +403,7 @@ app.post('/webhook', async (req, res) => {
                             };
                             
                             const paidAdminAlert = `✅ *PAID CLIENT REGISTERED!* ✅\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail}\n📝 *Plan Scope:* ${projectScope}\n💳 *Status:* Fully Paid via Portal Gateway!`;
-                            sendWhatsAppMessage("917529839762", paidAdminAlert); // Non-blocking dispatch
+                            sendWhatsAppMessage("917529839762", paidAdminAlert);
 
                             try {
                                 await axios.post('https://shahidcreatives.com/api/whatsapp-leads', { 
@@ -331,12 +434,10 @@ app.post('/webhook', async (req, res) => {
                             nudgeSent: false 
                         };
                         
-                        // Strict direct assignment. Never modifies pre-calculated website values.
                         const calculatedPrice = parsedBasePrice; 
                         const isINRLead = rawText.includes('₹') || rawText.includes('inr') || rawText.includes('INR') || !isInternationalNumber;
                         const currencyAdmin = isINRLead ? '₹' : '$';
 
-                        // Admin Notification Fix (Non-blocking dispatch)
                         const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n📝 *Plan:* ${projectScope}\n💰 *Total Value:* ${currencyAdmin}${calculatedPrice}`;
                         sendWhatsAppMessage("917529839762", adminNotification);
 
@@ -359,39 +460,11 @@ app.post('/webhook', async (req, res) => {
 
                         const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmount}&currency=${tokenCurrency}&totalPrice=${calculatedPrice}&name=${encodeURIComponent(clientName)}&email=${encodeURIComponent(clientEmail)}&phone=${from}&plan=${encodeURIComponent(projectScope)}&coupon=LAUNCH20`;
 
-                        // 🎯 FOMO APPLIED HERE FOR WEBSITE INBOUND EXACT SAVING AMOUNT AND T&C
                         let clientReply = isINRLead
-                            ? `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved to our dashboard.\n\n🔥 *URGENT:* Aapka **Flat 20% OFF (LAUNCH20)** coupon apply ho chuka hai! Aapne is deal par sidha **₹${savedAmountWeb > 0 ? savedAmountWeb : '20%'}** save kar liya hai. Ye limited-time offer expire hone se pehle apna slot lock karein. (*T&C Apply*)\n\n🔗 *Pay Securely Here (${guaranteeText}):* ${selfPayLink}\n\n_Note: Payment verify hote hi Shahid bhai ki team seedha aapse sampark karegi!_`
-                            : `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved to our dashboard.\n\n🔥 *URGENT:* Your **Flat 20% OFF (LAUNCH20)** coupon is currently applied! You just saved **$${savedAmountWeb > 0 ? savedAmountWeb : '20%'}** on this deal. Lock your slot before this limited-time offer expires. (*T&C Apply*)\n\n🔗 *Pay Securely Here (${guaranteeText}):* ${selfPayLink}\n\n_Note: Shahid's core team will reach out immediately upon confirmation!_`;
+                            ? `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved to our dashboard.\n\n🔥 *URGENT:* Aapka **Flat 20% OFF (LAUNCH20)** coupon apply ho chuka hai! Aapne is deal par sidha **₹${savedAmountWeb > 0 ? savedAmountWeb : '20%'}** save kar liya hai. Ye limited-time offer expire hone se pehle apna slot lock karein. (*T&C Apply*)\n\n🔗 *Pay Securely Here (${guaranteeText}):* ${selfPayLink}\n\n_Note: Payment verify hote hi Shahid Creatives ki Team seedha aapse sampark karegi!_`
+                            : `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved to our dashboard.\n\n🔥 *URGENT:* Your **Flat 20% OFF (LAUNCH20)** coupon is currently applied! You just saved **$${savedAmountWeb > 0 ? savedAmountWeb : '20%'}** on this deal. Lock your slot before this limited-time offer expires. (*T&C Apply*)\n\n🔗 *Pay Securely Here (${guaranteeText}):* ${selfPayLink}\n\n_Note: Shahid Creatives' Team will reach out immediately upon confirmation!_`;
                         
                         return sendWhatsAppMessage(from, clientReply);
-                    }
-
-                    if (!userSessions[from]) {
-                        userSessions[from] = { 
-                            step: 'region_check', 
-                            lang: (isInternationalNumber || isGlobalWebsiteTemplate) ? 'EN' : 'HINGLISH', 
-                            clientName: "Valued Client", 
-                            clientEmail: "", 
-                            projectScope: "Custom Project Development", 
-                            requestedSlot: "Not Selected", 
-                            lastSubmitedTime: 0, 
-                            lastInteractionTime: Date.now(), 
-                            nudgeSent: false 
-                        };
-                    }
-                    
-                    userSessions[from].lastInteractionTime = Date.now();
-                    const userLang = userSessions[from].lang;
-                    const currentStep = userSessions[from].step;
-
-                    const courtesyTriggers = ['thanks', 'thank you', 'ok', 'okay', 'ji', 'shukriya', 'thx'];
-                    if (courtesyTriggers.includes(userText)) {
-                        userSessions[from] = null; 
-                        let courtesyReply = (userLang === 'EN')
-                            ? "You're most welcome! 👍 Glad to help. Type 'Menu' anytime if you want to explore again."
-                            : "Aapka swagat hai! 👍 Milte hain aapse bohot jald discovery call par. Dobara shuru karne ke liye kisi bhi waqt 'Menu' ya 'Hi' bheinje.";
-                        return sendWhatsAppMessage(from, courtesyReply);
                     }
 
                     // 🎯 HIGH-PRIORITY INTERCEPTOR STATE: HANDLING USER REPLIES TO AUTOMATED FOLLOW-UP NUDGES
@@ -428,8 +501,8 @@ app.post('/webhook', async (req, res) => {
 
                         if (processedRoute) {
                             let replyText = (userLang === 'EN')
-                                ? "Hello! Welcome to *Shahid Creatives*. 🚀\nSelect a professional stack tier via option number:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI Business Automation Hub**\n3️⃣ **🔥 Exclusive Launch Deal**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid (Direct Consultation)**"
-                                : "Hello! Welcome to *Shahid Creatives*. 🚀\nKoshish ko aage badhane ke liye ek option number reply kijiye:\n\n1️⃣ *Web Development Tiers*\n2️⃣ *AI Business Automation & B2B Wholesale Demo*\n3️⃣ *🔥 Exclusive Launch Deal*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid* (Direct Consultation)";
+                                ? "Hello! Welcome to *Shahid Creatives*. 🚀\nSelect a professional stack tier via option number:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI Business Automation Hub**\n3️⃣ **🔥 Exclusive Launch Deal**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid Creatives' Team (Direct Consultation)**"
+                                : "Hello! Welcome to *Shahid Creatives*. 🚀\nKoshish ko aage badhane ke liye ek option number reply kijiye:\n\n1️⃣ *Web Development Tiers*\n2️⃣ *AI Business Automation & B2B Wholesale Demo*\n3️⃣ *🔥 Exclusive Launch Deal*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives ki Team* (Direct Consultation)";
                             return sendWhatsAppMessage(from, replyText);
                         } else {
                             return sendWhatsAppMessage(from, "Welcome to *Shahid Creatives*! 🚀 Please select your location layout to proceed:\n\n1️⃣ **India (Tax/Billing: ₹ INR)**\n2️⃣ **Outside India (Global Billing: $ USD)**");
@@ -552,7 +625,6 @@ app.post('/webhook', async (req, res) => {
                         const currencySymbol = isUSDTrack ? '$' : '₹';
                         const taxLabel = isUSDTrack ? 'incl Gateway Fees' : 'incl GST';
 
-                        // Admin Notification Fix (Non-blocking dispatch)
                         const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${cleanEmail}\n📝 *Plan Scope:* ${userSessions[from].projectScope}\n🔥 *Discount Applied:* ${currencySymbol}${savingAmount} (20% OFF)\n💰 *Calculated Price (${taxLabel}):* ${currencySymbol}${finalPayable}`;
                         sendWhatsAppMessage("917529839762", chatAdminNotification);
 
@@ -575,10 +647,9 @@ app.post('/webhook', async (req, res) => {
 
                         const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${isUSDTrack ? 49 : 999}&currency=${isUSDTrack ? 'USD' : 'INR'}&totalPrice=${finalPayable}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
 
-                        // 🎯 FOMO APPLIED HERE FOR DIRECT CHAT INBOUND WITH SAVING AMOUNT & T&C
                         let replyText = isUSDTrack 
-                            ? `🎉 *Success!* Your requirement for *${userSessions[from].projectScope}* is formally registered.\n\n🔥 *URGENT:* A special **Flat 20% OFF (LAUNCH20)** coupon has been automatically applied to your base price! You are saving **$${savingAmount}** today. Lock your price now before the offer expires. (*T&C Apply*)\n\n*Next Steps:*\nTo initiate your project development slot, please process the standard booking token ($49 USD) via our secure gateway below:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Shahid's core team will reach out immediately upon confirmation!_`
-                            : `🎉 *Mubarak ho!* Aapki requirement (*${userSessions[from].projectScope}*) successfully hamare dashboard mein register ho gayi hai.\n\n🔥 *URGENT:* Aapke base price par **Flat 20% OFF (LAUNCH20)** coupon automatically apply kar diya gaya hai! Aaj is deal par aap **₹${savingAmount}** bacha rahe hain. Offer expire hone se pehle apna price lock karein. (*T&C Apply*)\n\n*Next Steps:*\nApna slot pakka karne aur project shuru karne ke liye kripya apna Token Amount (₹999 INR) niche diye gaye secure payment link par clear karein:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Payment verify hote hi Shahid bhai ki team seedha aapse sampark karegi!_`;
+                            ? `🎉 *Success!* Your requirement for *${userSessions[from].projectScope}* is formally registered.\n\n🔥 *URGENT:* A special **Flat 20% OFF (LAUNCH20)** coupon has been automatically applied to your base price! You are saving **$${savingAmount}** today. Lock your price now before the offer expires. (*T&C Apply*)\n\n*Next Steps:*\nTo initiate your project development slot, please process the standard booking token ($49 USD) via our secure gateway below:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Shahid Creatives' Team will reach out immediately upon confirmation!_`
+                            : `🎉 *Mubarak ho!* Aapki requirement (*${userSessions[from].projectScope}*) successfully hamare dashboard mein register ho gayi hai.\n\n🔥 *URGENT:* Aapke base price par **Flat 20% OFF (LAUNCH20)** coupon automatically apply kar diya gaya hai! Aaj is deal par aap **₹${savingAmount}** bacha rahe hain. Offer expire hone se pehle apna price lock karein. (*T&C Apply*)\n\n*Next Steps:*\nApna slot pakka karne aur project shuru karne ke liye kripya apna Token Amount (₹999 INR) niche diye gaye secure payment link par clear karein:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Payment verify hote hi Shahid Creatives ki Team seedha aapse sampark karegi!_`;
                         
                         return sendWhatsAppMessage(from, replyText);
                     }
@@ -593,7 +664,7 @@ app.post('/webhook', async (req, res) => {
                             return sendWhatsAppMessage(from, requirementPrompt);
                         } else if (userText === '2' || userText.includes("discuss") || userText.includes("call") || userText.includes("strategy")) {
                             userSessions[from].step = 'post_registration';
-                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "👤 Perfect! Shahid will connect with you shortly for a strategy sync call." : "👤 Perfect! Shahid bhai bohot jald aapke sath strategy call par connect karenge. Get ready to launch! 🚀");
+                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "👤 Perfect! Shahid Creatives' Team will connect with you shortly for a strategy sync call." : "👤 Perfect! Shahid Creatives ki Team bohot jald aapke sath strategy call par connect karegi. Get ready to launch! 🚀");
                         }
                     }
 
@@ -687,8 +758,8 @@ app.post('/webhook', async (req, res) => {
 
                         if (!isCoreMatch) {
                             let replyText = (userLang === 'EN')
-                                ? "Hello! Welcome to *Shahid Creatives*. 🚀 Select a stack tier layout:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI Business Automation Hub**\n3️⃣ **🔥 Exclusive Launch Deal**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid (Direct Consultation)**"
-                                : "Hello! Welcome to *Shahid Creatives*. 🚀 Select layout choice number:\n\n1️⃣ *Web Development Tiers*\n2️⃣ *AI Business Automation & B2B Wholesale Demo*\n3️⃣ *🔥 Exclusive Launch Deal*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid* (Direct Consultation)";
+                                ? "Hello! Welcome to *Shahid Creatives*. 🚀 Select a stack tier layout:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI Business Automation Hub**\n3️⃣ **🔥 Exclusive Launch Deal**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid Creatives' Team (Direct Consultation)**"
+                                : "Hello! Welcome to *Shahid Creatives*. 🚀 Select layout choice number:\n\n1️⃣ *Web Development Tiers*\n2️⃣ *AI Business Automation & B2B Wholesale Demo*\n3️⃣ *🔥 Exclusive Launch Deal*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives ki Team* (Direct Consultation)";
                             return sendWhatsAppMessage(from, replyText);
                         }
 
@@ -722,8 +793,8 @@ app.post('/webhook', async (req, res) => {
                             const optionB_EN = (currentHourIST >= 17) ? "🅱️ *Day After Tomorrow at 12:00 PM*" : "🅱️ *Tomorrow at 12:00 PM*";
 
                             return sendWhatsAppMessage(from, (userLang === 'EN') 
-                                ? `👤 *Direct Consultation with Shahid:*\n\n${optionA_EN}\n${optionB_EN}\n🅲️ *Custom Time (Type preferred time below)*\n\n👉 Reply with A, B, or C!` 
-                                : `👤 *Direct Consultation with Shahid:*\n\n${optionA}\n${optionB}\n🅲️ *Custom Time (Apna secure timing niche type karein)*\n\n👉 Kripya **A, B, ya C** likh kar reply kijiye!`);
+                                ? `👤 *Direct Consultation with Shahid Creatives' Team:*\n\n${optionA_EN}\n${optionB_EN}\n🅲️ *Custom Time (Type preferred time below)*\n\n👉 Reply with A, B, or C!` 
+                                : `👤 *Direct Consultation with Shahid Creatives ki Team:*\n\n${optionA}\n${optionB}\n🅲️ *Custom Time (Apna secure timing niche type karein)*\n\n👉 Kripya **A, B, ya C** likh kar reply kijiye!`);
                         }
                     }
                 }
@@ -768,8 +839,8 @@ async function finalizeConsultationLead(from, textInput, res) {
     } catch (apiErr) { console.error("Dashboard parameters execution failure handler."); }
 
     let confirmationText = (userLang === 'EN')
-        ? `✅ *Booking Profile Complete!* \n\nThank you *${cleanName}*! Your specifications have been securely routed to Shahid. We will connect with you shortly! 🚀`
-        : `✅ *Booking Profile Complete!* \n\nThank you *${cleanName}*! Aapka requirement details Shahid bhai tak pahunch gaya hai. Hamari team aapse jald hi raabta karegi! 🚀`;
+        ? `✅ *Booking Profile Complete!* \n\nThank you *${cleanName}*! Your specifications have been securely routed to Shahid Creatives. We will connect with you shortly! 🚀`
+        : `✅ *Booking Profile Complete!* \n\nThank you *${cleanName}*! Aapka requirement details Shahid Creatives ki Team tak pahunch gaya hai. Hamari team aapse jald hi raabta karegi! 🚀`;
     return sendWhatsAppMessage(from, confirmationText);
 }
 

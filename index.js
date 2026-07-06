@@ -222,7 +222,6 @@ app.post('/webhook', async (req, res) => {
                             
                             if (idMatch) {
                                 let extractedId = idMatch[1].trim();
-                                // ✅ DYNAMIC ID FIX: Formats CREATIVE-XXXX to SC-XXXX
                                 projectID = extractedId.replace(/^[A-Za-z]+-/, 'SC-');
                                 if(!projectID.startsWith('SC-')) {
                                     projectID = `SC-${projectID.replace(/\D/g, '') || Math.floor(1000 + Math.random() * 9000)}`;
@@ -233,7 +232,6 @@ app.post('/webhook', async (req, res) => {
                         const isINRLead = rawText.includes('₹') || rawText.includes('INR') || !isInternationalNumber;
                         const isUSDTrack = !isINRLead;
 
-                        // Pre-calculate token link variables to save in session in case they choose "Retry"
                         const tokenAmount = isINRLead ? 999 : 49;
                         const tokenCurrency = isINRLead ? 'INR' : 'USD';
                         const matchedBasePriceStr = getBasePriceByPlan(projectScope, isUSDTrack);
@@ -250,6 +248,7 @@ app.post('/webhook', async (req, res) => {
                             clientName: clientName, 
                             clientEmail: clientEmail,
                             projectScope: projectScope, 
+                            savedPlan: projectScope, // Store precise plan text specifically for skipping steps
                             projectID: projectID,
                             payLink: selfPayLink, // Storing for Retry Action
                             lastInteractionTime: Date.now(), 
@@ -287,7 +286,7 @@ app.post('/webhook', async (req, res) => {
                     const currentStep = userSessions[from].step;
                     const session = userSessions[from]; // local reference
 
-                    // 🎯 NEW STATE: PAYMENT FAILED RESOLUTION - Check Debit Status
+                    // 🎯 STATE: PAYMENT FAILED RESOLUTION - Check Debit Status
                     if (currentStep === 'payment_failed_resolution') {
                         const isINRLead = userLang !== 'EN';
                         
@@ -309,7 +308,7 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // 🎯 NEW STATE: PAYMENT FAILED RETRY OPTIONS - Process Link or Booking
+                    // 🎯 STATE: PAYMENT FAILED RETRY OPTIONS - Process Link or Booking
                     if (currentStep === 'payment_failed_retry_options') {
                         const isINRLead = userLang !== 'EN';
                         const payLink = session.payLink || "https://shahidcreatives.com";
@@ -512,12 +511,20 @@ app.post('/webhook', async (req, res) => {
                     // 🎯 DEDICATED CAPTURE ROUTE FOR CUSTOM SCHEDULING TEXT
                     if (currentStep === 'awaiting_custom_time_input') {
                         let cleanInputTime = userText.replace(/[cCc🅲🅲️\-\*•\(\)]/g, '').trim();
-                        userSessions[from].step = 'collect_consultation_identity';
-                        userSessions[from].requestedSlot = rawText; 
-                        userSessions[from].projectScope = `Custom Slot Input ("${rawText}")`;
-                        return sendWhatsAppMessage(from, (userLang === 'EN') 
-                            ? `Got it! Custom slot parameters recorded: *"${rawText}"*\n\n✍ *Please complete your profile:* Kindly reply with your *Full Name* and *Email Address* (separated by comma, e.g. John Doe, john@example.com).` 
-                            : `Noted! Aapka preferred date/time save ho gaya hai: *"${rawText}"*\n\n✍ *Apna profile register karein:* Kripya reply mein apna *Full Name* aur *Email ID* comma (,) lagakar bheinjein (jaise: Sarfaraj Khan, sarfaraj@example.com).`);
+                        userSessions[from].requestedSlot = rawText;
+                        
+                        if (!userSessions[from].savedPlan) userSessions[from].savedPlan = userSessions[from].projectScope;
+
+                        if (userSessions[from].skipIdentityCapture || (userSessions[from].clientName && userSessions[from].clientName !== "Valued Client" && userSessions[from].clientEmail && userSessions[from].clientEmail !== "Not Provided" && userSessions[from].clientEmail !== "")) {
+                            userSessions[from].step = 'post_registration';
+                            return finalizeConsultationLead(from, userSessions[from].savedPlan || "Consultation Booking", res);
+                        } else {
+                            userSessions[from].step = 'collect_consultation_identity';
+                            userSessions[from].projectScope = `Custom Slot Input ("${rawText}")`;
+                            return sendWhatsAppMessage(from, (userLang === 'EN') 
+                                ? `Got it! Custom slot parameters recorded: *"${rawText}"*\n\n✍ *Please complete your profile:* Kindly reply with your *Full Name* and *Email Address* (separated by comma, e.g. John Doe, john@example.com).` 
+                                : `Noted! Aapka preferred date/time save ho gaya hai: *"${rawText}"*\n\n✍ *Apna profile register karein:* Kripya reply mein apna *Full Name* aur *Email ID* comma (,) lagakar bheinjein (jaise: Sarfaraj Khan, sarfaraj@example.com).`);
+                        }
                     }
 
                     // 🎯 STATE 1: COLLECT IDENTITY (STRICT MANDATORY NAME & EMAIL CHECK)
@@ -720,27 +727,42 @@ app.post('/webhook', async (req, res) => {
                         }
                     }
 
-                    // 🎯 STATE 6: CONSULTATION FIXED SLOTS ROUTING
+                    // 🎯 STATE 6: CONSULTATION FIXED SLOTS ROUTING (INTEGRATED SMART DATA MEMORY)
                     if (currentStep === 'awaiting_consultation_slot') {
                         const currentHourIST = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Kolkata"})).getHours();
                         let chosenOptionClean = userText.replace(/[\-\*•\(\)]/g, '').trim();
                         
+                        // Capture existing details if they already passed them
+                        if (!userSessions[from].savedPlan) userSessions[from].savedPlan = userSessions[from].projectScope;
+                        const hasValidIdentity = userSessions[from].clientName && userSessions[from].clientName !== "Valued Client" && userSessions[from].clientEmail && userSessions[from].clientEmail !== "Not Provided" && userSessions[from].clientEmail !== "";
+                        
                         if (chosenOptionClean === 'a' || chosenOptionClean.includes("today") || chosenOptionClean.includes("5")) {
-                            userSessions[from].step = 'collect_consultation_identity'; 
                             const dynamicSlotLabel = (currentHourIST >= 17) ? "Tomorrow at 5:00 PM" : "Today at 5:00 PM";
-                            
-                            userSessions[from].requestedSlot = dynamicSlotLabel; userSessions[from].projectScope = `Direct Consultation Slot: ${dynamicSlotLabel}`;
+                            userSessions[from].requestedSlot = dynamicSlotLabel; 
                             sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: ${dynamicSlotLabel}`);
-                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address* (separated by a comma, e.g. John Doe, john@email.com)." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma (,) lagakar ek sath bhejien (jaise: Sarfaraj Khan, sarfaraj@gmail.com).");
+                            
+                            if (hasValidIdentity) {
+                                userSessions[from].step = 'post_registration';
+                                return finalizeConsultationLead(from, userSessions[from].savedPlan, res);
+                            } else {
+                                userSessions[from].step = 'collect_consultation_identity'; 
+                                return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address* (separated by a comma, e.g. John Doe, john@email.com)." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma (,) lagakar ek sath bhejien (jaise: Sarfaraj Khan, sarfaraj@gmail.com).");
+                            }
                         } else if (chosenOptionClean === 'b' || chosenOptionClean.includes("tomorrow") || chosenOptionClean.includes("12")) {
-                            userSessions[from].step = 'collect_consultation_identity'; 
                             const dynamicSlotLabel = (currentHourIST >= 17) ? "Day After Tomorrow at 12:00 PM" : "Tomorrow at 12:00 PM";
-                            
-                            userSessions[from].requestedSlot = dynamicSlotLabel; userSessions[from].projectScope = `Direct Consultation Slot: ${dynamicSlotLabel}`;
+                            userSessions[from].requestedSlot = dynamicSlotLabel;
                             sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 +${from}\n⏰ Chosen Slot: ${dynamicSlotLabel}`);
-                            return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address* (separated by a comma, e.g. John Doe, john@email.com)." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma (,) lagakar ek sath bhejien (jaise: Sarfaraj Khan, sarfaraj@gmail.com).");
+                            
+                            if (hasValidIdentity) {
+                                userSessions[from].step = 'post_registration';
+                                return finalizeConsultationLead(from, userSessions[from].savedPlan, res);
+                            } else {
+                                userSessions[from].step = 'collect_consultation_identity'; 
+                                return sendWhatsAppMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address* (separated by a comma, e.g. John Doe, john@email.com)." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma (,) lagakar ek sath bhejien (jaise: Sarfaraj Khan, sarfaraj@gmail.com).");
+                            }
                         } else if (chosenOptionClean === 'c' || chosenOptionClean.includes("custom")) {
                             userSessions[from].step = 'awaiting_custom_time_input';
+                            userSessions[from].skipIdentityCapture = hasValidIdentity; // Setup pass tag
                             return sendWhatsAppMessage(from, (userLang === 'EN') ? "📅 *Custom Scheduling Activated!* \n\nPlease type your preferred **Date and Time** below (e.g., *Monday at 3 PM*):" : "📅 *Custom Scheduling Active!* \n\nKripya jis **Date aur Time** par aap call chahte hain, use niche type karke send karein (jaise: *Kal dopahar 3 baje*):");
                         }
                     }

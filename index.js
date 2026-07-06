@@ -203,7 +203,7 @@ app.post('/webhook', async (req, res) => {
                     }
 
                     // 🎯 TOP PRIORITY INTERCEPTOR: WEBSITE INBOUND FORM SYNC
-                    if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate") || rawText.includes("Estimated Price:") || rawText.includes("Grand Total:")) {
+                    if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate") || rawText.includes("Estimated Price:") || rawText.includes("Grand Total:") || rawText.includes("Project/Category:")) {
                         if (userSessions[from] && userSessions[from].lastSubmitedTime && (Date.now() - userSessions[from].lastSubmitedTime < 15000)) { 
                             return; 
                         }
@@ -215,17 +215,26 @@ app.post('/webhook', async (req, res) => {
                         
                         try {
                             const nameMatch = rawText.match(/(?:Client Name|👤[^:]*):\s*([^\n\r]+)/i);
-                            const scopeMatch = rawText.match(/(?:Plan Chosen|Category Model|Specifications[^:]*):\s*([^\n\r]+)/i);
-                            const priceMatch = rawText.match(/(?:Estimated Price|Base Price|Price|Grand Total[^:]*):\s*[₹\$]?\s*([0-9.,]+)/i) || rawText.match(/[₹$]([0-9.,]+)/);
+                            // Robust scope match supporting multiple dynamic labels
+                            const scopeMatch = rawText.match(/(?:Project\/Category|Category Model|Plan Chosen|Specifications)[^:]*:\s*([^\n\r]+)/i);
                             
                             if (nameMatch) {
-                                clientName = nameMatch[1].split('\n')[0].split(',')[0].trim();
+                                clientName = nameMatch[1].split(',')[0].trim();
                             }
                             if (scopeMatch) {
-                                projectScope = scopeMatch[1].replace(/[\*•\-]/g, '').trim();
+                                projectScope = scopeMatch[1].replace(/[\*•]/g, '').trim();
                             }
-                            if (priceMatch) { 
-                                parsedBasePrice = Math.round(parseFloat(priceMatch[1].replace(/,/g, '').trim())); 
+                            
+                            // Highly precise absolute total extraction from website
+                            const totalMatch = rawText.match(/(?:Total Due|Grand Total)[^₹$]*[₹$]\s*([0-9.,]+)/i);
+                            if (totalMatch) {
+                                parsedBasePrice = Math.round(parseFloat(totalMatch[1].replace(/,/g, '')));
+                            } else {
+                                // Fallback: extract the last valid currency number (usually the grand total on receipts)
+                                const allPrices = [...rawText.matchAll(/[₹$]\s*([0-9.,]+)/g)];
+                                if (allPrices.length > 0) {
+                                    parsedBasePrice = Math.round(parseFloat(allPrices[allPrices.length - 1][1].replace(/,/g, '')));
+                                }
                             }
                             
                             const globalEmailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/i;
@@ -282,12 +291,12 @@ app.post('/webhook', async (req, res) => {
                             nudgeSent: false 
                         };
                         
+                        // Strict direct assignment. Never modifies pre-calculated website values.
                         const calculatedPrice = parsedBasePrice; 
-                        const isINRLead = rawText.includes('₹') || rawText.includes('inr') || !isInternationalNumber;
+                        const isINRLead = rawText.includes('₹') || rawText.includes('inr') || rawText.includes('INR') || !isInternationalNumber;
                         const currencyAdmin = isINRLead ? '₹' : '$';
 
-                        // Admin Notification Fix
-                        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n📝 *Plan:* ${projectScope}\n💰 *Price Base:* ${currencyAdmin}${calculatedPrice}`;
+                        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n📝 *Plan:* ${projectScope}\n💰 *Total Value:* ${currencyAdmin}${calculatedPrice}`;
                         await sendWhatsAppMessage("917529839762", adminNotification);
 
                         try {

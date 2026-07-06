@@ -49,7 +49,7 @@ function getBasePriceByPlan(planScope, isUSD = false) {
             return "311";
         }
         
-        // 🌐 Web Plans
+        // 🌐 Web Plans (Strictly excluding AI keywords)
         if (text.includes("starter plan") || text.includes("visiting card") || text.includes("starter / visiting card site")) {
             return "199";
         }
@@ -59,7 +59,7 @@ function getBasePriceByPlan(planScope, isUSD = false) {
         if (text.includes("starter business") || text.includes("business website")) {
             return "499";
         }
-        if (text.includes("e-commerce hub") || text.includes("ecommerce")) {
+        if ((text.includes("e-commerce hub") || text.includes("ecommerce") || text.includes("e-commerce")) && !text.includes("sales automation") && !text.includes("retainer")) {
             return "899";
         }
         if (text.includes("custom enterprise") || text.includes("software")) {
@@ -85,14 +85,14 @@ function getBasePriceByPlan(planScope, isUSD = false) {
             return "18999";
         }
         
-        // 🌐 Web Plans
+        // 🌐 Web Plans (Strictly excluding AI keywords)
         if (text.includes("landing page") || text.includes("funnel")) {
             return "12300";
         }
         if (text.includes("business") || text.includes("corporate")) {
             return "25500";
         }
-        if (text.includes("e-commerce") || text.includes("store")) {
+        if ((text.includes("e-commerce") || text.includes("store")) && !text.includes("sales automation") && !text.includes("retainer")) {
             return "47500";
         }
         if (text.includes("saas") || text.includes("software") || text.includes("custom web application")) {
@@ -214,27 +214,21 @@ app.post('/webhook', async (req, res) => {
                         let parsedBasePrice = 0; 
                         
                         try {
-                            const nameMatch = rawText.match(/(?:Client Name|👤[^:]*):\s*([^\n\r]+)/i);
-                            // Robust scope match supporting multiple dynamic labels
-                            const scopeMatch = rawText.match(/(?:Project\/Category|Category Model|Plan Chosen|Specifications)[^:]*:\s*([^\n\r]+)/i);
+                            const nameMatch = rawText.match(/(?:Client Name|Name|👤)[^:]*:\s*([^\n\r]+)/i);
+                            // Robust Plan Parser (Stops before price brackets)
+                            const scopeMatch = rawText.match(/(?:Project\/Category|Plan Chosen|Category Model|Specifications|Plan)[^:]*:\s*([^\n\r(₹$]+)/i);
                             
                             if (nameMatch) {
-                                clientName = nameMatch[1].split(',')[0].trim();
+                                clientName = nameMatch[1].replace(/[*_]/g, '').split(',')[0].trim();
                             }
                             if (scopeMatch) {
-                                projectScope = scopeMatch[1].replace(/[\*•]/g, '').trim();
+                                projectScope = scopeMatch[1].replace(/[*_\[\]]/g, '').trim();
                             }
                             
-                            // Highly precise absolute total extraction from website
-                            const totalMatch = rawText.match(/(?:Total Due|Grand Total)[^₹$]*[₹$]\s*([0-9.,]+)/i);
-                            if (totalMatch) {
-                                parsedBasePrice = Math.round(parseFloat(totalMatch[1].replace(/,/g, '')));
-                            } else {
-                                // Fallback: extract the last valid currency number (usually the grand total on receipts)
-                                const allPrices = [...rawText.matchAll(/[₹$]\s*([0-9.,]+)/g)];
-                                if (allPrices.length > 0) {
-                                    parsedBasePrice = Math.round(parseFloat(allPrices[allPrices.length - 1][1].replace(/,/g, '')));
-                                }
+                            // Highly precise absolute total extraction from website (Always grabs the FINAL calculated value)
+                            const allPrices = [...rawText.matchAll(/[₹$]\s*([0-9.,]+)/g)];
+                            if (allPrices.length > 0) {
+                                parsedBasePrice = Math.round(parseFloat(allPrices[allPrices.length - 1][1].replace(/,/g, '')));
                             }
                             
                             const globalEmailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/i;
@@ -296,6 +290,7 @@ app.post('/webhook', async (req, res) => {
                         const isINRLead = rawText.includes('₹') || rawText.includes('inr') || rawText.includes('INR') || !isInternationalNumber;
                         const currencyAdmin = isINRLead ? '₹' : '$';
 
+                        // Admin Notification Fix
                         const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n📝 *Plan:* ${projectScope}\n💰 *Total Value:* ${currencyAdmin}${calculatedPrice}`;
                         await sendWhatsAppMessage("917529839762", adminNotification);
 

@@ -133,7 +133,7 @@ app.post('/send-client-credentials', async (req, res) => {
         const payload = req.body;
         
         // Admin Alert for API Inbound Event
-        const adminAlertText = `🌟 *NEW API PORTAL LEAD!* 🌟\n\n👤 *Name:* ${payload.name || payload.client_name || "Unknown"}\n📱 *Phone:* ${payload.phone || payload.whatsapp_number || "0000"}\n✉️ *Email:* ${payload.email || "Not Provided"}\n📝 *Plan:* ${payload.plan || payload.project_scope || "N/A"}\n💰 *Price Calculated:* ${payload.price || payload.calculated_price || 0}`;
+        const adminAlertText = `🌟 *NEW API PORTAL LEAD!* 🌟\n\n👤 *Name:* ${payload.name || payload.client_name || "Unknown"}\n📱 *Phone:* ${payload.phone || payload.whatsapp_number || "0000"}\n✉️ *Email:* ${payload.email || "Not Provided"}\n📝 *Plan Scope:* ${payload.plan || payload.project_scope || "N/A"}\n💰 *Calculated Price:* ${payload.price || payload.calculated_price || 0}`;
         sendWhatsAppMessage("917529839762", adminAlertText); // Non-blocking dispatch
 
         await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
@@ -141,7 +141,8 @@ app.post('/send-client-credentials', async (req, res) => {
             whatsapp_number: payload.phone || payload.whatsapp_number || "0000000000",
             project_scope: payload.plan || payload.project_scope || "Credentials Sync Event",
             calculated_price: payload.price || payload.calculated_price || 0,
-            email: payload.email || "Not Provided"
+            email: payload.email || "Not Provided",
+            discussion_notes: adminAlertText // ✅ SYNCED WITH NEW PARSER LOGIC
         });
         res.status(200).json({ success: true, message: "Credentials Packet routed securely!" });
     } catch (err) {
@@ -260,7 +261,7 @@ app.post('/webhook', async (req, res) => {
 
                         // Admin Alert for Emergency Assistance (With Full Base Price Details)
                         const currencyAdmin = isUSDTrack ? '$' : '₹';
-                        const alertMsg = `🚨 *URGENT: PAYMENT DROP-OFF REPORTED!* 🚨\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n📝 *Plan:* ${projectScope}\n🆔 *Client ID:* ${projectID}\n💵 *Base Price:* ${currencyAdmin}${matchedBasePrice}\n🔥 *Discount:* ${currencyAdmin}${savingAmount} (20% OFF)\n💰 *Final Payable:* ${currencyAdmin}${finalPayable}\n\n⚠️ *Action:* Client bot interaction active to check debit/cancel status.`;
+                        const alertMsg = `🚨 *URGENT: PAYMENT DROP-OFF REPORTED!* 🚨\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n📝 *Plan Scope:* ${projectScope}\n🆔 *Client ID:* ${projectID}\n💵 *Base Price:* ${currencyAdmin}${matchedBasePrice}\n🔥 *Discount Applied:* ${currencyAdmin}${savingAmount} (LAUNCH20)\n💰 *Calculated Price:* ${currencyAdmin}${finalPayable}\n\n⚠️ *Action:* Client bot interaction active to check debit/cancel status.`;
                         sendWhatsAppMessage("917529839762", alertMsg);
 
                         // Client Question Phase
@@ -410,7 +411,7 @@ app.post('/webhook', async (req, res) => {
                                 nudgeSent: true 
                             };
                             
-                            const paidAdminAlert = `✅ *PAID CLIENT REGISTERED!* ✅\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail}\n📝 *Plan Scope:* ${projectScope}\n💰 *Amount Paid:* ${formIsUSDTrack ? '$' : '₹'}${parsedBasePrice}\n💳 *Status:* Fully Paid via Portal Gateway!`;
+                            const paidAdminAlert = `✅ *PAID CLIENT REGISTERED!* ✅\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail}\n📝 *Plan Scope:* ${projectScope}\n💰 *Calculated Price:* ${formIsUSDTrack ? '$' : '₹'}${parsedBasePrice}\n💳 *Status:* Fully Paid via Portal Gateway!`;
                             sendWhatsAppMessage("917529839762", paidAdminAlert);
 
                             try {
@@ -419,7 +420,8 @@ app.post('/webhook', async (req, res) => {
                                     whatsapp_number: from, 
                                     project_scope: `${projectScope} (Status: Fully Paid Portal Form)`, 
                                     calculated_price: parsedBasePrice, 
-                                    email: clientEmail 
+                                    email: clientEmail,
+                                    discussion_notes: paidAdminAlert // ✅ SYNCED WITH NEW PARSER LOGIC
                                 });
                             } catch (err) { 
                                 console.error("Paid lead API sync error:", err.message); 
@@ -447,7 +449,7 @@ app.post('/webhook', async (req, res) => {
                         const currencyAdmin = isINRLead ? '₹' : '$';
 
                         // Admin Notification Sync with Complete Base Details Fix
-                        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n📝 *Plan:* ${projectScope}\n💵 *Base Price:* ${currencyAdmin}${calculatedPrice + savedAmountWeb}\n🔥 *Discount Saved:* ${currencyAdmin}${savedAmountWeb}\n💰 *Final Value:* ${currencyAdmin}${calculatedPrice}`;
+                        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n📝 *Plan Scope:* ${projectScope}\n💵 *Base Price:* ${currencyAdmin}${calculatedPrice + savedAmountWeb}\n🔥 *Discount Applied:* ${currencyAdmin}${savedAmountWeb} (LAUNCH20)\n💰 *Calculated Price:* ${currencyAdmin}${calculatedPrice}`;
                         sendWhatsAppMessage("917529839762", adminNotification);
 
                         try {
@@ -456,7 +458,8 @@ app.post('/webhook', async (req, res) => {
                                 whatsapp_number: from, 
                                 project_scope: projectScope, 
                                 calculated_price: calculatedPrice, 
-                                email: clientEmail 
+                                email: clientEmail,
+                                discussion_notes: adminNotification // ✅ SYNCED WITH NEW PARSER LOGIC
                             });
                         } catch (err) { 
                             console.error("Meta Dashboard sync err."); 
@@ -643,7 +646,7 @@ app.post('/webhook', async (req, res) => {
                         const taxLabel = isUSDTrack ? 'incl Gateway Fees' : 'incl GST';
 
                         // 🎯 ADMIN ALERT COMPLETE PRICE DETAIL FIX (Base Price, Discount, Final Payable)
-                        const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${cleanEmail}\n📝 *Plan Scope:* ${userSessions[from].projectScope}\n💵 *Base Price:* ${currencySymbol}${matchedBasePrice}\n🔥 *Discount Applied:* ${currencySymbol}${savingAmount} (20% OFF)\n💰 *Calculated Price (${taxLabel}):* ${currencySymbol}${finalPayable}`;
+                        const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${cleanEmail}\n📝 *Plan Scope:* ${userSessions[from].projectScope}\n💵 *Base Price:* ${currencySymbol}${matchedBasePrice}\n🔥 *Discount Applied:* ${currencySymbol}${savingAmount} (LAUNCH20)\n💰 *Calculated Price:* ${currencySymbol}${finalPayable}`;
                         sendWhatsAppMessage("917529839762", chatAdminNotification);
 
                         try {
@@ -652,7 +655,8 @@ app.post('/webhook', async (req, res) => {
                                 whatsapp_number: from, 
                                 project_scope: userSessions[from].projectScope, 
                                 calculated_price: finalPayable, 
-                                email: cleanEmail 
+                                email: cleanEmail,
+                                discussion_notes: chatAdminNotification // ✅ SYNCED WITH NEW PARSER LOGIC
                             });
                         } catch (dashboardError) { 
                             console.error("Admin Sync exception logic execution handler."); 
@@ -856,7 +860,7 @@ async function finalizeConsultationLead(from, textInput, res) {
     const currency = isUSDTrack ? '$' : '₹';
     const taxLabel = isUSDTrack ? 'incl Gateway Fees' : 'incl GST';
 
-    const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details & Parameters:* Direct Consultation Slot: ${dynamicSlot}\n💬 *User Stated Objectives:* "${textInput}"\n💵 *Base Price:* ${currency}${matchedBasePrice}\n🔥 *Discount:* ${currency}${savingAmount} (20% OFF)\n💳 *Final Payable:* ${currency}${finalCalculatedPrice} (${taxLabel})\n\n🤖 *Status:* Live details captured securely!`;
+    const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details & Parameters:* Direct Consultation Slot: ${dynamicSlot}\n💬 *User Stated Objectives:* "${textInput}"\n💵 *Base Price:* ${currency}${matchedBasePrice}\n🔥 *Discount Applied:* ${currency}${savingAmount} (LAUNCH20)\n💰 *Calculated Price:* ${currency}${finalCalculatedPrice} (${taxLabel})\n\n🤖 *Status:* Live details captured securely!`;
     sendWhatsAppMessage("917529839762", comprehensiveAdminAlert); // Non-blocking dispatch
 
     try {
@@ -865,7 +869,7 @@ async function finalizeConsultationLead(from, textInput, res) {
             whatsapp_number: from,
             email: clientEmail,
             requested_slot: dynamicSlot,
-            discussion_notes: `*User Stated Objectives:* "${textInput}"\n\n${comprehensiveAdminAlert}`,
+            discussion_notes: `*User Stated Objectives:* "${textInput}"\n\n${comprehensiveAdminAlert}`, // ✅ SYNCED WITH NEW PARSER LOGIC
             project_scope: textInput, 
             calculated_price: finalCalculatedPrice 
         });

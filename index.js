@@ -12,6 +12,11 @@ app.use(bodyParser.json());
 const TELEGRAM_TOKEN = '8563313484:AAHo9aqVSETs4aXntUXn01yIuHN3OdzxTq8';
 const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: true });
 
+// 🛠️ FIX FOR 409 CONFLICT ERROR
+bot.on('polling_error', (error) => {
+    console.log("Telegram Polling Error (Ignored to prevent crash):", error.message);
+});
+
 // Telegram - Handling User Inputs & Routing to Master Engine
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id.toString();
@@ -355,7 +360,7 @@ async function processUnifiedMessage(from, rawText, platform) {
     // 🎯 STATE: PAYMENT FAILED RETRY OPTIONS - Process Link or Booking
     if (currentStep === 'payment_failed_retry_options') {
         const isINRLead = userLang !== 'EN';
-        const payLink = session.payLink || "https://shahidcreatives.com";
+        const payLink = session.payLink || "https://shahidcreatives.com/";
 
         if (userText === '1' || userText.includes("pay") || userText.includes("retry") || userText.includes("dubara")) {
             userSessions[from].step = 'completed';

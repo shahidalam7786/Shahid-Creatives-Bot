@@ -247,19 +247,20 @@ app.post('/webhook', async (req, res) => {
 
                         userSessions[from] = { 
                             step: 'payment_failed_resolution', // Ask if debit or failed
-                            lang: isUSDTrack ? 'EN' : 'HINGLISH', // ✅ BUGS FIXED: Prioritize Explicit Text Detection
+                            lang: isUSDTrack ? 'EN' : 'HINGLISH',
                             clientName: clientName, 
                             clientEmail: clientEmail,
                             projectScope: projectScope, 
-                            savedPlan: projectScope, // Store precise plan text specifically for skipping steps
+                            savedPlan: projectScope, 
                             projectID: projectID,
-                            payLink: selfPayLink, // Storing for Retry Action
+                            payLink: selfPayLink,
                             lastInteractionTime: Date.now(), 
                             nudgeSent: true 
                         };
 
-                        // Admin Alert for Emergency Assistance
-                        const alertMsg = `🚨 *URGENT: PAYMENT DROP-OFF REPORTED!* 🚨\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n📝 *Plan:* ${projectScope}\n🆔 *Client ID:* ${projectID}\n\n⚠️ *Action:* Client bot interaction active to check debit/cancel status.`;
+                        // Admin Alert for Emergency Assistance (With Full Base Price Details)
+                        const currencyAdmin = isUSDTrack ? '$' : '₹';
+                        const alertMsg = `🚨 *URGENT: PAYMENT DROP-OFF REPORTED!* 🚨\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n📝 *Plan:* ${projectScope}\n🆔 *Client ID:* ${projectID}\n💵 *Base Price:* ${currencyAdmin}${matchedBasePrice}\n🔥 *Discount:* ${currencyAdmin}${savingAmount} (20% OFF)\n💰 *Final Payable:* ${currencyAdmin}${finalPayable}\n\n⚠️ *Action:* Client bot interaction active to check debit/cancel status.`;
                         sendWhatsAppMessage("917529839762", alertMsg);
 
                         // Client Question Phase
@@ -409,7 +410,7 @@ app.post('/webhook', async (req, res) => {
                                 nudgeSent: true 
                             };
                             
-                            const paidAdminAlert = `✅ *PAID CLIENT REGISTERED!* ✅\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail}\n📝 *Plan Scope:* ${projectScope}\n💳 *Status:* Fully Paid via Portal Gateway!`;
+                            const paidAdminAlert = `✅ *PAID CLIENT REGISTERED!* ✅\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail}\n📝 *Plan Scope:* ${projectScope}\n💰 *Amount Paid:* ${formIsUSDTrack ? '$' : '₹'}${parsedBasePrice}\n💳 *Status:* Fully Paid via Portal Gateway!`;
                             sendWhatsAppMessage("917529839762", paidAdminAlert);
 
                             try {
@@ -445,7 +446,8 @@ app.post('/webhook', async (req, res) => {
                         const isINRLead = !formIsUSDTrack;
                         const currencyAdmin = isINRLead ? '₹' : '$';
 
-                        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n📝 *Plan:* ${projectScope}\n💰 *Total Value:* ${currencyAdmin}${calculatedPrice}`;
+                        // Admin Notification Sync with Complete Base Details Fix
+                        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* +${from}\n👤 *Name:* ${clientName}\n📝 *Plan:* ${projectScope}\n💵 *Base Price:* ${currencyAdmin}${calculatedPrice + savedAmountWeb}\n🔥 *Discount Saved:* ${currencyAdmin}${savedAmountWeb}\n💰 *Final Value:* ${currencyAdmin}${calculatedPrice}`;
                         sendWhatsAppMessage("917529839762", adminNotification);
 
                         try {
@@ -640,7 +642,8 @@ app.post('/webhook', async (req, res) => {
                         const currencySymbol = isUSDTrack ? '$' : '₹';
                         const taxLabel = isUSDTrack ? 'incl Gateway Fees' : 'incl GST';
 
-                        const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${cleanEmail}\n📝 *Plan Scope:* ${userSessions[from].projectScope}\n🔥 *Discount Applied:* ${currencySymbol}${savingAmount} (20% OFF)\n💰 *Calculated Price (${taxLabel}):* ${currencySymbol}${finalPayable}`;
+                        // 🎯 ADMIN ALERT COMPLETE PRICE DETAIL FIX (Base Price, Discount, Final Payable)
+                        const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${cleanEmail}\n📝 *Plan Scope:* ${userSessions[from].projectScope}\n💵 *Base Price:* ${currencySymbol}${matchedBasePrice}\n🔥 *Discount Applied:* ${currencySymbol}${savingAmount} (20% OFF)\n💰 *Calculated Price (${taxLabel}):* ${currencySymbol}${finalPayable}`;
                         sendWhatsAppMessage("917529839762", chatAdminNotification);
 
                         try {
@@ -853,7 +856,7 @@ async function finalizeConsultationLead(from, textInput, res) {
     const currency = isUSDTrack ? '$' : '₹';
     const taxLabel = isUSDTrack ? 'incl Gateway Fees' : 'incl GST';
 
-    const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details & Parameters:* Direct Consultation Slot: ${dynamicSlot}\n💬 *User Stated Objectives:* "${textInput}"\n💰 *Base Price:* ${currency}${matchedBasePrice}\n🔥 *Discount:* ${currency}${savingAmount} (20% OFF)\n💳 *Final Payable:* ${currency}${finalCalculatedPrice} (${taxLabel})\n\n🤖 *Status:* Live details captured securely!`;
+    const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* +${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details & Parameters:* Direct Consultation Slot: ${dynamicSlot}\n💬 *User Stated Objectives:* "${textInput}"\n💵 *Base Price:* ${currency}${matchedBasePrice}\n🔥 *Discount:* ${currency}${savingAmount} (20% OFF)\n💳 *Final Payable:* ${currency}${finalCalculatedPrice} (${taxLabel})\n\n🤖 *Status:* Live details captured securely!`;
     sendWhatsAppMessage("917529839762", comprehensiveAdminAlert); // Non-blocking dispatch
 
     try {

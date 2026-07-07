@@ -162,7 +162,7 @@ app.post('/send-client-credentials', async (req, res) => {
         
         // Admin Alert for API Inbound Event
         const adminAlertText = `🌟 *NEW API PORTAL LEAD!* 🌟\n\n👤 *Name:* ${payload.name || payload.client_name || "Unknown"}\n📱 *Phone:* ${payload.phone || payload.whatsapp_number || "0000"}\n✉️ *Email:* ${payload.email || "Not Provided"}\n📝 *Plan Scope:* ${payload.plan || payload.project_scope || "N/A"}\n💰 *Calculated Price:* ${payload.price || payload.calculated_price || 0}`;
-        sendWhatsAppMessage("917529839762", adminAlertText); // Non-blocking dispatch
+        sendAdminAlert(adminAlertText); // Omnichannel Admin Alert
 
         await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
             client_name: payload.name || payload.client_name || "API Inbound Portal Lead",
@@ -305,7 +305,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         // Admin Alert for Emergency Assistance (With Full Base Price Details)
         const currencyAdmin = isUSDTrack ? '$' : '₹';
         const alertMsg = `🚨 *URGENT: PAYMENT DROP-OFF REPORTED!* 🚨\n\n📱 *Client:* ${platform === 'telegram' ? 'TG-' : '+'}${from}\n👤 *Name:* ${clientName}\n📝 *Plan Scope:* ${projectScope}\n🆔 *Client ID:* ${projectID}\n💵 *Base Price:* ${currencyAdmin}${matchedBasePrice}\n🔥 *Discount Applied:* ${currencyAdmin}${savingAmount} (LAUNCH20)\n💰 *Calculated Price:* ${currencyAdmin}${finalPayable}\n\n⚠️ *Action:* Client bot interaction active to check debit/cancel status.`;
-        sendWhatsAppMessage("917529839762", alertMsg);
+        sendAdminAlert(alertMsg);
 
         // Client Question Phase
         let replyMsg = isINRLead
@@ -457,7 +457,7 @@ async function processUnifiedMessage(from, rawText, platform) {
             };
             
             const paidAdminAlert = `✅ *PAID CLIENT REGISTERED!* ✅\n\n📱 *Client Contact:* ${platform === 'telegram' ? 'TG-' : '+'}${from}\n👤 *Name:* ${clientName}\n✉️ *Email:* ${clientEmail}\n📝 *Plan Scope:* ${projectScope}\n💰 *Calculated Price:* ${formIsUSDTrack ? '$' : '₹'}${parsedBasePrice}\n💳 *Status:* Fully Paid via Portal Gateway!`;
-            sendWhatsAppMessage("917529839762", paidAdminAlert);
+            sendAdminAlert(paidAdminAlert);
 
             try {
                 await axios.post('https://shahidcreatives.com/api/whatsapp-leads', { 
@@ -496,7 +496,7 @@ async function processUnifiedMessage(from, rawText, platform) {
 
         // Admin Notification Sync with Complete Base Details Fix
         const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* ${platform === 'telegram' ? 'TG-' : '+'}${from}\n👤 *Name:* ${clientName}\n📝 *Plan Scope:* ${projectScope}\n💵 *Base Price:* ${currencyAdmin}${calculatedPrice + savedAmountWeb}\n🔥 *Discount Applied:* ${currencyAdmin}${savedAmountWeb} (LAUNCH20)\n💰 *Calculated Price:* ${currencyAdmin}${calculatedPrice}`;
-        sendWhatsAppMessage("917529839762", adminNotification);
+        sendAdminAlert(adminNotification);
 
         try {
             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', { 
@@ -692,7 +692,7 @@ async function processUnifiedMessage(from, rawText, platform) {
 
         // 🎯 ADMIN ALERT COMPLETE PRICE DETAIL FIX (Base Price, Discount, Final Payable)
         const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* ${platform === 'telegram' ? 'TG-' : '+'}${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${cleanEmail}\n📝 *Plan Scope:* ${userSessions[from].projectScope}\n💵 *Base Price:* ${currencySymbol}${matchedBasePrice}\n🔥 *Discount Applied:* ${currencySymbol}${savingAmount} (LAUNCH20)\n💰 *Calculated Price:* ${currencySymbol}${finalPayable}`;
-        sendWhatsAppMessage("917529839762", chatAdminNotification);
+        sendAdminAlert(chatAdminNotification);
 
         try {
             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', { 
@@ -799,7 +799,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         if (chosenOptionClean === 'a' || chosenOptionClean.includes("today") || chosenOptionClean.includes("5")) {
             const dynamicSlotLabel = (currentHourIST >= 17) ? "Tomorrow at 5:00 PM" : "Today at 5:00 PM";
             userSessions[from].requestedSlot = dynamicSlotLabel; 
-            sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 ${platform === 'telegram' ? 'TG-' : '+'}${from}\n⏰ Chosen Slot: ${dynamicSlotLabel}`);
+            sendAdminAlert(`🚨 *SLOT REQUEST!* 🚨\n📱 ${platform === 'telegram' ? 'TG-' : '+'}${from}\n⏰ Chosen Slot: ${dynamicSlotLabel}`);
             
             if (hasValidIdentity) {
                 userSessions[from].step = 'post_registration';
@@ -811,7 +811,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         } else if (chosenOptionClean === 'b' || chosenOptionClean.includes("tomorrow") || chosenOptionClean.includes("12")) {
             const dynamicSlotLabel = (currentHourIST >= 17) ? "Day After Tomorrow at 12:00 PM" : "Tomorrow at 12:00 PM";
             userSessions[from].requestedSlot = dynamicSlotLabel;
-            sendWhatsAppMessage("917529839762", `🚨 *SLOT REQUEST!* 🚨\n📱 ${platform === 'telegram' ? 'TG-' : '+'}${from}\n⏰ Chosen Slot: ${dynamicSlotLabel}`);
+            sendAdminAlert(`🚨 *SLOT REQUEST!* 🚨\n📱 ${platform === 'telegram' ? 'TG-' : '+'}${from}\n⏰ Chosen Slot: ${dynamicSlotLabel}`);
             
             if (hasValidIdentity) {
                 userSessions[from].step = 'post_registration';
@@ -902,7 +902,7 @@ async function finalizeConsultationLead(from, textInput, res, platform) {
     const taxLabel = isUSDTrack ? 'incl Gateway Fees' : 'incl GST';
 
     const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* ${platform === 'telegram' ? 'TG-' : '+'}${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details & Parameters:* Direct Consultation Slot: ${dynamicSlot}\n💬 *User Stated Objectives:* "${textInput}"\n💵 *Base Price:* ${currency}${matchedBasePrice}\n🔥 *Discount Applied:* ${currency}${savingAmount} (LAUNCH20)\n💰 *Calculated Price:* ${currency}${finalCalculatedPrice} (${taxLabel})\n\n🤖 *Status:* Live details captured securely!`;
-    sendWhatsAppMessage("917529839762", comprehensiveAdminAlert); // Non-blocking dispatch
+    sendAdminAlert(comprehensiveAdminAlert); // Omnichannel Admin Alert
 
     try {
         await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
@@ -937,6 +937,26 @@ async function sendUnifiedMessage(to, text, platform) {
         }
     } else {
         await sendWhatsAppMessage(to, text);
+    }
+}
+
+// 🛡️ MULTI-CHANNEL ADMIN ALERT SYSTEM
+async function sendAdminAlert(text) {
+    // 1. Send to WhatsApp Admin
+    const WHATSAPP_ADMIN_NUMBER = "917529839762";
+    await sendWhatsAppMessage(WHATSAPP_ADMIN_NUMBER, text);
+    
+    // 2. Send to Telegram Admin
+    const TELEGRAM_ADMIN_ID = "@Shahidcreatives_admin"; // Note: For private Telegram users, it is recommended to use numeric Chat ID (like '123456789')
+    try {
+        let htmlText = text
+            .replace(/\*(.*?)\*/g, '<b>$1</b>')
+            .replace(/_(.*?)_/g, '<i>$1</i>');
+        await bot.sendMessage(TELEGRAM_ADMIN_ID, htmlText, { parse_mode: "HTML" });
+    } catch (e) {
+        console.error("Telegram Admin Alert Delivery Note: If this fails, user must start the bot first or you must use a numeric chat ID.", e.message);
+        // Safe Fallback
+        bot.sendMessage(TELEGRAM_ADMIN_ID, text).catch(err => {});
     }
 }
 

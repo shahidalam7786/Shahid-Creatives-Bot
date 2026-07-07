@@ -254,13 +254,17 @@ async function processUnifiedMessage(from, rawText, platform) {
         let clientEmail = "Not Provided";
         
         try {
-            const nameMatch = rawText.match(/Client Profile:\s*([^(\n]+)/i);
-            const scopeMatch = rawText.match(/Project Category:\s*([^(\n]+)/i);
-            const idMatch = rawText.match(/Project ID:\s*([^(\n]+)/i);
+            const nameMatch = rawText.match(/Client Profile:\s*([^(\\n]+)/i);
+            const scopeMatch = rawText.match(/Project Category:\s*([^(\\n]+)/i);
+            const idMatch = rawText.match(/Project ID:\s*([^(\\n]+)/i);
             const emailMatch = rawText.match(/Email:\s*([^\n\r]+)/i);
             
             if (nameMatch) clientName = nameMatch[1].replace(/[*_]/g, '').trim();
-            if (scopeMatch) projectScope = scopeMatch[1].replace(/[*_\[\]]/g, '').trim();
+            if (scopeMatch) projectScope = scopeMatch[1].replace(/[*_
+
+\[\]
+
+]/g, '').trim();
             if (emailMatch) clientEmail = emailMatch[1].trim();
             
             if (idMatch) {
@@ -411,7 +415,7 @@ async function processUnifiedMessage(from, rawText, platform) {
             const nameMatch = rawText.match(/(?:Client Name|Name|👤)[^:]*:\s*([^\n\r]+)/i);
             const scopeMatch = rawText.match(/(?:Project\/Category|Plan Chosen|Category Model|Specifications|Plan)[^:]*:\s*([^\n\r(₹$]+)/i);
             
-            const savedMatch = rawText.match(/\(Saved\s*[₹\$]?\s*([0-9.,]+)\)/i);
+            const savedMatch = rawText.match(/\(Saved\s*[₹$]?\s*([0-9.,]+)\)/i);
             if (savedMatch) {
                 savedAmountWeb = Math.round(parseFloat(savedMatch[1].replace(/,/g, '')));
             }
@@ -420,7 +424,11 @@ async function processUnifiedMessage(from, rawText, platform) {
                 clientName = nameMatch[1].replace(/[*_]/g, '').split(',')[0].trim();
             }
             if (scopeMatch) {
-                projectScope = scopeMatch[1].replace(/[*_\[\]]/g, '').trim();
+                projectScope = scopeMatch[1].replace(/[*_
+
+\[\]
+
+]/g, '').trim();
             }
             
             const allPrices = [...rawText.matchAll(/[₹$]\s*([0-9.,]+)/g)];
@@ -628,7 +636,7 @@ async function processUnifiedMessage(from, rawText, platform) {
             
             let interceptorReply = (userText.includes('1'))
                 ? (isUSDTrack ? "⚠️ Please be specific! Which Web scope do you need? \n\n👉 Type one: *Starter Plan* ($199), *Basic Plan* ($299), *Starter Business Site* ($499), or *E-Commerce Hub* ($899)" : "⚠️ Kripya clear batayein! Aapko hamare active modules mein se kis tarah ki website chahiye? \n\n👉 Niche diye gaye active plans mein se ek naam type karein:\n🔹 *Landing Page/Funnel* (₹12,300)\n🔹 *Business/Corporate Website* (₹25,500)\n🔹 *E-commerce Website (Online Store)* (₹47,500)\n🔹 *Custom Web Application* (₹1,45,000+)")
-                : (isUSDTrack ? "⚠️ Please be specific! What AI architecture do you want? \n\n👉 Type one: *AI Content & SEO* ($77), *B2B & Wholesale* ($155), *Service Lead* ($155), *E-Commerce Sales* ($155), or *Complete Digital Engine* ($311)" : "⚠️ Kripya clear batayein! Aapko kis tarah ka automation stack design karwana hai? \n\n👉 Niche diye gaye models mein se ek naam type karein:\n🤖 *AI Content & SEO Maintainer* (₹4,999/Mo)\n💼 *B2B & Wholesale Lead Engine* (₹9,499/Mo)\n📅 *Service & Appointment Lead* (₹9,499/Mo)\n🛒 *E-Commerce Sales Automation* (₹9,499/Mo)\n🌐 *Complete Digital Sales Engine* (₹18,999/Mo)");
+                : (isUSDTrack ? "⚠️ Please be specific! What AI architecture do you want? \n\n👉 Type one: *AI Content & SEO* ($77), *B2B & Wholesale* ($155), *Service Lead* ($155), *E-Commerce Sales* ($155), or *Complete Digital Engine* ($311)" : "⚠️ Kripya clear batayein! Aapko kis tarah ka automation stack design karwana hai? \n\n👉 Niche diye gaye models mein se ek naam type karein:\n🤖 *AI Content & SEO Maintainer* (₹4,999/Mo)\n💼 *B2B & Wholesale Lead Engine* (₹9,499/Mo)\n📅 *Service & Appointment Lead Engine* (₹9,499/Mo)\n🛒 *E-Commerce Sales Automation* (₹9,499/Mo)\n🌐 *Complete Digital Sales Engine* (₹18,999/Mo)");
             return sendUnifiedMessage(from, interceptorReply, platform);
         }
 
@@ -795,7 +803,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         // Capture existing details if they already passed them
         if (!userSessions[from].savedPlan) userSessions[from].savedPlan = userSessions[from].projectScope;
         const hasValidIdentity = userSessions[from].clientName && userSessions[from].clientName !== "Valued Client" && userSessions[from].clientEmail && userSessions[from].clientEmail !== "Not Provided" && userSessions[from].clientEmail !== "";
-        
+
         if (chosenOptionClean === 'a' || chosenOptionClean.includes("today") || chosenOptionClean.includes("5")) {
             const dynamicSlotLabel = (currentHourIST >= 17) ? "Tomorrow at 5:00 PM" : "Today at 5:00 PM";
             userSessions[from].requestedSlot = dynamicSlotLabel; 
@@ -823,162 +831,4 @@ async function processUnifiedMessage(from, rawText, platform) {
         } else if (chosenOptionClean === 'c' || chosenOptionClean.includes("custom")) {
             userSessions[from].step = 'awaiting_custom_time_input';
             userSessions[from].skipIdentityCapture = hasValidIdentity; // Setup pass tag
-            return sendUnifiedMessage(from, (userLang === 'EN') ? "📅 *Custom Scheduling Activated!* \n\nPlease type your preferred **Date and Time** below (e.g., *Monday at 3 PM*):" : "📅 *Custom Scheduling Active!* \n\nKripya jis **Date aur Time** par aap call chahte hain, use niche type karke send karein (jaise: *Kal dopahar 3 baje*):", platform);
-        }
-    }
-
-    // 🎯 STATE 8: CORE ENGINE - MAIN MENU ROUTER
-    if (currentStep === 'welcome' || currentStep === 'main_menu') {
-        userSessions[from].step = 'main_menu';
-        let isCoreMatch = false; let targetMenuRoute = userText;
-
-        if (userText === '1' || userText.includes("web") || userText.includes("site")) { targetMenuRoute = '1'; isCoreMatch = true; }
-        else if (userText === '2' || userText.includes("automation") || userText.includes("bot")) { targetMenuRoute = '2'; isCoreMatch = true; }
-        else if (userText === '3' || userText.includes("deal") || userText.includes("discount")) { targetMenuRoute = '3'; isCoreMatch = true; }
-        else if (userText === '4' || userText.includes("book") || userText.includes("token")) { targetMenuRoute = '4'; isCoreMatch = true; }
-        else if (userText === '5' || userText.includes("shahid") || userText.includes("talk")) { targetMenuRoute = '5'; isCoreMatch = true; }
-
-        if (!isCoreMatch) {
-            let replyText = (userLang === 'EN')
-                ? "Hello! Welcome to *Shahid Creatives*. 🚀 Select a stack tier layout:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI Business Automation Hub**\n3️⃣ **🔥 Exclusive Launch Deal**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid Creatives' Team (Direct Consultation)**"
-                : "Hello! Welcome to *Shahid Creatives*. 🚀 Select layout choice number:\n\n1️⃣ *Web Development Tiers*\n2️⃣ *AI Business Automation & B2B Wholesale Demo*\n3️⃣ *🔥 Exclusive Launch Deal*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives ki Team* (Direct Consultation)";
-            return sendUnifiedMessage(from, replyText, platform);
-        }
-
-        if (targetMenuRoute === '1') {
-            userSessions[from].step = 'process_requirement_menu'; 
-            return sendUnifiedMessage(from, (userLang === 'EN') 
-                ? "Please select what you want to build today by replying with option number:\n1️⃣ Starter Plan ($199)\n2️⃣ Basic Plan ($299)\n3️⃣ Starter Business Site ($499)\n4️⃣ E-Commerce Hub ($899)\n5️⃣ Custom Enterprise App ($2,499)" 
-                : "Kripya select kijiye ki aap kya banwana chahte hain, reply mein number bheinjein:\n1️⃣ **Landing Page/Funnel** (Base: ₹12,300)\n2️⃣ **Business/Corporate Website** (Base: ₹25,500)\n3️⃣ **E-commerce Website (Online Store)** (Base: ₹47,500)\n4️⃣ **Custom Web Application / Software** (Base: ₹1,45,000+)", platform);
-        } else if (targetMenuRoute === '2') {
-            userSessions[from].step = 'process_automation_menu';
-            return sendUnifiedMessage(from, (userLang === 'EN')
-                ? "🤖 **AI Business Automation Hub**\nPlease reply with an option number (**1 to 5**):\n\n1️⃣ AI Content & SEO Maintainer ($77/Mo)\n2️⃣ B2B & Wholesale Lead Engine ($155/Mo)\n3️⃣ Service & Appointment Lead Engine ($155/Mo)\n4️⃣ E-Commerce Sales Automation Retainer ($155/Mo)\n5️⃣ Complete Digital Sales Engine ($311/Mo)\n\n📲 *Live Wholesale B2B Automation Demo:* https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo"
-                : "🤖 **AI Business Automation & Live Demo:**\nKripya niche diye gaye list mein se ek option number (**1 se 5**) ya naam reply kijiye:\n\n1️⃣ **AI Content & SEO Maintainer** (Base: ₹4,999/Mo)\n2️⃣ **B2B & Wholesale Lead Engine** (Base: ₹9,499/Mo)\n3️⃣ **Service & Appointment Lead Engine** (Base: ₹9,499/Mo)\n4️⃣ **E-Commerce Sales Automation Retainer** (Base: ₹9,499/Mo)\n5️⃣ **Complete Digital Sales Engine** (Base: ₹18,999/Mo)\n\n📲 *Live Wholesale B2B Automation Demo Link:* https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo", platform);
-        } else if (targetMenuRoute === '3') {
-            userSessions[from].step = 'process_requirement_menu';
-            return sendUnifiedMessage(from, (userLang === 'EN')
-                ? "🔥 *Exclusive Launch Offer Active!* (Flat 20% OFF Code Applied)\n\nPlease select your project requirement number to secure your discounted slot:\n\n1️⃣ Starter Plan ($199)\n2️⃣ Basic Plan ($299)\n3️⃣ Starter Business Site ($499)\n4️⃣ E-Commerce Hub ($899)\n5️⃣ Custom Enterprise App ($2,499)"
-                : "🔥 *Exclusive Launch Offer Active!* (Flat 20% OFF Coupon apply kar diya gaya hai)\n\nAap jis requirement par discount lock karna chahte hain, kripya uska number reply kijiye:\n\n1️⃣ **Landing Page/Funnel** (Base: ₹12,300)\n2️⃣ **Business/Corporate Website** (Base: ₹25,500)\n3️⃣ **E-commerce Website** (Base: ₹47,500)\n4️⃣ **Custom Web Application / Software** (Base: ₹1,45,000+)", platform);
-        } else if (targetMenuRoute === '4') {
-            userSessions[from].step = 'process_requirement_menu';
-            return sendUnifiedMessage(from, (userLang === 'EN')
-                ? "💳 *Direct Booking & Token System ($49)*\n\nPlease select the project type you want to lock slot for via option number:\n\n1️⃣ Starter Plan ($199)\n2️⃣ Basic Plan ($299)\n3️⃣ Starter Business Site ($499)\n4️⃣ E-Commerce Hub ($899)\n5️⃣ Custom Enterprise App ($2,499)"
-                : "💳 *Direct Booking & Token System (₹999 Slot Lock)*\n\nAap jis project layout ke liye secure token register karna chahte hain, kripya uska option number bheinje:\n\n1️⃣ **Landing Page/Funnel** (Base: ₹12,300)\n2️⃣ **Business/Corporate Website** (Base: ₹25,500)\n3️⃣ **E-commerce Website** (Base: ₹47,500)\n4️⃣ **Custom Web Application / Software** (Base: ₹1,45,000+)", platform);
-        } else if (targetMenuRoute === '5') {
-            userSessions[from].step = 'awaiting_consultation_slot';
-            const currentHourIST = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Kolkata"})).getHours();
-            
-            const optionA = (currentHourIST >= 17) ? "🅰️ *Kal Shaam 5:00 Baje*" : "🅰️ *Aaj Shaam 5:00 Baje*";
-            const optionB = (currentHourIST >= 17) ? "🅱️ *Parso Dopahar 12:00 Baje*" : "🅱️ *Kal Dopahar 12:00 Baje*";
-            const optionA_EN = (currentHourIST >= 17) ? "🅰️ *Tomorrow at 5:00 PM*" : "🅰️ *Today at 5:00 PM*";
-            const optionB_EN = (currentHourIST >= 17) ? "🅱️ *Day After Tomorrow at 12:00 PM*" : "🅱️ *Tomorrow at 12:00 PM*";
-
-            return sendUnifiedMessage(from, (userLang === 'EN') 
-                ? `👤 *Direct Consultation with Shahid Creatives' Team:*\n\n${optionA_EN}\n${optionB_EN}\n🅲️ *Custom Time (Type preferred time below)*\n\n👉 Reply with A, B, or C!` 
-                : `👤 *Direct Consultation with Shahid Creatives ki Team:*\n\n${optionA}\n${optionB}\n🅲️ *Custom Time (Apna secure timing niche type karein)*\n\n👉 Kripya **A, B, ya C** likh kar reply kijiye!`, platform);
-        }
-    }
-}
-
-// 🎯 REUSABLE LOGIC: FINALIZE CONSULTATION LEAD
-async function finalizeConsultationLead(from, textInput, res, platform) {
-    const session = userSessions[from];
-    const cleanName = session.clientName || "Valued Client";
-    const clientEmail = session.clientEmail || "Not Provided";
-    const dynamicSlot = session.requestedSlot || "Direct Scheduled Request";
-    const userLang = session.lang;
-
-    const isUSDTrack = (userLang === 'EN'); 
-    const matchedBasePriceStr = getBasePriceByPlan(textInput, isUSDTrack);
-    const matchedBasePrice = parseFloat(matchedBasePriceStr);
-    
-    // 🎯 ADMIN NOTIFICATION UPDATE: Syncs with Base Price discount logic
-    const savingAmount = Math.round(matchedBasePrice * 0.20);
-    const discountedBasePrice = matchedBasePrice - savingAmount;
-    const finalCalculatedPrice = calculateTotalPayable(discountedBasePrice, isUSDTrack);
-    
-    const currency = isUSDTrack ? '$' : '₹';
-    const taxLabel = isUSDTrack ? 'incl Gateway Fees' : 'incl GST';
-
-    const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* ${platform === 'telegram' ? 'TG-' : '+'}${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details & Parameters:* Direct Consultation Slot: ${dynamicSlot}\n💬 *User Stated Objectives:* "${textInput}"\n💵 *Base Price:* ${currency}${matchedBasePrice}\n🔥 *Discount Applied:* ${currency}${savingAmount} (LAUNCH20)\n💰 *Calculated Price:* ${currency}${finalCalculatedPrice} (${taxLabel})\n\n🤖 *Status:* Live details captured securely!`;
-    sendAdminAlert(comprehensiveAdminAlert); // Omnichannel Admin Alert
-
-    try {
-        await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
-            client_name: cleanName,
-            whatsapp_number: from,
-            email: clientEmail,
-            requested_slot: dynamicSlot,
-            discussion_notes: `*User Stated Objectives:* "${textInput}"\n\n${comprehensiveAdminAlert}`, // ✅ SYNCED WITH NEW PARSER LOGIC
-            project_scope: textInput, 
-            calculated_price: finalCalculatedPrice 
-        });
-    } catch (apiErr) { console.error("Dashboard parameters execution failure handler."); }
-
-    let confirmationText = (userLang === 'EN')
-        ? `✅ *Booking Profile Complete!* \n\nThank you *${cleanName}*! Your specifications have been securely routed to Shahid Creatives. We will connect with you shortly! 🚀`
-        : `✅ *Booking Profile Complete!* \n\nThank you *${cleanName}*! Aapka requirement details Shahid Creatives ki Team tak pahunch gaya hai. Hamari team aapse jald hi raabta karegi! 🚀`;
-    return sendUnifiedMessage(from, confirmationText, platform);
-}
-
-// 🛡️ OMNICHANNEL MESSAGE SENDER (Translates WhatsApp Formatting to Telegram)
-async function sendUnifiedMessage(to, text, platform) {
-    if (platform === 'telegram') {
-        try {
-            // Converts WhatsApp Bold (*text*) to Telegram HTML (<b>text</b>) to prevent parser crash
-            let htmlText = text
-                .replace(/\*(.*?)\*/g, '<b>$1</b>')
-                .replace(/_(.*?)_/g, '<i>$1</i>');
-                
-            await bot.sendMessage(to, htmlText, { parse_mode: "HTML" });
-        } catch (e) {
-            await bot.sendMessage(to, text); // Absolute safe fallback
-        }
-    } else {
-        await sendWhatsAppMessage(to, text);
-    }
-}
-
-// 🛡️ MULTI-CHANNEL ADMIN ALERT SYSTEM
-async function sendAdminAlert(text) {
-    // 1. Send to WhatsApp Admin
-    const WHATSAPP_ADMIN_NUMBER = "917529839762";
-    await sendWhatsAppMessage(WHATSAPP_ADMIN_NUMBER, text);
-    
-    // 2. Send to Telegram Admin
-    const TELEGRAM_ADMIN_ID = "@Shahidcreatives_admin"; // Note: For private Telegram users, it is recommended to use numeric Chat ID (like '123456789')
-    try {
-        let htmlText = text
-            .replace(/\*(.*?)\*/g, '<b>$1</b>')
-            .replace(/_(.*?)_/g, '<i>$1</i>');
-        await bot.sendMessage(TELEGRAM_ADMIN_ID, htmlText, { parse_mode: "HTML" });
-    } catch (e) {
-        console.error("Telegram Admin Alert Delivery Note: If this fails, user must start the bot first or you must use a numeric chat ID.", e.message);
-        // Safe Fallback
-        bot.sendMessage(TELEGRAM_ADMIN_ID, text).catch(err => {});
-    }
-}
-
-async function sendWhatsAppMessage(to, text) {
-    const SECURED_ACCESS_TOKEN = process.env.WHATSAPP_TOKEN; 
-    const DEFAULT_PHONE_NUMBER_ID = "1202984902891472"; 
-    try {
-        await axios({
-            method: "POST", 
-            url: `https://graph.facebook.com/v18.0/${DEFAULT_PHONE_NUMBER_ID}/messages`,
-            data: { messaging_product: "whatsapp", to: to, type: "text", text: { body: text } },
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${SECURED_ACCESS_TOKEN}` }
-        });
-    } catch (e) { 
-        // Improved Error Logging for dispatch failures
-        console.error("WhatsApp API dispatch error:", e.response ? JSON.stringify(e.response.data) : e.message); 
-    }
-}
-
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`ChatBot engine live on port ${PORT}`);
-    console.log("✅ Telegram Bot Active!");
-    console.log("✅ WhatsApp Webhook Active!");
-});
+            return sendUnifiedMessage(from, (userLang === 'EN') ? "📅 *Custom Scheduling Activated!* \n\nPlease type your preferred **Date and Time** below (e.g., *Monday at 3 PM*):" : "📅 *Custom Scheduling Active!* \n\nKripya jis **Date aur Time** par aap call chahte hain, use niche type karke send karein (ja

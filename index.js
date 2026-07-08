@@ -28,7 +28,6 @@ bot.on('message', async (msg) => {
     await processUnifiedMessage(chatId, text, 'telegram');
 });
 
-
 // ==========================================
 // 🟢 2. WHATSAPP ENGINE & SERVER LOGIC (ORIGINAL CODE)
 // ==========================================
@@ -321,7 +320,8 @@ async function processUnifiedMessage(from, rawText, platform) {
             lang: (isInternationalNumber || isGlobalWebsiteTemplate) ? 'EN' : 'HINGLISH', 
             platform: platform, // Storing platform logic
             clientName: "Valued Client", 
-            clientEmail: "", 
+            clientEmail: "",
+            clientPhone: "", // Initialize Client Phone
             projectScope: "Custom Project Development", 
             requestedSlot: "Not Selected", 
             lastSubmitedTime: 0, 
@@ -580,20 +580,33 @@ async function processUnifiedMessage(from, rawText, platform) {
         } else {
             userSessions[from].step = 'collect_consultation_identity';
             userSessions[from].projectScope = `Custom Slot Input ("${rawText}")`;
-            return sendUnifiedMessage(from, (userLang === 'EN') 
-                ? `Got it! Custom slot parameters recorded: *"${rawText}"*\n\n✍ *Please complete your profile:* Kindly reply with your *Full Name* and *Email Address* (separated by comma, e.g. John Doe, john@example.com).` 
-                : `Noted! Aapka preferred date/time save ho gaya hai: *"${rawText}"*\n\n✍ *Apna profile register karein:* Kripya reply mein apna *Full Name* aur *Email ID* comma (,) lagakar bheinjein (jaise: Sarfaraj Khan, sarfaraj@example.com).`, platform);
+            
+            // Dynamic Prompt for Telegram Phone Capture
+            let promptText = (userLang === 'EN')
+                ? (platform === 'telegram' 
+                    ? `Got it! Custom slot parameters recorded: *"${rawText}"*\n\n✍ *Please complete your profile:* Kindly reply with your *Full Name, Email Address, and Mobile Number* (separated by commas, e.g. John Doe, john@example.com, +919876543210).` 
+                    : `Got it! Custom slot parameters recorded: *"${rawText}"*\n\n✍ *Please complete your profile:* Kindly reply with your *Full Name* and *Email Address* (separated by comma, e.g. John Doe, john@example.com).`)
+                : (platform === 'telegram'
+                    ? `Noted! Aapka preferred date/time save ho gaya hai: *"${rawText}"*\n\n✍ *Apna profile register karein:* Kripya reply mein apna *Full Name, Email ID, aur Mobile Number* comma (,) lagakar bheinjein (jaise: Sarfaraj Khan, sarfaraj@example.com, 9876543210).`
+                    : `Noted! Aapka preferred date/time save ho gaya hai: *"${rawText}"*\n\n✍ *Apna profile register karein:* Kripya reply mein apna *Full Name* aur *Email ID* comma (,) lagakar bheinjein (jaise: Sarfaraj Khan, sarfaraj@example.com).`);
+                    
+            return sendUnifiedMessage(from, promptText, platform);
         }
     }
 
-    // 🎯 STATE 1: COLLECT IDENTITY (STRICT MANDATORY NAME & EMAIL CHECK)
+    // 🎯 STATE 1: COLLECT IDENTITY (STRICT MANDATORY NAME & EMAIL & PHONE CHECK)
     if (currentStep === 'collect_consultation_identity') {
         let cleanName = ""; 
         let cleanEmail = "";
+        let cleanPhone = (platform === 'whatsapp') ? from : ""; // Default WA number
+        
         if (rawText.includes(",")) {
             const parts = rawText.split(","); 
-            cleanName = parts[0].trim(); 
-            cleanEmail = parts[1].trim();
+            cleanName = parts[0] ? parts[0].trim() : ""; 
+            cleanEmail = parts[1] ? parts[1].trim() : "";
+            if (parts.length >= 3 && platform === 'telegram') {
+                cleanPhone = parts[2].trim().replace(/[^0-9+]/g, '');
+            }
         } else {
             const globalEmailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/i;
             const emailMatch = rawText.match(globalEmailRegex);
@@ -603,15 +616,24 @@ async function processUnifiedMessage(from, rawText, platform) {
             }
         }
 
-        if (!cleanName || cleanName.length < 2 || !cleanEmail || !cleanEmail.includes("@") || !cleanEmail.includes(".")) {
-            return sendUnifiedMessage(from, (userLang === 'EN') 
-                ? "⚠️ *Format Error!* Both **Full Name** and a valid **Email ID** are strictly mandatory.\n\n👉 Please reply again in this exact structure: *Your Name, your-email@example.com*" 
-                : "⚠️ *Registration Error!* Profile lock karne ke liye **Full Name** aur ek valid **Email ID** dono zaroori hain.\n\n👉 Kripya dubara is tarah likh kar bhejin: *Aapka Name, aapkaemail@gmail.com*", platform);
+        let isPhoneValid = (platform === 'whatsapp') || (cleanPhone && cleanPhone.length >= 7);
+
+        if (!cleanName || cleanName.length < 2 || !cleanEmail || !cleanEmail.includes("@") || !cleanEmail.includes(".") || !isPhoneValid) {
+            let errorMsg = (userLang === 'EN')
+                ? (platform === 'telegram' 
+                    ? "⚠️ *Format Error!* Full Name, Email ID, and Mobile Number are strictly mandatory.\n\n👉 Please reply again in this exact structure: *Your Name, your-email@example.com, +919876543210*"
+                    : "⚠️ *Format Error!* Both **Full Name** and a valid **Email ID** are strictly mandatory.\n\n👉 Please reply again in this exact structure: *Your Name, your-email@example.com*")
+                : (platform === 'telegram'
+                    ? "⚠️ *Registration Error!* Profile lock karne ke liye Full Name, Email ID, aur Mobile Number zaroori hain.\n\n👉 Kripya dubara is tarah likh kar bhejin: *Aapka Name, aapkaemail@gmail.com, 9876543210*"
+                    : "⚠️ *Registration Error!* Profile lock karne ke liye **Full Name** aur ek valid **Email ID** dono zaroori hain.\n\n👉 Kripya dubara is tarah likh kar bhejin: *Aapka Name, aapkaemail@gmail.com*");
+                    
+            return sendUnifiedMessage(from, errorMsg, platform);
         }
         
         userSessions[from].step = 'collect_custom_query_and_time'; 
         userSessions[from].clientName = cleanName; 
         userSessions[from].clientEmail = cleanEmail;
+        userSessions[from].clientPhone = cleanPhone; // Saved!
 
         let descriptivePrompt = (userLang === 'EN')
             ? `Thank you *${cleanName}*! 🙏\n\nTo lock a high-converting strategy blueprint, please share your goals in the next reply:\n\n🌐 **1. Website Development:**\nWhich plan fits your vision? (Starter Plan, Basic Plan, Starter Business Site, or E-Commerce Hub?)\n\n🤖 **2. AI Automation Goals:**\nWhat precise processes do you want to automate?`
@@ -646,18 +668,26 @@ async function processUnifiedMessage(from, rawText, platform) {
     if (currentStep === 'collect_details') {
         userSessions[from].projectScope = rawText; 
         userSessions[from].step = 'ask_name_email';
-        return sendUnifiedMessage(from, (userLang === 'EN') ? "Awesome! 📝 Kindly reply with your **Full Name** and **Email Address**." : "Awesome! 📝 Kripya apna **Full Name** aur **Email ID** bhej lijiye.", platform);
+        
+        let prompt = (userLang === 'EN')
+            ? (platform === 'telegram' ? "Awesome! 📝 Kindly reply with your **Full Name, Email Address, and Mobile Number** (comma separated)." : "Awesome! 📝 Kindly reply with your **Full Name** and **Email Address**.")
+            : (platform === 'telegram' ? "Awesome! 📝 Kripya apna **Full Name, Email ID, aur Mobile Number** bhej lijiye (comma lagakar)." : "Awesome! 📝 Kripya apna **Full Name** aur **Email ID** bhej lijiye.");
+        return sendUnifiedMessage(from, prompt, platform);
     }
 
     // 🎯 STATE 4: INBOUND CHAT REGISTRATION COMPLETED
     if (currentStep === 'ask_name_email') {
         let cleanName = ""; 
         let cleanEmail = "";
+        let cleanPhone = (platform === 'whatsapp') ? from : ""; // Default WA number
         
         if (rawText.includes(",")) {
             const parts = rawText.split(","); 
-            cleanName = parts[0].trim(); 
-            cleanEmail = parts[1].trim();
+            cleanName = parts[0] ? parts[0].trim() : ""; 
+            cleanEmail = parts[1] ? parts[1].trim() : "";
+            if (parts.length >= 3 && platform === 'telegram') {
+                cleanPhone = parts[2].trim().replace(/[^0-9+]/g, '');
+            }
         } else {
             const globalEmailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/i;
             const emailMatch = rawText.match(globalEmailRegex);
@@ -667,15 +697,24 @@ async function processUnifiedMessage(from, rawText, platform) {
             }
         }
 
-        if (!cleanName || cleanName.length < 2 || !cleanEmail || !cleanEmail.includes("@") || !cleanEmail.includes(".")) {
-            return sendUnifiedMessage(from, (userLang === 'EN') 
-                ? "⚠️ *Format Error!* Both **Full Name** and a valid **Email ID** are strictly mandatory to generate the payment token.\n\n👉 Please reply again in this exact structure: *Your Name, your-email@example.com*" 
-                : "⚠️ *Registration Error!* Link generate karne ke liye **Full Name** aur ek valid **Email ID** dono zaroori hain.\n\n👉 Kripya dubara is tarah likh kar bhejin: *Aapka Name, aapkaemail@gmail.com*", platform);
+        let isPhoneValid = (platform === 'whatsapp') || (cleanPhone && cleanPhone.length >= 7);
+
+        if (!cleanName || cleanName.length < 2 || !cleanEmail || !cleanEmail.includes("@") || !cleanEmail.includes(".") || !isPhoneValid) {
+            let errorMsg = (userLang === 'EN') 
+                ? (platform === 'telegram' 
+                    ? "⚠️ *Format Error!* Full Name, Email ID, and Mobile Number are strictly mandatory to generate the payment token.\n\n👉 Please reply again in this exact structure: *Your Name, your-email@example.com, +919876543210*"
+                    : "⚠️ *Format Error!* Both **Full Name** and a valid **Email ID** are strictly mandatory to generate the payment token.\n\n👉 Please reply again in this exact structure: *Your Name, your-email@example.com*")
+                : (platform === 'telegram'
+                    ? "⚠️ *Registration Error!* Link generate karne ke liye Full Name, Email ID, aur Mobile Number zaroori hain.\n\n👉 Kripya dubara is tarah likh kar bhejin: *Aapka Name, aapkaemail@gmail.com, 9876543210*"
+                    : "⚠️ *Registration Error!* Link generate karne ke liye **Full Name** aur ek valid **Email ID** dono zaroori hain.\n\n👉 Kripya dubara is tarah likh kar bhejin: *Aapka Name, aapkaemail@gmail.com*");
+                    
+            return sendUnifiedMessage(from, errorMsg, platform);
         }
 
         userSessions[from].step = 'completed'; 
         userSessions[from].clientName = cleanName; 
         userSessions[from].clientEmail = cleanEmail;
+        userSessions[from].clientPhone = cleanPhone; // Saved!
         
         const isUSDTrack = (userLang === 'EN');
         const matchedBasePriceStr = getBasePriceByPlan(userSessions[from].projectScope, isUSDTrack);
@@ -687,17 +726,18 @@ async function processUnifiedMessage(from, rawText, platform) {
 
         // 🎯 GST + GATEWAY ON THE DISCOUNTED BASE PRICE
         const finalPayable = calculateTotalPayable(discountedBasePrice, isUSDTrack);
-        
         const currencySymbol = isUSDTrack ? '$' : '₹';
 
+        const displayPhone = userSessions[from].clientPhone || (platform === 'whatsapp' ? from : "Not Provided");
+
         // 🎯 ADMIN ALERT COMPLETE PRICE DETAIL FIX (Base Price, Discount, Final Payable)
-        const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* ${platform === 'telegram' ? 'TG-' : '+'}${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${cleanEmail}\n📝 *Plan Scope:* ${userSessions[from].projectScope}\n💵 *Base Price:* ${currencySymbol}${matchedBasePrice}\n🔥 *Discount Applied:* ${currencySymbol}${savingAmount} (LAUNCH20)\n💰 *Calculated Price:* ${currencySymbol}${finalPayable}`;
+        const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* ${displayPhone} ${platform === 'telegram' ? '(Telegram)' : '(WhatsApp)'}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${cleanEmail}\n📝 *Plan Scope:* ${userSessions[from].projectScope}\n💵 *Base Price:* ${currencySymbol}${matchedBasePrice}\n🔥 *Discount Applied:* ${currencySymbol}${savingAmount} (LAUNCH20)\n💰 *Calculated Price:* ${currencySymbol}${finalPayable}`;
         sendAdminAlert(chatAdminNotification);
 
         try {
             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', { 
                 client_name: cleanName, 
-                whatsapp_number: from, 
+                whatsapp_number: displayPhone, 
                 project_scope: userSessions[from].projectScope, 
                 calculated_price: finalPayable, 
                 email: cleanEmail,
@@ -712,7 +752,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         const encodedEmail = encodeURIComponent(cleanEmail); 
         const encodedPlan = encodeURIComponent(userSessions[from].projectScope);
 
-        const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${isUSDTrack ? 49 : 999}&currency=${isUSDTrack ? 'USD' : 'INR'}&totalPrice=${finalPayable}&name=${encodedName}&email=${encodedEmail}&phone=${from}&plan=${encodedPlan}&coupon=LAUNCH20`;
+        const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${isUSDTrack ? 49 : 999}&currency=${isUSDTrack ? 'USD' : 'INR'}&totalPrice=${finalPayable}&name=${encodedName}&email=${encodedEmail}&phone=${displayPhone}&plan=${encodedPlan}&coupon=LAUNCH20`;
 
         let replyText = isUSDTrack 
             ? `🎉 *Success!* Your requirement for *${userSessions[from].projectScope}* is formally registered.\n\n🔥 *URGENT:* A special **Flat 20% OFF (LAUNCH20)** coupon has been automatically applied to your base price! You are saving **$${savingAmount}** today. Lock your price now before the offer expires. (*T&C Apply*)\n\n*Next Steps:*\nTo initiate your project development slot, please process the standard booking token ($49 USD) via our secure gateway below:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Shahid Creatives' Team will reach out immediately upon confirmation!_`
@@ -757,7 +797,12 @@ async function processUnifiedMessage(from, rawText, platform) {
         if (isMatchFound) {
             userSessions[from].step = 'ask_name_email'; 
             userSessions[from].projectScope = dynamicCategory;
-            return sendUnifiedMessage(from, isUSDTrack ? `Awesome! Selected: *${dynamicCategory}*. 📝 Kindly reply with your **Full Name** and **Email Address**.` : `Awesome! Aapne *${dynamicCategory}* select kiya hai. 📝 Ab kripya apna **Full Name** aur **Email ID** reply mein bhej lijiye.`, platform);
+            
+            let promptText = (userLang === 'EN')
+                ? (platform === 'telegram' ? `Awesome! Selected: *${dynamicCategory}*. 📝 Kindly reply with your **Full Name, Email Address, and Mobile Number** (comma separated).` : `Awesome! Selected: *${dynamicCategory}*. 📝 Kindly reply with your **Full Name** and **Email Address**.`)
+                : (platform === 'telegram' ? `Awesome! Aapne *${dynamicCategory}* select kiya hai. 📝 Ab kripya apna **Full Name, Email ID, aur Mobile Number** reply mein bhej lijiye.` : `Awesome! Aapne *${dynamicCategory}* select kiya hai. 📝 Ab kripya apna **Full Name** aur **Email ID** reply mein bhej lijiye.`);
+            
+            return sendUnifiedMessage(from, promptText, platform);
         } else {
             return sendUnifiedMessage(from, isUSDTrack ? "❌ Invalid choice. Reply from valid options." : "❌ Samajh nahi paye. Kripya list mein se ek number bheinje.", platform);
         }
@@ -777,9 +822,11 @@ async function processUnifiedMessage(from, rawText, platform) {
         if (isAutomateMatch) {
             userSessions[from].step = 'ask_name_email';
             userSessions[from].projectScope = dynamicCategory;
+            
             let askDetailsText = (userLang === 'EN')
-                ? `Excellent Selection: *${dynamicCategory}*. 🤖 📝 Kindly reply with your **Full Name** and **Email Address** to proceed.`
-                : `Excellent Selection! Aapne *${dynamicCategory}* choose kiya hai. 🤖 📝 Ab kripya apna **Full Name** aur **Email ID** reply mein bheinje.`;
+                ? (platform === 'telegram' ? `Excellent Selection: *${dynamicCategory}*. 🤖 📝 Kindly reply with your **Full Name, Email Address, and Mobile Number** to proceed.` : `Excellent Selection: *${dynamicCategory}*. 🤖 📝 Kindly reply with your **Full Name** and **Email Address** to proceed.`)
+                : (platform === 'telegram' ? `Excellent Selection! Aapne *${dynamicCategory}* choose kiya hai. 🤖 📝 Ab kripya apna **Full Name, Email ID, aur Mobile Number** reply mein bheinje.` : `Excellent Selection! Aapne *${dynamicCategory}* choose kiya hai. 🤖 📝 Ab kripya apna **Full Name** aur **Email ID** reply mein bheinje.`);
+                
             return sendUnifiedMessage(from, askDetailsText, platform);
         } else {
             let fallbackMsg = (userLang === 'EN') ? "❌ Invalid selection. Reply from *1 to 5*." : "❌ Kripya list mein se sirf *1 se 5* ke beech koi number likhein.";
@@ -806,7 +853,10 @@ async function processUnifiedMessage(from, rawText, platform) {
                 return finalizeConsultationLead(from, userSessions[from].savedPlan, null, platform);
             } else {
                 userSessions[from].step = 'collect_consultation_identity'; 
-                return sendUnifiedMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address* (separated by a comma, e.g. John Doe, john@email.com)." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma (,) lagakar ek sath bhejien (jaise: Sarfaraj Khan, sarfaraj@gmail.com).", platform);
+                let idPrompt = (userLang === 'EN') 
+                    ? (platform === 'telegram' ? "✍ *Please complete your profile:* Kindly reply with your *Full Name, Email Address, and Mobile Number* (separated by commas, e.g. John Doe, john@email.com, 9876543210)." : "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address* (separated by a comma, e.g. John Doe, john@email.com).")
+                    : (platform === 'telegram' ? "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID, aur Mobile Number* reply mein comma (,) lagakar ek sath bhejien (jaise: Sarfaraj Khan, sarfaraj@gmail.com, 9876543210)." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma (,) lagakar ek sath bhejien (jaise: Sarfaraj Khan, sarfaraj@gmail.com).");
+                return sendUnifiedMessage(from, idPrompt, platform);
             }
         } else if (chosenOptionClean === 'b' || chosenOptionClean.includes("tomorrow") || chosenOptionClean.includes("12")) {
             const dynamicSlotLabel = (currentHourIST >= 17) ? "Day After Tomorrow at 12:00 PM" : "Tomorrow at 12:00 PM";
@@ -818,7 +868,10 @@ async function processUnifiedMessage(from, rawText, platform) {
                 return finalizeConsultationLead(from, userSessions[from].savedPlan, null, platform);
             } else {
                 userSessions[from].step = 'collect_consultation_identity'; 
-                return sendUnifiedMessage(from, (userLang === 'EN') ? "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address* (separated by a comma, e.g. John Doe, john@email.com)." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma (,) lagakar ek sath bhejien (jaise: Sarfaraj Khan, sarfaraj@gmail.com).", platform);
+                let idPrompt = (userLang === 'EN') 
+                    ? (platform === 'telegram' ? "✍ *Please complete your profile:* Kindly reply with your *Full Name, Email Address, and Mobile Number* (separated by commas, e.g. John Doe, john@email.com, 9876543210)." : "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address* (separated by a comma, e.g. John Doe, john@email.com).")
+                    : (platform === 'telegram' ? "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID, aur Mobile Number* reply mein comma (,) lagakar ek sath bhejien (jaise: Sarfaraj Khan, sarfaraj@gmail.com, 9876543210)." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma (,) lagakar ek sath bhejien (jaise: Sarfaraj Khan, sarfaraj@gmail.com).");
+                return sendUnifiedMessage(from, idPrompt, platform);
             }
         } else if (chosenOptionClean === 'c' || chosenOptionClean.includes("custom")) {
             userSessions[from].step = 'awaiting_custom_time_input';
@@ -889,6 +942,9 @@ async function finalizeConsultationLead(from, textInput, res, platform) {
     const dynamicSlot = session.requestedSlot || "Direct Scheduled Request";
     const userLang = session.lang;
 
+    // Fetch Phone: Use explicitly collected phone if available, else fallback
+    const displayPhone = session.clientPhone || (platform === 'whatsapp' ? from : "Not Provided");
+
     const isUSDTrack = (userLang === 'EN'); 
     const matchedBasePriceStr = getBasePriceByPlan(textInput, isUSDTrack);
     const matchedBasePrice = parseFloat(matchedBasePriceStr);
@@ -901,13 +957,18 @@ async function finalizeConsultationLead(from, textInput, res, platform) {
     const currency = isUSDTrack ? '$' : '₹';
     const taxLabel = isUSDTrack ? 'incl Gateway Fees' : 'incl GST';
 
-    const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* ${platform === 'telegram' ? 'TG-' : '+'}${from}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details & Parameters:* Direct Consultation Slot: ${dynamicSlot}\n💬 *User Stated Objectives:* "${textInput}"\n💵 *Base Price:* ${currency}${matchedBasePrice}\n🔥 *Discount Applied:* ${currency}${savingAmount} (LAUNCH20)\n💰 *Calculated Price:* ${currency}${finalCalculatedPrice} (${taxLabel})\n\n🤖 *Status:* Live details captured securely!`;
+    const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* ${displayPhone} ${platform === 'telegram' ? '(Telegram)' : '(WhatsApp)'}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details & Parameters:* Direct Consultation Slot: ${dynamicSlot}\n💬 *User Stated Objectives:* "${textInput}"\n💵 *Base Price:* ${currency}${matchedBasePrice}\n🔥 *Discount Applied:* ${currency}${savingAmount} (LAUNCH20)\n💰 *Calculated Price:* ${currency}${finalCalculatedPrice} (${taxLabel})\n\n🤖 *Status:* Live details captured securely!`;
     sendAdminAlert(comprehensiveAdminAlert); // Omnichannel Admin Alert
 
+    // REQ 5: Route Telegram consultations to the specific API Endpoint
+    const targetEndpoint = platform === 'telegram' 
+        ? 'https://shahidcreatives.com/api/consultations' 
+        : 'https://shahidcreatives.com/api/whatsapp-leads';
+
     try {
-        await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
+        await axios.post(targetEndpoint, {
             client_name: cleanName,
-            whatsapp_number: from,
+            whatsapp_number: displayPhone,
             email: clientEmail,
             requested_slot: dynamicSlot,
             discussion_notes: `*User Stated Objectives:* "${textInput}"\n\n${comprehensiveAdminAlert}`, // ✅ SYNCED WITH NEW PARSER LOGIC
@@ -947,7 +1008,7 @@ async function sendAdminAlert(text) {
     await sendWhatsAppMessage(WHATSAPP_ADMIN_NUMBER, text);
     
     // 2. Send to Telegram Admin
-    const TELEGRAM_ADMIN_ID = "@Shahidcreatives_admin"; // Note: For private Telegram users, it is recommended to use numeric Chat ID (like '123456789')
+    const TELEGRAM_ADMIN_ID = "@Shahidcreatives_admin"; 
     try {
         let htmlText = text
             .replace(/\*(.*?)\*/g, '<b>$1</b>')

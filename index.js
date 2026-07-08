@@ -320,8 +320,7 @@ async function processUnifiedMessage(from, rawText, platform) {
             lang: (isInternationalNumber || isGlobalWebsiteTemplate) ? 'EN' : 'HINGLISH', 
             platform: platform, // Storing platform logic
             clientName: "Valued Client", 
-            clientEmail: "",
-            clientPhone: "", // Initialize Client Phone
+            clientEmail: "", 
             projectScope: "Custom Project Development", 
             requestedSlot: "Not Selected", 
             lastSubmitedTime: 0, 
@@ -735,6 +734,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         sendAdminAlert(chatAdminNotification);
 
         try {
+            // FIXED: Using single dashboard URL api/whatsapp-leads for BOTH telegram and whatsapp so it syncs properly
             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', { 
                 client_name: cleanName, 
                 whatsapp_number: displayPhone, 
@@ -960,10 +960,8 @@ async function finalizeConsultationLead(from, textInput, res, platform) {
     const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* ${displayPhone} ${platform === 'telegram' ? '(Telegram)' : '(WhatsApp)'}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details & Parameters:* Direct Consultation Slot: ${dynamicSlot}\n💬 *User Stated Objectives:* "${textInput}"\n💵 *Base Price:* ${currency}${matchedBasePrice}\n🔥 *Discount Applied:* ${currency}${savingAmount} (LAUNCH20)\n💰 *Calculated Price:* ${currency}${finalCalculatedPrice} (${taxLabel})\n\n🤖 *Status:* Live details captured securely!`;
     sendAdminAlert(comprehensiveAdminAlert); // Omnichannel Admin Alert
 
-    // REQ 5: Route Telegram consultations to the specific API Endpoint
-    const targetEndpoint = platform === 'telegram' 
-        ? 'https://shahidcreatives.com/api/consultations' 
-        : 'https://shahidcreatives.com/api/whatsapp-leads';
+    // FIXED: Route both Telegram and WhatsApp consultations to the SAME API Endpoint so Dashboard catches everything.
+    const targetEndpoint = 'https://shahidcreatives.com/api/whatsapp-leads';
 
     try {
         await axios.post(targetEndpoint, {
@@ -1008,14 +1006,17 @@ async function sendAdminAlert(text) {
     await sendWhatsAppMessage(WHATSAPP_ADMIN_NUMBER, text);
     
     // 2. Send to Telegram Admin
-    const TELEGRAM_ADMIN_ID = "@Shahidcreatives_admin"; 
+    // ⚠️ CRITICAL FIX: You MUST replace this with your Numeric Chat ID (e.g. "123456789") 
+    // To get your ID, message @userinfobot from your admin account.
+    const TELEGRAM_ADMIN_ID = "REPLACE_THIS_WITH_NUMERIC_ID_HERE"; 
+    
     try {
         let htmlText = text
             .replace(/\*(.*?)\*/g, '<b>$1</b>')
             .replace(/_(.*?)_/g, '<i>$1</i>');
         await bot.sendMessage(TELEGRAM_ADMIN_ID, htmlText, { parse_mode: "HTML" });
     } catch (e) {
-        console.error("Telegram Admin Alert Delivery Note: If this fails, user must start the bot first or you must use a numeric chat ID.", e.message);
+        console.error("Telegram Admin Alert Delivery Note: You must put your NUMERIC Chat ID instead of @username.", e.message);
         // Safe Fallback
         bot.sendMessage(TELEGRAM_ADMIN_ID, text).catch(err => {});
     }

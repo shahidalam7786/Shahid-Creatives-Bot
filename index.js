@@ -1011,7 +1011,7 @@ async function sendAdminAlert(text) {
     // 2. Send to Telegram Admin
     // ⚠️ CRITICAL FIX: You MUST replace this with your Numeric Chat ID (e.g. "123456789") 
     // To get your ID, message @userinfobot from your admin account.
-    const TELEGRAM_ADMIN_ID = "REPLACE_THIS_WITH_NUMERIC_ID_HERE"; 
+    const TELEGRAM_ADMIN_ID = "8885973325"; 
     
     try {
         let htmlText = text

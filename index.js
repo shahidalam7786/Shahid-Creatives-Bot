@@ -20,6 +20,10 @@ bot.on('polling_error', (error) => {
 // Telegram - Handling User Inputs & Routing to Master Engine
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id.toString();
+    
+    // 🚨 ID CHECKER: Yeh line aapke logs mein Chat ID print karegi
+    console.log("🚨 MERA TELEGRAM CHAT ID HAI:", chatId);
+
     const text = msg.text;
 
     if (!text) return; // Ignore non-text messages (photos, etc.)

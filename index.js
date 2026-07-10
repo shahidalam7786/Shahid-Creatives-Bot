@@ -61,21 +61,21 @@ function getBasePriceByPlan(planScope, isUSD = false) {
     const text = String(planScope).toLowerCase().trim();
     
     if (isUSD) {
-        // 🚀 AI Automation Plans (Placed FIRST to strictly prevent overlap with Web Plans)
-        if (text.includes("ai content") || text.includes("seo maintainer")) {
+        // 🚀 AI-Powered Growth Retainers (Placed FIRST to strictly prevent overlap with Web Plans)
+        if (text.includes("starter digital") || text.includes("maintainer")) {
             return "77";
         }
-        if (text.includes("b2b") || text.includes("wholesale lead")) {
+        if (text.includes("web conversion") || text.includes("conversion engine")) {
             return "155";
         }
-        if (text.includes("service & appointment") || text.includes("appointment lead")) {
-            return "155";
-        }
-        if (text.includes("e-commerce sales automation") || text.includes("automation retainer")) {
-            return "155";
-        }
-        if (text.includes("complete digital sales") || text.includes("digital sales engine")) {
+        if (text.includes("omnichannel") || text.includes("growth partner")) {
             return "311";
+        }
+        if (text.includes("ecosystem") || text.includes("full-scale")) {
+            return "499";
+        }
+        if (text.includes("elite intelligence") || text.includes("bespoke systems")) {
+            return "799";
         }
         
         // 🌐 Web Plans (Strictly excluding AI keywords)
@@ -97,21 +97,21 @@ function getBasePriceByPlan(planScope, isUSD = false) {
         
         return "110";
     } else {
-        // 🚀 AI Automation Plans (Placed FIRST to strictly prevent overlap with Web Plans)
-        if (text.includes("ai content") || text.includes("seo maintainer")) {
+        // 🚀 AI-Powered Growth Retainers (Placed FIRST to strictly prevent overlap with Web Plans)
+        if (text.includes("starter digital") || text.includes("maintainer")) {
             return "4999";
         }
-        if (text.includes("b2b") || text.includes("wholesale lead")) {
+        if (text.includes("web conversion") || text.includes("conversion engine")) {
             return "9499";
         }
-        if (text.includes("service & appointment") || text.includes("appointment lead")) {
-            return "9499";
-        }
-        if (text.includes("e-commerce sales automation") || text.includes("automation retainer")) {
-            return "9499";
-        }
-        if (text.includes("complete digital sales") || text.includes("digital sales engine")) {
+        if (text.includes("omnichannel") || text.includes("growth partner")) {
             return "18999";
+        }
+        if (text.includes("ecosystem") || text.includes("full-scale")) {
+            return "29999";
+        }
+        if (text.includes("elite intelligence") || text.includes("bespoke systems")) {
+            return "49999";
         }
         
         // 🌐 Web Plans (Strictly excluding AI keywords)
@@ -564,8 +564,8 @@ async function processUnifiedMessage(from, rawText, platform) {
 
         if (processedRoute) {
             let replyText = (userLang === 'EN')
-                ? "Hello! Welcome to *Shahid Creatives*. 🚀\nSelect a professional stack tier via option number:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI Business Automation Hub**\n3️⃣ **🔥 Exclusive Launch Deal**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid Creatives' Team (Direct Consultation)**"
-                : "Hello! Welcome to *Shahid Creatives*. 🚀\nKoshish ko aage badhane ke liye ek option number reply kijiye:\n\n1️⃣ *Web Development Tiers*\n2️⃣ *AI Business Automation & B2B Wholesale Demo*\n3️⃣ *🔥 Exclusive Launch Deal*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives ki Team* (Direct Consultation)";
+                ? "Hello! Welcome to *Shahid Creatives*. 🚀\nSelect a professional stack tier via option number:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI-Powered Growth Retainers**\n3️⃣ **🔥 Exclusive Launch Deal**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid Creatives' Team (Direct Consultation)**"
+                : "Hello! Welcome to *Shahid Creatives*. 🚀\nKoshish ko aage badhane ke liye ek option number reply kijiye:\n\n1️⃣ *Web Development Tiers*\n2️⃣ *AI-Powered Growth Retainers*\n3️⃣ *🔥 Exclusive Launch Deal*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives ki Team* (Direct Consultation)";
             return sendUnifiedMessage(from, replyText, platform);
         } else {
             return sendUnifiedMessage(from, "Welcome to *Shahid Creatives*! 🚀 Please select your location layout to proceed:\n\n1️⃣ **India (Tax/Billing: ₹ INR)**\n2️⃣ **Outside India (Global Billing: $ USD)**", platform);
@@ -641,7 +641,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         userSessions[from].clientPhone = cleanPhone; // Saved!
 
         let descriptivePrompt = (userLang === 'EN')
-            ? `Thank you *${cleanName}*! 🙏\n\nTo lock a high-converting strategy blueprint, please share your goals in the next reply:\n\n🌐 **1. Website Development:**\nWhich plan fits your vision? (Starter Plan, Basic Plan, Starter Business Site, or E-Commerce Hub?)\n\n🤖 **2. AI Automation Goals:**\nWhat precise processes do you want to automate?`
+            ? `Thank you *${cleanName}*! 🙏\n\nTo lock a high-converting strategy blueprint, please share your goals in the next reply:\n\n🌐 **1. Website Development:**\nWhich plan fits your vision? (Starter Plan, Basic Plan, Starter Business Site, or E-Commerce Hub?)\n\n🤖 **2. AI-Powered Growth Retainers:**\nWhat precise processes do you want to automate?`
             : `Thank you *${cleanName}*! 🙏\n\nStrategy call ko 100% efficient banane ke liye, kripya agle message mein niche di gayi details batayein:\n\n🌐 **Type 1:** Agar aapko Website chahiye toh specific type likhein (e.g., Landing Page, Corporate Showcase, ya Online Store).\n\n🤖 **Type 2:** Agar AI Architecture/Bot chahiye toh details likhein (e.g., AI SEO, WhatsApp Lead Bot, Sales Engine).`;
         return sendUnifiedMessage(from, descriptivePrompt, platform);
     }
@@ -655,7 +655,7 @@ async function processUnifiedMessage(from, rawText, platform) {
             
             let interceptorReply = (userText.includes('1'))
                 ? (isUSDTrack ? "⚠️ Please be specific! Which Web scope do you need? \n\n👉 Type one: *Starter Plan* ($199), *Basic Plan* ($299), *Starter Business Site* ($499), or *E-Commerce Hub* ($899)" : "⚠️ Kripya clear batayein! Aapko hamare active modules mein se kis tarah ki website chahiye? \n\n👉 Niche diye gaye active plans mein se ek naam type karein:\n🔹 *Landing Page/Funnel* (₹12,300)\n🔹 *Business/Corporate Website* (₹25,500)\n🔹 *E-commerce Website (Online Store)* (₹47,500)\n🔹 *Custom Web Application* (₹1,45,000+)")
-                : (isUSDTrack ? "⚠️ Please be specific! What AI architecture do you want? \n\n👉 Type one: *AI Content & SEO* ($77), *B2B & Wholesale* ($155), *Service Lead* ($155), *E-Commerce Sales* ($155), or *Complete Digital Engine* ($311)" : "⚠️ Kripya clear batayein! Aapko kis tarah ka automation stack design karwana hai? \n\n👉 Niche diye gaye models mein se ek naam type karein:\n🤖 *AI Content & SEO Maintainer* (₹4,999/Mo)\n💼 *B2B & Wholesale Lead Engine* (₹9,499/Mo)\n📅 *Service & Appointment Lead* (₹9,499/Mo)\n🛒 *E-Commerce Sales Automation* (₹9,499/Mo)\n🌐 *Complete Digital Sales Engine* (₹18,999/Mo)");
+                : (isUSDTrack ? "⚠️ Please be specific! What AI architecture do you want? \n\n👉 Type one: *Starter Digital Maintainer* ($77), *Web Conversion Engine* ($155), *Omnichannel Growth Partner* ($311), *Full-Scale Ecosystem Operations* ($499), or *Elite Intelligence* ($799)" : "⚠️ Kripya clear batayein! Aapko kis tarah ka automation stack design karwana hai? \n\n👉 Niche diye gaye models mein se ek naam type karein:\n🤖 *Starter Digital Maintainer* (₹4,999/Mo)\n💼 *Web Conversion Engine* (₹9,499/Mo)\n📅 *Omnichannel Growth Partner* (₹18,999/Mo)\n🛒 *Full-Scale Ecosystem Operations* (₹29,999/Mo)\n🌐 *Elite Intelligence & Bespoke Systems* (₹49,999/Mo)");
             return sendUnifiedMessage(from, interceptorReply, platform);
         }
 
@@ -815,24 +815,26 @@ async function processUnifiedMessage(from, rawText, platform) {
         }
     }
 
-    // 🎯 STATE 5.2: PROCESS AUTOMATION REQ SELECTION (UPDATED 5 PLANS)
+    // 🎯 STATE 5.2: PROCESS AUTOMATION REQ SELECTION (UPDATED 5 PLANS WITH DEMO LINK)
     if (currentStep === 'process_automation_menu') {
         let isAutomateMatch = false;
         let dynamicCategory = "";
 
-        if (userText === '1' || userText.includes("content") || userText.includes("seo")) { dynamicCategory = "AI Content & SEO Maintainer"; isAutomateMatch = true; }
-        else if (userText === '2' || userText.includes("b2b") || userText.includes("wholesale")) { dynamicCategory = "B2B & Wholesale Lead Engine"; isAutomateMatch = true; }
-        else if (userText === '3' || userText.includes("service") || userText.includes("appointment")) { dynamicCategory = "Service & Appointment Lead Engine"; isAutomateMatch = true; }
-        else if (userText === '4' || userText.includes("e-commerce sales") || userText.includes("retainer")) { dynamicCategory = "The E-Commerce Sales Automation Retainer"; isAutomateMatch = true; }
-        else if (userText === '5' || userText.includes("complete digital") || userText.includes("sales engine")) { dynamicCategory = "The Complete Digital Sales Engine"; isAutomateMatch = true; }
+        if (userText === '1' || userText.includes("starter digital") || userText.includes("maintainer")) { dynamicCategory = "Starter Digital Maintainer"; isAutomateMatch = true; }
+        else if (userText === '2' || userText.includes("web conversion") || userText.includes("conversion engine")) { dynamicCategory = "Web Conversion Engine"; isAutomateMatch = true; }
+        else if (userText === '3' || userText.includes("omnichannel") || userText.includes("growth partner")) { dynamicCategory = "Omnichannel Growth Partner"; isAutomateMatch = true; }
+        else if (userText === '4' || userText.includes("ecosystem") || userText.includes("full-scale")) { dynamicCategory = "Full-Scale Ecosystem Operations"; isAutomateMatch = true; }
+        else if (userText === '5' || userText.includes("elite intelligence") || userText.includes("bespoke systems")) { dynamicCategory = "Elite Intelligence & Bespoke Systems"; isAutomateMatch = true; }
 
         if (isAutomateMatch) {
             userSessions[from].step = 'ask_name_email';
             userSessions[from].projectScope = dynamicCategory;
             
+            const liveDemoLinkText = "\n\n📲 *Live Demo Link:* https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo\n\n";
+
             let askDetailsText = (userLang === 'EN')
-                ? (platform === 'telegram' ? `Excellent Selection: *${dynamicCategory}*. 🤖 📝 Kindly reply with your **Full Name, Email Address, and Mobile Number** to proceed.` : `Excellent Selection: *${dynamicCategory}*. 🤖 📝 Kindly reply with your **Full Name** and **Email Address** to proceed.`)
-                : (platform === 'telegram' ? `Excellent Selection! Aapne *${dynamicCategory}* choose kiya hai. 🤖 📝 Ab kripya apna **Full Name, Email ID, aur Mobile Number** reply mein bheinje.` : `Excellent Selection! Aapne *${dynamicCategory}* choose kiya hai. 🤖 📝 Ab kripya apna **Full Name** aur **Email ID** reply mein bheinje.`);
+                ? (platform === 'telegram' ? `Excellent Selection: *${dynamicCategory}*. 🤖${liveDemoLinkText}📝 Kindly reply with your **Full Name, Email Address, and Mobile Number** to proceed.` : `Excellent Selection: *${dynamicCategory}*. 🤖${liveDemoLinkText}📝 Kindly reply with your **Full Name** and **Email Address** to proceed.`)
+                : (platform === 'telegram' ? `Excellent Selection! Aapne *${dynamicCategory}* choose kiya hai. 🤖${liveDemoLinkText}📝 Ab kripya apna **Full Name, Email ID, aur Mobile Number** reply mein bheinje.` : `Excellent Selection! Aapne *${dynamicCategory}* choose kiya hai. 🤖${liveDemoLinkText}📝 Ab kripya apna **Full Name** aur **Email ID** reply mein bheinje.`);
                 
             return sendUnifiedMessage(from, askDetailsText, platform);
         } else {
@@ -893,15 +895,15 @@ async function processUnifiedMessage(from, rawText, platform) {
         let isCoreMatch = false; let targetMenuRoute = userText;
 
         if (userText === '1' || userText.includes("web") || userText.includes("site")) { targetMenuRoute = '1'; isCoreMatch = true; }
-        else if (userText === '2' || userText.includes("automation") || userText.includes("bot")) { targetMenuRoute = '2'; isCoreMatch = true; }
+        else if (userText === '2' || userText.includes("automation") || userText.includes("retainer") || userText.includes("bot") || userText.includes("ai")) { targetMenuRoute = '2'; isCoreMatch = true; }
         else if (userText === '3' || userText.includes("deal") || userText.includes("discount")) { targetMenuRoute = '3'; isCoreMatch = true; }
         else if (userText === '4' || userText.includes("book") || userText.includes("token")) { targetMenuRoute = '4'; isCoreMatch = true; }
         else if (userText === '5' || userText.includes("shahid") || userText.includes("talk")) { targetMenuRoute = '5'; isCoreMatch = true; }
 
         if (!isCoreMatch) {
             let replyText = (userLang === 'EN')
-                ? "Hello! Welcome to *Shahid Creatives*. 🚀 Select a stack tier layout:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI Business Automation Hub**\n3️⃣ **🔥 Exclusive Launch Deal**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid Creatives' Team (Direct Consultation)**"
-                : "Hello! Welcome to *Shahid Creatives*. 🚀 Select layout choice number:\n\n1️⃣ *Web Development Tiers*\n2️⃣ *AI Business Automation & B2B Wholesale Demo*\n3️⃣ *🔥 Exclusive Launch Deal*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives ki Team* (Direct Consultation)";
+                ? "Hello! Welcome to *Shahid Creatives*. 🚀 Select a stack tier layout:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI-Powered Growth Retainers**\n3️⃣ **🔥 Exclusive Launch Deal**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid Creatives' Team (Direct Consultation)**"
+                : "Hello! Welcome to *Shahid Creatives*. 🚀 Select layout choice number:\n\n1️⃣ *Web Development Tiers*\n2️⃣ *AI-Powered Growth Retainers*\n3️⃣ *🔥 Exclusive Launch Deal*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives ki Team* (Direct Consultation)";
             return sendUnifiedMessage(from, replyText, platform);
         }
 
@@ -913,8 +915,8 @@ async function processUnifiedMessage(from, rawText, platform) {
         } else if (targetMenuRoute === '2') {
             userSessions[from].step = 'process_automation_menu';
             return sendUnifiedMessage(from, (userLang === 'EN')
-                ? "🤖 **AI Business Automation Hub**\nPlease reply with an option number (**1 to 5**):\n\n1️⃣ AI Content & SEO Maintainer ($77/Mo)\n2️⃣ B2B & Wholesale Lead Engine ($155/Mo)\n3️⃣ Service & Appointment Lead Engine ($155/Mo)\n4️⃣ E-Commerce Sales Automation Retainer ($155/Mo)\n5️⃣ Complete Digital Sales Engine ($311/Mo)\n\n📲 *Live Wholesale B2B Automation Demo:* https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo"
-                : "🤖 **AI Business Automation & Live Demo:**\nKripya niche diye gaye list mein se ek option number (**1 se 5**) ya naam reply kijiye:\n\n1️⃣ **AI Content & SEO Maintainer** (Base: ₹4,999/Mo)\n2️⃣ **B2B & Wholesale Lead Engine** (Base: ₹9,499/Mo)\n3️⃣ **Service & Appointment Lead Engine** (Base: ₹9,499/Mo)\n4️⃣ **E-Commerce Sales Automation Retainer** (Base: ₹9,499/Mo)\n5️⃣ **Complete Digital Sales Engine** (Base: ₹18,999/Mo)\n\n📲 *Live Wholesale B2B Automation Demo Link:* https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo", platform);
+                ? "🤖 **AI-Powered Growth Retainers**\nPlease reply with an option number (**1 to 5**):\n\n1️⃣ Starter Digital Maintainer ($77/Mo)\n2️⃣ Web Conversion Engine ($155/Mo)\n3️⃣ Omnichannel Growth Partner ($311/Mo)\n4️⃣ Full-Scale Ecosystem Operations ($499/Mo)\n5️⃣ Elite Intelligence & Bespoke Systems ($799/Mo)\n\n📲 *Live Demo:* https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo"
+                : "🤖 **AI-Powered Growth Retainers**\nKripya niche diye gaye list mein se ek option number (**1 se 5**) ya naam reply kijiye:\n\n1️⃣ **Starter Digital Maintainer** (Base: ₹4,999/Mo)\n2️⃣ **Web Conversion Engine** (Base: ₹9,499/Mo)\n3️⃣ **Omnichannel Growth Partner** (Base: ₹18,999/Mo)\n4️⃣ **Full-Scale Ecosystem Operations** (Base: ₹29,999/Mo)\n5️⃣ **Elite Intelligence & Bespoke Systems** (Base: ₹49,999/Mo)\n\n📲 *Live Demo Link:* https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo", platform);
         } else if (targetMenuRoute === '3') {
             userSessions[from].step = 'process_requirement_menu';
             return sendUnifiedMessage(from, (userLang === 'EN')

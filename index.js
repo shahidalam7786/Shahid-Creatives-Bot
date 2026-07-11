@@ -61,7 +61,7 @@ function getBasePriceByPlan(planScope, isUSD = false) {
     const text = String(planScope).toLowerCase().trim();
     
     if (isUSD) {
-        // 🚀 AI-Powered Growth Retainers (Placed FIRST to strictly prevent overlap with Web Plans)
+        // 🚀 AI-Powered Growth Retainers & Telegram Bots
         if (text.includes("starter digital") || text.includes("maintainer")) {
             return "77";
         }
@@ -76,6 +76,15 @@ function getBasePriceByPlan(planScope, isUSD = false) {
         }
         if (text.includes("elite intelligence") || text.includes("bespoke systems")) {
             return "799";
+        }
+        if ((text.includes("telegram") && text.includes("starter"))) {
+            return "77";
+        }
+        if ((text.includes("telegram") && text.includes("growth"))) {
+            return "155";
+        }
+        if ((text.includes("telegram") && text.includes("elite"))) {
+            return "311";
         }
         
         // 🌐 Web Plans (Strictly excluding AI keywords)
@@ -97,7 +106,7 @@ function getBasePriceByPlan(planScope, isUSD = false) {
         
         return "110";
     } else {
-        // 🚀 AI-Powered Growth Retainers (Placed FIRST to strictly prevent overlap with Web Plans)
+        // 🚀 AI-Powered Growth Retainers & Telegram Bots
         if (text.includes("starter digital") || text.includes("maintainer")) {
             return "4999";
         }
@@ -112,6 +121,15 @@ function getBasePriceByPlan(planScope, isUSD = false) {
         }
         if (text.includes("elite intelligence") || text.includes("bespoke systems")) {
             return "49999";
+        }
+        if ((text.includes("telegram") && text.includes("starter"))) {
+            return "3999";
+        }
+        if ((text.includes("telegram") && text.includes("growth"))) {
+            return "7599";
+        }
+        if ((text.includes("telegram") && text.includes("elite"))) {
+            return "15199";
         }
         
         // 🌐 Web Plans (Strictly excluding AI keywords)
@@ -655,7 +673,7 @@ async function processUnifiedMessage(from, rawText, platform) {
             
             let interceptorReply = (userText.includes('1'))
                 ? (isUSDTrack ? "⚠️ Please be specific! Which Web scope do you need? \n\n👉 Type one: *Starter Plan* ($199), *Basic Plan* ($299), *Starter Business Site* ($499), or *E-Commerce Hub* ($899)" : "⚠️ Kripya clear batayein! Aapko hamare active modules mein se kis tarah ki website chahiye? \n\n👉 Niche diye gaye active plans mein se ek naam type karein:\n🔹 *Landing Page/Funnel* (₹12,300)\n🔹 *Business/Corporate Website* (₹25,500)\n🔹 *E-commerce Website (Online Store)* (₹47,500)\n🔹 *Custom Web Application* (₹1,45,000+)")
-                : (isUSDTrack ? "⚠️ Please be specific! What AI architecture do you want? \n\n👉 Type one: *Starter Digital Maintainer* ($77), *Web Conversion Engine* ($155), *Omnichannel Growth Partner* ($311), *Full-Scale Ecosystem Operations* ($499), or *Elite Intelligence* ($799)" : "⚠️ Kripya clear batayein! Aapko kis tarah ka automation stack design karwana hai? \n\n👉 Niche diye gaye models mein se ek naam type karein:\n🤖 *Starter Digital Maintainer* (₹4,999/Mo)\n💼 *Web Conversion Engine* (₹9,499/Mo)\n📅 *Omnichannel Growth Partner* (₹18,999/Mo)\n🛒 *Full-Scale Ecosystem Operations* (₹29,999/Mo)\n🌐 *Elite Intelligence & Bespoke Systems* (₹49,999/Mo)");
+                : (isUSDTrack ? "⚠️ Please be specific! What AI architecture do you want? \n\n👉 Type one: *Starter Digital Maintainer* ($77), *Web Conversion Engine* ($155), *Omnichannel Growth Partner* ($311), *Full-Scale Ecosystem Operations* ($499), *Elite Intelligence* ($799), *Telegram Universal Automation - Starter* ($77), *Telegram Universal Automation - Growth* ($155), or *Telegram Universal Automation - Elite* ($311)" : "⚠️ Kripya clear batayein! Aapko kis tarah ka automation stack design karwana hai? \n\n👉 Niche diye gaye models mein se ek naam type karein:\n🤖 *Starter Digital Maintainer* (₹4,999/Mo)\n💼 *Web Conversion Engine* (₹9,499/Mo)\n📅 *Omnichannel Growth Partner* (₹18,999/Mo)\n🛒 *Full-Scale Ecosystem Operations* (₹29,999/Mo)\n🌐 *Elite Intelligence & Bespoke Systems* (₹49,999/Mo)\n🤖 *Telegram Universal Automation - Starter* (₹3,999/Mo)\n🤖 *Telegram Universal Automation - Growth* (₹7,599/Mo)\n🤖 *Telegram Universal Automation - Elite* (₹15,199/Mo)");
             return sendUnifiedMessage(from, interceptorReply, platform);
         }
 
@@ -815,7 +833,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         }
     }
 
-    // 🎯 STATE 5.2: PROCESS AUTOMATION REQ SELECTION (UPDATED 5 PLANS WITH DEMO LINK)
+    // 🎯 STATE 5.2: PROCESS AUTOMATION REQ SELECTION (ALL 8 PLANS TOGETHER)
     if (currentStep === 'process_automation_menu') {
         let isAutomateMatch = false;
         let dynamicCategory = "";
@@ -825,6 +843,10 @@ async function processUnifiedMessage(from, rawText, platform) {
         else if (userText === '3' || userText.includes("omnichannel") || userText.includes("growth partner")) { dynamicCategory = "Omnichannel Growth Partner"; isAutomateMatch = true; }
         else if (userText === '4' || userText.includes("ecosystem") || userText.includes("full-scale")) { dynamicCategory = "Full-Scale Ecosystem Operations"; isAutomateMatch = true; }
         else if (userText === '5' || userText.includes("elite intelligence") || userText.includes("bespoke systems")) { dynamicCategory = "Elite Intelligence & Bespoke Systems"; isAutomateMatch = true; }
+        // 🌍 NEW: Telegram Automation Plans merged into the same list
+        else if (userText === '6' || (userText.includes("telegram") && userText.includes("starter"))) { dynamicCategory = "Telegram Universal Automation - Starter Plan"; isAutomateMatch = true; }
+        else if (userText === '7' || (userText.includes("telegram") && userText.includes("growth"))) { dynamicCategory = "Telegram Universal Automation - Growth Plan"; isAutomateMatch = true; }
+        else if (userText === '8' || (userText.includes("telegram") && userText.includes("elite"))) { dynamicCategory = "Telegram Universal Automation - Elite Plan"; isAutomateMatch = true; }
 
         if (isAutomateMatch) {
             userSessions[from].step = 'ask_name_email';
@@ -838,7 +860,7 @@ async function processUnifiedMessage(from, rawText, platform) {
                 
             return sendUnifiedMessage(from, askDetailsText, platform);
         } else {
-            let fallbackMsg = (userLang === 'EN') ? "❌ Invalid selection. Reply from *1 to 5*." : "❌ Kripya list mein se sirf *1 se 5* ke beech koi number likhein.";
+            let fallbackMsg = (userLang === 'EN') ? "❌ Invalid selection. Reply from *1 to 8*." : "❌ Kripya list mein se sirf *1 se 8* ke beech koi number likhein.";
             return sendUnifiedMessage(from, fallbackMsg, platform);
         }
     }
@@ -915,8 +937,8 @@ async function processUnifiedMessage(from, rawText, platform) {
         } else if (targetMenuRoute === '2') {
             userSessions[from].step = 'process_automation_menu';
             return sendUnifiedMessage(from, (userLang === 'EN')
-                ? "🤖 **AI-Powered Growth Retainers**\nPlease reply with an option number (**1 to 5**):\n\n1️⃣ Starter Digital Maintainer ($77/Mo)\n2️⃣ Web Conversion Engine ($155/Mo)\n3️⃣ Omnichannel Growth Partner ($311/Mo)\n4️⃣ Full-Scale Ecosystem Operations ($499/Mo)\n5️⃣ Elite Intelligence & Bespoke Systems ($799/Mo)\n\n📲 *Live Demo:* https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo"
-                : "🤖 **AI-Powered Growth Retainers**\nKripya niche diye gaye list mein se ek option number (**1 se 5**) ya naam reply kijiye:\n\n1️⃣ **Starter Digital Maintainer** (Base: ₹4,999/Mo)\n2️⃣ **Web Conversion Engine** (Base: ₹9,499/Mo)\n3️⃣ **Omnichannel Growth Partner** (Base: ₹18,999/Mo)\n4️⃣ **Full-Scale Ecosystem Operations** (Base: ₹29,999/Mo)\n5️⃣ **Elite Intelligence & Bespoke Systems** (Base: ₹49,999/Mo)\n\n📲 *Live Demo Link:* https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo", platform);
+                ? "🤖 **AI-Powered Growth Retainers & Telegram Bots**\nPlease reply with an option number (**1 to 8**):\n\n1️⃣ Starter Digital Maintainer ($77/Mo)\n2️⃣ Web Conversion Engine ($155/Mo)\n3️⃣ Omnichannel Growth Partner ($311/Mo)\n4️⃣ Full-Scale Ecosystem Operations ($499/Mo)\n5️⃣ Elite Intelligence & Bespoke Systems ($799/Mo)\n6️⃣ Telegram Universal Automation - Starter ($77/Mo)\n7️⃣ Telegram Universal Automation - Growth ($155/Mo)\n8️⃣ Telegram Universal Automation - Elite ($311/Mo)\n\n📲 *Live Demo:* https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo"
+                : "🤖 **AI-Powered Growth Retainers & Telegram Bots**\nKripya niche diye gaye list mein se ek option number (**1 se 8**) ya naam reply kijiye:\n\n1️⃣ **Starter Digital Maintainer** (Base: ₹4,999/Mo)\n2️⃣ **Web Conversion Engine** (Base: ₹9,499/Mo)\n3️⃣ **Omnichannel Growth Partner** (Base: ₹18,999/Mo)\n4️⃣ **Full-Scale Ecosystem Operations** (Base: ₹29,999/Mo)\n5️⃣ **Elite Intelligence & Bespoke Systems** (Base: ₹49,999/Mo)\n6️⃣ **Telegram Universal Automation - Starter** (Base: ₹3,999/Mo)\n7️⃣ **Telegram Universal Automation - Growth** (Base: ₹7,599/Mo)\n8️⃣ **Telegram Universal Automation - Elite** (Base: ₹15,199/Mo)\n\n📲 *Live Demo Link:* https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo", platform);
         } else if (targetMenuRoute === '3') {
             userSessions[from].step = 'process_requirement_menu';
             return sendUnifiedMessage(from, (userLang === 'EN')

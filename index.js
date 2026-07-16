@@ -1069,7 +1069,7 @@ async function sendAdminAlert(text) {
 }
 
 async function sendWhatsAppMessage(to, text) {
-    const SECURED_ACCESS_TOKEN = process.env.WHATSAPP_TOKEN; 
+    const SECURED_ACCESS_TOKEN = "EAAOT5XBXyVwBR7v5XwYnbITF4zF3xWzQXikBjAH1w2qu0sQTbVkyqpNvmRAqhkmU7BqCEcthw5CHelfzr3fmDF2C3la6lw28iYLPI3EmZAZC6vDQoHQyiZAKz7QmfuiZBh0TKhusnrH6CeJZBJLdwU30MOzyr7Vkn26w5dE4md74Bu4OwoLzqfmCCtFDZA9AZDZD"; 
     const DEFAULT_PHONE_NUMBER_ID = "1202984902891472"; 
     try {
         await axios({

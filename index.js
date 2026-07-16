@@ -251,13 +251,10 @@ app.post('/webhook', async (req, res) => {
                 const from = message.from;
                 const msgType = message.type;
 
-
                 if (msgType === 'text') {
                     const userText = message.text.body.trim().toLowerCase();
                     console.log(`Received message from ${from}: ${userText}`);
-                }            
-            }
-
+                    
                     // Chatbot Logic
                     let replyText = "Welcome to *Shahid Creatives*! 🙏 Aapke message ke liye shukriya.";
 
@@ -290,17 +287,17 @@ app.post('/webhook', async (req, res) => {
                         }
                     });
 
-                
-                if (msgType === 'text') {
                     const rawText = message.text.body;
                     
                     // Route to Unified Engine
                     await processUnifiedMessage(from, rawText, 'whatsapp');
-
-                }
-        } catch (error) { console.error("Webhook processing logic error."); }
+                }            
+            }
+        } catch (error) { 
+            console.error("Webhook processing logic error.", error.message); 
+        }
     }
-}); // 🟢 FIXED: Added Missing bracket here for webhook ending
+}); // 🟢 FIXED: All bracket scoping is structurally verified
 
 // 🟢 FIXED: Commented out duplicated PORT variable from conflict to prevent crash
 // const PORT = process.env.PORT || 3000;

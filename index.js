@@ -201,13 +201,6 @@ app.post('/send-client-credentials', async (req, res) => {
 });
 
 
-// 🟢 FIXED: Commented duplicate broken webhook from Git Conflict so bot doesn't crash
-// // WhatsApp Messages Handle
-// app.post('/webhook', async (req, res) => {
-//     res.sendStatus(200); // Meta ko turant response bhejien
-// });
-
-
 // 🟢 ROUTE HANDLER: Payment Reminders Dispatch Engine
 app.post('/send-payment-reminder', async (req, res) => {
     try {
@@ -252,44 +245,10 @@ app.post('/webhook', async (req, res) => {
                 const msgType = message.type;
 
                 if (msgType === 'text') {
-                    const userText = message.text.body.trim().toLowerCase();
-                    console.log(`Received message from ${from}: ${userText}`);
-                    
-                    // Chatbot Logic
-                    let replyText = "Welcome to *Shahid Creatives*! 🙏 Aapke message ke liye shukriya.";
-
-                    if (userText === 'hi' || userText === 'hello') {
-                        replyText = "Hello! *Shahid Creatives* mein aapka swagat hai. ❤️\n\nAapko kis tarah ki service chahiye? Niche diye gaye number bhejien:\n\n1️⃣ *Video Editing*\n2️⃣ *Graphic Design*\n3️⃣ *Pricing Details*";
-                    } else if (userText === '1') {
-                        replyText = "🎬 *Video Editing Services:*\n\nHum Cinematic Videos, Reels, YouTube Videos aur Shorts edit karte hain. Aap apna raw data share kar sakte hain!";
-                    } else if (userText === '2') {
-                        replyText = "🎨 *Graphic Design Services:*\n\nHum Thumbnails, Posters, Logos aur Social Media Graphics design karte hain.";
-                    } else if (userText === '3') {
-                        replyText = "💰 *Pricing Details:*\n\nHamare charges service ke hisab se hain. Aap apna project detail share kijiye, hum best rate batayenge!";
-                    }
-
-                    // Render Dashboard ke Environment Variable se Token uthana (100% Secure)
-                    const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
-                    const PHONE_NUMBER_ID = "1202984902891472";
-
-                    await axios({
-                        method: "POST",
-                        url: `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`,
-                        data: {
-                            messaging_product: "whatsapp",
-                            to: from,
-                            type: "text",
-                            text: { body: replyText }
-                        },
-                        headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${WHATSAPP_TOKEN}`
-                        }
-                    });
-
                     const rawText = message.text.body;
+                    console.log(`Received message from ${from}: ${rawText}`);
                     
-                    // Route to Unified Engine
+                    // Route directly to Unified Engine (Removed the hardcoded double-reply block)
                     await processUnifiedMessage(from, rawText, 'whatsapp');
                 }            
             }
@@ -297,13 +256,7 @@ app.post('/webhook', async (req, res) => {
             console.error("Webhook processing logic error.", error.message); 
         }
     }
-}); // 🟢 FIXED: All bracket scoping is structurally verified
-
-// 🟢 FIXED: Commented out duplicated PORT variable from conflict to prevent crash
-// const PORT = process.env.PORT || 3000;
-// app.listen(PORT, () => {
-//     console.log(`Google Cloud Server is running successfully on port ${PORT}`);
-// });
+}); 
 
 // ==========================================
 // 🧠 UNIFIED BOT ENGINE (PROCESSES BOTH TG & WA)
@@ -1044,7 +997,6 @@ async function finalizeConsultationLead(from, textInput, res, platform) {
     const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* ${displayPhone} ${platform === 'telegram' ? '(Telegram)' : '(WhatsApp)'}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details & Parameters:* Direct Consultation Slot: ${dynamicSlot}\n💬 *User Stated Objectives:* "${textInput}"\n💵 *Base Price:* ${currency}${matchedBasePrice}\n🔥 *Discount Applied:* ${currency}${savingAmount} (LAUNCH20)\n💰 *Calculated Price:* ${currency}${finalCalculatedPrice} (${taxLabel})\n\n🤖 *Status:* Live details captured securely!`;
     sendAdminAlert(comprehensiveAdminAlert); // Omnichannel Admin Alert
 
-    // FIXED: Route both Telegram and WhatsApp consultations to the SAME API Endpoint so Dashboard catches everything.
     const targetEndpoint = 'https://shahidcreatives.com/api/whatsapp-leads';
 
     try {
@@ -1091,8 +1043,6 @@ async function sendAdminAlert(text) {
     await sendWhatsAppMessage(WHATSAPP_ADMIN_NUMBER, text);
     
     // 2. Send to Telegram Admin
-    // ⚠️ CRITICAL FIX: You MUST replace this with your Numeric Chat ID (e.g. "123456789") 
-    // To get your ID, message @userinfobot from your admin account.
     const TELEGRAM_ADMIN_ID = "8885973325"; 
     
     try {
@@ -1102,7 +1052,6 @@ async function sendAdminAlert(text) {
         await bot.sendMessage(TELEGRAM_ADMIN_ID, htmlText, { parse_mode: "HTML" });
     } catch (e) {
         console.error("Telegram Admin Alert Delivery Note: You must put your NUMERIC Chat ID instead of @username.", e.message);
-        // Safe Fallback
         bot.sendMessage(TELEGRAM_ADMIN_ID, text).catch(err => {});
     }
 }
@@ -1118,10 +1067,9 @@ async function sendWhatsAppMessage(to, text) {
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${SECURED_ACCESS_TOKEN}` }
         });
     } catch (e) { 
-        // Improved Error Logging for dispatch failures
         console.error("WhatsApp API dispatch error:", e.response ? JSON.stringify(e.response.data) : e.message); 
     }
-} // 🟢 FIXED: Added Missing bracket here for function ending
+} 
 
 const PORT = process.env.PORT || 10000; 
 app.listen(PORT, '0.0.0.0', () => {

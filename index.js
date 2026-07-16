@@ -169,8 +169,20 @@ setInterval(() => {
     }
 }, 60000);
 
-// 🤖 SERVER HEALTH CHECK
+// 🤖 SERVER HEALTH CHECK & META WEBHOOK VERIFICATION (Unified for Root '/')
 app.get('/', (req, res) => {
+    const VERIFY_TOKEN = "mysecrettoken";
+    
+    // Check if this is a Meta verification request
+    if (req.query['hub.mode'] && req.query['hub.verify_token']) {
+        if (req.query['hub.mode'] === 'subscribe' && req.query['hub.verify_token'] === VERIFY_TOKEN) {
+            return res.status(200).send(req.query['hub.challenge']);
+        } else {
+            return res.sendStatus(403);
+        }
+    }
+    
+    // Otherwise, return normal health check
     res.status(200).send("Shahid Creatives Bot Server is Live on Render with Secured Credentials! 🚀 (Telegram & WhatsApp Both Active)");
 });
 
@@ -218,9 +230,9 @@ app.post('/send-payment-reminder', async (req, res) => {
     }
 });
 
-// Meta Webhook Verification
+// Meta Webhook Verification (Backup for '/webhook' path)
 app.get('/webhook', (req, res) => {
-    const VERIFY_TOKEN = "shahid_creatives_secret_token_123";
+    const VERIFY_TOKEN = "mysecrettoken";
     if (req.query['hub.mode'] === 'subscribe' && req.query['hub.verify_token'] === VERIFY_TOKEN) {
         return res.status(200).send(req.query['hub.challenge']);
     }

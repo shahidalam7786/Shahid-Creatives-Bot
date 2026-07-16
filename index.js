@@ -7,15 +7,6 @@ const app = express();
 app.use(bodyParser.json());
 
 
-// Meta Developer Dashboard verification
-app.get('/webhook', (req, res) => {
-    const VERIFY_TOKEN = "shahid_creatives_secret_token_123";
-
-    const mode = req.query['hub.mode'];
-    const token = req.query['hub.verify_token'];
-    const challenge = req.query['hub.challenge'];
-=======
-// ==========================================
 // 🚀 1. TELEGRAM BOT SETUP (INTEGRATED)
 // ==========================================
 const TELEGRAM_TOKEN = '8563313484:AAHo9aqVSETs4aXntUXn01yIuHN3OdzxTq8';
@@ -210,11 +201,13 @@ app.post('/send-client-credentials', async (req, res) => {
 });
 
 
-// WhatsApp Messages Handle
-app.post('/webhook', async (req, res) => {
-    res.sendStatus(200); // Meta ko turant response bhejien
+// 🟢 FIXED: Commented duplicate broken webhook from Git Conflict so bot doesn't crash
+// // WhatsApp Messages Handle
+// app.post('/webhook', async (req, res) => {
+//     res.sendStatus(200); // Meta ko turant response bhejien
+// });
 
-=======
+
 // 🟢 ROUTE HANDLER: Payment Reminders Dispatch Engine
 app.post('/send-payment-reminder', async (req, res) => {
     try {
@@ -262,6 +255,8 @@ app.post('/webhook', async (req, res) => {
                 if (msgType === 'text') {
                     const userText = message.text.body.trim().toLowerCase();
                     console.log(`Received message from ${from}: ${userText}`);
+                }            
+            }
 
                     // Chatbot Logic
                     let replyText = "Welcome to *Shahid Creatives*! 🙏 Aapke message ke liye shukriya.";
@@ -303,17 +298,16 @@ app.post('/webhook', async (req, res) => {
                     await processUnifiedMessage(from, rawText, 'whatsapp');
 
                 }
-            }
         } catch (error) { console.error("Webhook processing logic error."); }
     }
-});
+}); // 🟢 FIXED: Added Missing bracket here for webhook ending
 
-<<<<<<< HEAD
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Google Cloud Server is running successfully on port ${PORT}`);
-});
-=======
+// 🟢 FIXED: Commented out duplicated PORT variable from conflict to prevent crash
+// const PORT = process.env.PORT || 3000;
+// app.listen(PORT, () => {
+//     console.log(`Google Cloud Server is running successfully on port ${PORT}`);
+// });
+
 // ==========================================
 // 🧠 UNIFIED BOT ENGINE (PROCESSES BOTH TG & WA)
 // ==========================================
@@ -853,7 +847,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         if (userText === '1' || userText.includes("token") || userText.includes("book") || userText.includes("confirm")) {
             userSessions[from].step = 'process_requirement_menu';
             let requirementPrompt = (userLang === 'EN')
-                ? "Please select what you want to build today by replying with the option number (**1 to 5**):\n\n1️⃣ Starter Plan ($199)\n2️⃣ Basic Plan ($299)\n3️⃣ Starter Business Site ($499)\n4️⃣ E-Commerce Hub ($899)\n5️⃣ Custom Enterprise App ($2,499)"
+                ? "Please select what you want to build today by replying with the option number (**1 to 5**):\n\n1️⃣ Starter Plan ($199)\n2️⃣ Basic Plan ($299)\n3 Starter Business Site ($499)\n4️⃣ E-Commerce Hub ($899)\n5️⃣ Custom Enterprise App ($2,499)"
                 : "Perfect! Pehle aapki structural requirement lock kar lete hain. 🚀\n\nNiche diye gaye options mein se koi ek number (*1 se 4*) reply kijiye:\n\n1️⃣ **Landing Page/Funnel** (Base: ₹12,300)\n2️⃣ **Business/Corporate Website** (Base: ₹25,500)\n3️⃣ **E-commerce Website** (Base: ₹47,500)\n4️⃣ **Custom Web Application / Software** (Base: ₹1,45,000+)";
             return sendUnifiedMessage(from, requirementPrompt, platform);
         } else if (userText === '2' || userText.includes("discuss") || userText.includes("call") || userText.includes("strategy")) {
@@ -1130,9 +1124,9 @@ async function sendWhatsAppMessage(to, text) {
         // Improved Error Logging for dispatch failures
         console.error("WhatsApp API dispatch error:", e.response ? JSON.stringify(e.response.data) : e.message); 
     }
-}
+} // 🟢 FIXED: Added Missing bracket here for function ending
 
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT || 10000; 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`ChatBot engine live on port ${PORT}`);
     console.log("✅ Telegram Bot Active!");

@@ -43,7 +43,7 @@ salonBot.on('polling_error', (error) => {
 // Lightweight memory for Salon Bot
 const salonSessions = {};
 
-// 🟢 ADMIN INLINE BUTTON HANDLER (CONFIRM/REJECT LOGIC)
+// 🟢 ADMIN & USER INLINE BUTTON HANDLER
 salonBot.on('callback_query', async (query) => {
     const chatId = query.message.chat.id.toString();
     const data = query.data;
@@ -65,11 +65,36 @@ salonBot.on('callback_query', async (query) => {
         return salonBot.answerCallbackQuery(query.id);
     }
 
-    // 2. USER ACTIONS (Date & Time Buttons)
+    // 2. USER ACTIONS (Service, Date & Time Buttons)
     if (!salonSessions[chatId]) return salonBot.answerCallbackQuery(query.id);
     const session = salonSessions[chatId];
 
-    if (data.startsWith('date_')) {
+    // SERVICE SELECTION BUTTONS
+    if (data.startsWith('srv_')) {
+        const serviceChoice = data.split('_')[1];
+        session.step = 'AWAITING_DATE_BTN';
+        
+        let priceReply = "";
+        if (serviceChoice === 'smoothing') { priceReply = "Excellent! **Smoothing** sirf ₹2499 mein available hai (Valid for Any Length)."; session.service = "Smoothing"; session.price = "₹2499"; }
+        else if (serviceChoice === 'keratin') { priceReply = "Excellent! **Keratin** sirf ₹1999 mein available hai (Valid for Any Length)."; session.service = "Keratin"; session.price = "₹1999"; }
+        else if (serviceChoice === 'botox') { priceReply = "Excellent! **Botox** sirf ₹2999 mein available hai (Valid for Any Length)."; session.service = "Botox"; session.price = "₹2999"; }
+        else if (serviceChoice === 'nanoplastia') { priceReply = "Excellent! **Nanoplastia** sirf ₹3999 mein available hai (Valid for Any Length)."; session.service = "Nanoplastia"; session.price = "₹3999"; }
+
+        const dateOptions = {
+            inline_keyboard: [
+                [{ text: "📅 Today", callback_data: "date_today" }, { text: "📅 Tomorrow", callback_data: "date_tomorrow" }]
+            ]
+        };
+        
+        await salonBot.editMessageText(`${priceReply}\n\nKripya apna preferred **Date** select karein: 👇`, {
+            chat_id: chatId,
+            message_id: messageId,
+            parse_mode: "Markdown",
+            reply_markup: dateOptions
+        });
+    }
+    // DATE SELECTION BUTTONS
+    else if (data.startsWith('date_')) {
         session.date = data === 'date_today' ? 'Today' : 'Tomorrow';
         session.step = 'AWAITING_TIME_BTN';
 
@@ -93,6 +118,7 @@ salonBot.on('callback_query', async (query) => {
             reply_markup: { inline_keyboard: timeButtons }
         });
     }
+    // TIME SELECTION BUTTONS
     else if (data.startsWith('time_')) {
         session.time = data.replace('time_', '');
         session.dateTime = `${session.date} at ${session.time}`;
@@ -120,45 +146,38 @@ salonBot.on('message', async (msg) => {
     const lowerText = text.toLowerCase();
     const resetTriggers = ['hi', 'hello', 'hey', 'start', '/start', 'menu'];
 
-    // 1. GREETING
+    // 1. GREETING WITH SERVICE BUTTONS
     if (!salonSessions[chatId] || resetTriggers.includes(lowerText)) {
-        salonSessions[chatId] = { step: 'SERVICE_SELECTION' };
-        const greetingMsg = "Hello! Welcome to *Fit hair artist Unisex Family Salon*! ✨\n\nHum Mohali ke top-rated 4.9-star salon hain. 💇‍♀️\n\n🔥 *Current Special Offers (Valid for ANY LENGTH of hair):*\n🔹 Smoothing: ₹2499\n🔹 Keratin: ₹1999\n🔹 Botox: ₹2999\n🔹 Nanoplastia: ₹3999\n\nAap aaj kaunsi service dekh rahe hain? 💅";
-        return salonBot.sendMessage(chatId, greetingMsg, { parse_mode: "Markdown", reply_markup: { remove_keyboard: true } });
+        salonSessions[chatId] = { step: 'AWAITING_SERVICE_BTN' };
+        
+        const greetingMsg = "Hello! Welcome to *Fit hair artist Unisex Family Salon*! ✨\n\nHum Mohali ke top-rated 4.9-star salon hain. 💇‍♀️\n\n🔥 *Current Special Offers (Valid for ANY LENGTH of hair):*\n\nAap aaj kaunsi service dekh rahe hain? 👇\n*(Kripya niche diye gaye options par click karein)*";
+        
+        const serviceOpts = {
+            parse_mode: "Markdown",
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: "🔹 Smoothing: ₹2499", callback_data: "srv_smoothing" }],
+                    [{ text: "🔹 Keratin: ₹1999", callback_data: "srv_keratin" }],
+                    [{ text: "🔹 Botox: ₹2999", callback_data: "srv_botox" }],
+                    [{ text: "🔹 Nanoplastia: ₹3999", callback_data: "srv_nanoplastia" }]
+                ]
+            }
+        };
+        return salonBot.sendMessage(chatId, greetingMsg, serviceOpts);
     }
 
     const session = salonSessions[chatId];
     const step = session.step;
 
-    // CONSTRAINTS: Redirect unrelated queries smoothly
-    const salonKeywords = ['smoothing', 'keratin', 'botox', 'nanoplastia', 'haircut', 'facial', 'pedicure', 'hair', 'salon', 'appointment', 'price', 'book', 'time', 'date', 'baje', 'am', 'pm'];
-    const isRelated = salonKeywords.some(kw => lowerText.includes(kw)) || step !== 'SERVICE_SELECTION';
-
-    if (!isRelated && step === 'SERVICE_SELECTION') {
-        return salonBot.sendMessage(chatId, "Sorry, hum yahan sirf salon bookings and services assist karte hain. Kya aap appointment book karna chahenge? 📅");
+    // CONSTRAINTS: Intercept manual typing during button phases
+    if (step === 'AWAITING_SERVICE_BTN') {
+        return salonBot.sendMessage(chatId, "Kripya upar diye gaye buttons par click karke apni service select karein. 👇");
     }
-
-    // 2. SERVICE SELECTION & TRIGGER DATE BUTTONS
-    if (step === 'SERVICE_SELECTION') {
-        session.service = text; 
-        session.step = 'AWAITING_DATE_BTN';
-        
-        let priceReply = "";
-        if (lowerText.includes('smoothing')) { priceReply = "Excellent! Smoothing sirf ₹2499 mein available hai (Valid for Any Length)."; session.price = "₹2499"; }
-        else if (lowerText.includes('keratin')) { priceReply = "Excellent! Keratin sirf ₹1999 mein available hai (Valid for Any Length)."; session.price = "₹1999"; }
-        else if (lowerText.includes('botox')) { priceReply = "Excellent! Botox sirf ₹2999 mein available hai (Valid for Any Length)."; session.price = "₹2999"; }
-        else if (lowerText.includes('nanoplastia')) { priceReply = "Excellent! Nanoplastia sirf ₹3999 mein available hai (Valid for Any Length)."; session.price = "₹3999"; }
-        else { priceReply = "Great choice! Prices vary based on consultation, but we offer the best rates in Mohali. ✨"; session.price = "Consultation Based"; }
-
-        const dateOptions = {
-            reply_markup: {
-                inline_keyboard: [
-                    [{ text: "📅 Today", callback_data: "date_today" }, { text: "📅 Tomorrow", callback_data: "date_tomorrow" }]
-                ]
-            }
-        };
-
-        return salonBot.sendMessage(chatId, `${priceReply}\n\nKripya apna preferred Date select karein: 👇`, dateOptions);
+    if (step === 'AWAITING_DATE_BTN') {
+        return salonBot.sendMessage(chatId, "Kripya Date select karne ke liye upar diye gaye (Today/Tomorrow) buttons par click karein. 👇");
+    }
+    if (step === 'AWAITING_TIME_BTN') {
+        return salonBot.sendMessage(chatId, "Kripya Time select karne ke liye upar diye gaye Time Slot buttons par click karein. 👇");
     }
 
     // 3. BOOKING PROCESS - NAME

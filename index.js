@@ -6,7 +6,7 @@ const TelegramBot = require('node-telegram-bot-api'); // 🟢 TELEGRAM LIBRARY A
 const app = express();
 app.use(bodyParser.json());
 
-
+// ==========================================
 // 🚀 1. TELEGRAM BOT SETUP (ORIGINAL SHAHID CREATIVES)
 // ==========================================
 const TELEGRAM_TOKEN = '8563313484:AAHo9aqVSETs4aXntUXn01yIuHN3OdzxTq8';
@@ -28,11 +28,13 @@ bot.on('message', async (msg) => {
     await processUnifiedMessage(chatId, text, 'telegram');
 });
 
+
 // ==========================================
-// ✨ NEW: SALON AI VIRTUAL RECEPTIONIST BOT
+// ✨ NEW: SALON AI VIRTUAL RECEPTIONIST BOT (PREMIUM UPGRADE)
 // ==========================================
 const SALON_TELEGRAM_TOKEN = '8602924285:AAGRgdN8F6pr5BhzCysFaM8uXoXNo93gyeY';
 const salonBot = new TelegramBot(SALON_TELEGRAM_TOKEN, { polling: true });
+const SALON_ADMIN_CHAT_ID = '8885973325'; // 🚨 ADMIN CHAT ID SET HERE
 
 salonBot.on('polling_error', (error) => {
     console.log("Salon Bot Polling Error:", error.message);
@@ -41,10 +43,78 @@ salonBot.on('polling_error', (error) => {
 // Lightweight memory for Salon Bot
 const salonSessions = {};
 
+// 🟢 ADMIN INLINE BUTTON HANDLER (CONFIRM/REJECT LOGIC)
+salonBot.on('callback_query', async (query) => {
+    const chatId = query.message.chat.id.toString();
+    const data = query.data;
+    const messageId = query.message.message_id;
+
+    // 1. ADMIN ACTIONS (Confirm or Reject)
+    if (chatId === SALON_ADMIN_CHAT_ID && data.startsWith('admin_')) {
+        const parts = data.split('_'); 
+        const action = parts[1]; // confirm / reject
+        const clientChatId = parts[2]; // user's chat id
+
+        if (action === 'confirm') {
+            await salonBot.editMessageText(query.message.text + "\n\n✅ **STATUS: BOOKING CONFIRMED BY YOU**", { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
+            await salonBot.sendMessage(clientChatId, "🎉 **Great News!**\n\nYour appointment has been **CONFIRMED** by the salon. Hum aapka intezaar kar rahe hain! ✨", { parse_mode: "Markdown" });
+        } else if (action === 'reject') {
+            await salonBot.editMessageText(query.message.text + "\n\n❌ **STATUS: REJECTED / RESCHEDULED BY YOU**", { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
+            await salonBot.sendMessage(clientChatId, "⚠️ **Notice from Salon**\n\nMaafi chahte hain, aapka select kiya hua slot abhi full hai. Humari team aapse jald hi call par connect karke naya time set karegi. 🙏", { parse_mode: "Markdown" });
+        }
+        return salonBot.answerCallbackQuery(query.id);
+    }
+
+    // 2. USER ACTIONS (Date & Time Buttons)
+    if (!salonSessions[chatId]) return salonBot.answerCallbackQuery(query.id);
+    const session = salonSessions[chatId];
+
+    if (data.startsWith('date_')) {
+        session.date = data === 'date_today' ? 'Today' : 'Tomorrow';
+        session.step = 'AWAITING_TIME_BTN';
+
+        // Dynamic 9 AM to 8 PM Buttons Generation
+        const timeButtons = [];
+        let row = [];
+        const times = ["9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM", "6:00 PM", "7:00 PM", "8:00 PM"];
+        
+        times.forEach((time, index) => {
+            row.push({ text: `⏰ ${time}`, callback_data: `time_${time}` });
+            if (row.length === 3 || index === times.length - 1) { // 3 buttons per row
+                timeButtons.push(row);
+                row = [];
+            }
+        });
+
+        await salonBot.editMessageText(`Aapne **${session.date}** select kiya hai.\n\nAb kripya apna preferred **Time Slot** choose karein:`, {
+            chat_id: chatId,
+            message_id: messageId,
+            parse_mode: "Markdown",
+            reply_markup: { inline_keyboard: timeButtons }
+        });
+    }
+    else if (data.startsWith('time_')) {
+        session.time = data.replace('time_', '');
+        session.dateTime = `${session.date} at ${session.time}`;
+        session.step = 'COLLECT_NAME';
+        
+        await salonBot.editMessageText(`Perfect! Aapka slot **${session.dateTime}** ke liye note ho gaya hai.\n\nAb kripya apna shubh naam (Name) type karke bhejein. ✨`, {
+            chat_id: chatId,
+            message_id: messageId,
+            parse_mode: "Markdown"
+        });
+    }
+
+    salonBot.answerCallbackQuery(query.id);
+});
+
+// 🟢 USER MESSAGES ROUTER
 salonBot.on('message', async (msg) => {
     const chatId = msg.chat.id.toString();
-    const text = msg.text;
-
+    
+    // Support Contact Button & Normal Text
+    let text = msg.text;
+    if (msg.contact) { text = msg.contact.phone_number; }
     if (!text) return; 
 
     const lowerText = text.toLowerCase();
@@ -54,7 +124,7 @@ salonBot.on('message', async (msg) => {
     if (!salonSessions[chatId] || resetTriggers.includes(lowerText)) {
         salonSessions[chatId] = { step: 'SERVICE_SELECTION' };
         const greetingMsg = "Hello! Welcome to *Fit hair artist Unisex Family Salon*! ✨\n\nHum Mohali ke top-rated 4.9-star salon hain. 💇‍♀️\n\n🔥 *Current Special Offers (Valid for ANY LENGTH of hair):*\n🔹 Smoothing: ₹2499\n🔹 Keratin: ₹1999\n🔹 Botox: ₹2999\n🔹 Nanoplastia: ₹3999\n\nAap aaj kaunsi service dekh rahe hain? 💅";
-        return salonBot.sendMessage(chatId, greetingMsg, { parse_mode: "Markdown" });
+        return salonBot.sendMessage(chatId, greetingMsg, { parse_mode: "Markdown", reply_markup: { remove_keyboard: true } });
     }
 
     const session = salonSessions[chatId];
@@ -68,46 +138,78 @@ salonBot.on('message', async (msg) => {
         return salonBot.sendMessage(chatId, "Sorry, hum yahan sirf salon bookings and services assist karte hain. Kya aap appointment book karna chahenge? 📅");
     }
 
-    // 2. SERVICE SELECTION
+    // 2. SERVICE SELECTION & TRIGGER DATE BUTTONS
     if (step === 'SERVICE_SELECTION') {
         session.service = text; 
-        session.step = 'COLLECT_DATE';
+        session.step = 'AWAITING_DATE_BTN';
         
         let priceReply = "";
-        if (lowerText.includes('smoothing')) priceReply = "Excellent! Smoothing sirf ₹2499 mein available hai (Valid for Any Length).";
-        else if (lowerText.includes('keratin')) priceReply = "Excellent! Keratin sirf ₹1999 mein available hai (Valid for Any Length).";
-        else if (lowerText.includes('botox')) priceReply = "Excellent! Botox sirf ₹2999 mein available hai (Valid for Any Length).";
-        else if (lowerText.includes('nanoplastia')) priceReply = "Excellent! Nanoplastia sirf ₹3999 mein available hai (Valid for Any Length).";
-        else priceReply = "Great choice! Prices vary based on consultation, but we offer the best rates in Mohali. ✨";
+        if (lowerText.includes('smoothing')) { priceReply = "Excellent! Smoothing sirf ₹2499 mein available hai (Valid for Any Length)."; session.price = "₹2499"; }
+        else if (lowerText.includes('keratin')) { priceReply = "Excellent! Keratin sirf ₹1999 mein available hai (Valid for Any Length)."; session.price = "₹1999"; }
+        else if (lowerText.includes('botox')) { priceReply = "Excellent! Botox sirf ₹2999 mein available hai (Valid for Any Length)."; session.price = "₹2999"; }
+        else if (lowerText.includes('nanoplastia')) { priceReply = "Excellent! Nanoplastia sirf ₹3999 mein available hai (Valid for Any Length)."; session.price = "₹3999"; }
+        else { priceReply = "Great choice! Prices vary based on consultation, but we offer the best rates in Mohali. ✨"; session.price = "Consultation Based"; }
 
-        return salonBot.sendMessage(chatId, `${priceReply}\n\nKripya apna preferred Date aur Time batayein (jaise: Kal sham 4 baje). 📅`);
-    }
+        const dateOptions = {
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: "📅 Today", callback_data: "date_today" }, { text: "📅 Tomorrow", callback_data: "date_tomorrow" }]
+                ]
+            }
+        };
 
-    // 3. BOOKING PROCESS - DATE & TIME
-    if (step === 'COLLECT_DATE') {
-        session.dateTime = text;
-        session.step = 'COLLECT_NAME';
-        return salonBot.sendMessage(chatId, "Perfect! Ab kripya apna shubh naam (Name) bataiye. ✨");
+        return salonBot.sendMessage(chatId, `${priceReply}\n\nKripya apna preferred Date select karein: 👇`, dateOptions);
     }
 
     // 3. BOOKING PROCESS - NAME
     if (step === 'COLLECT_NAME') {
         session.name = text;
         session.step = 'COLLECT_PHONE';
-        return salonBot.sendMessage(chatId, `Shukriya ${session.name}! Last step, apna Contact Number share karein taaki hum booking secure kar sakein. 📱`);
+        
+        // Telegram in-built Request Contact Button
+        const contactOpts = {
+            reply_markup: {
+                keyboard: [
+                    [{ text: "📱 Share Contact Number", request_contact: true }]
+                ],
+                one_time_keyboard: true,
+                resize_keyboard: true
+            }
+        };
+        return salonBot.sendMessage(chatId, `Shukriya ${session.name}! Last step, apna verified Contact Number share karne ke liye niche **"📱 Share Contact Number"** button par click karein. 👇`, contactOpts);
     }
 
-    // 4. CONFIRMATION
+    // 4. CONFIRMATION & ADMIN ALERT ENGINE
     if (step === 'COLLECT_PHONE') {
-        session.phone = text;
+        session.phone = text; // Captures actual typed number or shared contact
         session.step = 'COMPLETED';
         
-        const confirmMsg = `Thank you ${session.name}! Your appointment for ${session.service} is confirmed for ${session.dateTime}. Our team is excited to pamper you. See you at Phase 11, Mohali! ✨`;
-        return salonBot.sendMessage(chatId, confirmMsg);
+        // 🔹 Digital Receipt for User
+        const receiptMsg = `🎉 **Booking Request Received!**\n\nThank you, **${session.name}**! Humari team aapko pamper karne ke liye excited hai.\n\n🧾 **Booking Details:**\n💇‍♀️ **Service:** ${session.service}\n💰 **Price:** ${session.price}\n📅 **Time:** ${session.dateTime}\n📞 **Contact:** ${session.phone}\n📍 **Location:** Phase 11, Mohali\n\n_Please wait, salon admin is confirming your slot..._ ✨`;
+        
+        salonBot.sendMessage(chatId, receiptMsg, { 
+            parse_mode: "Markdown", 
+            reply_markup: { remove_keyboard: true } // Removes the contact button cleanly
+        });
+
+        // 🚨 Instant Alert to Admin with Control Buttons
+        const adminAlertMsg = `🚨 **NEW SALON LEAD ALERT!** 🚨\n\n👤 **Name:** ${session.name}\n📱 **Number:** \`${session.phone}\`\n💇‍♀️ **Service:** ${session.service} (${session.price})\n📅 **Slot Requested:** ${session.dateTime}\n\n*Action Required:*`;
+        
+        const adminOptions = {
+            parse_mode: "Markdown",
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: "✅ Confirm Booking", callback_data: `admin_confirm_${chatId}` }],
+                    [{ text: "❌ Slot Full / Reschedule", callback_data: `admin_reject_${chatId}` }]
+                ]
+            }
+        };
+
+        return salonBot.sendMessage(SALON_ADMIN_CHAT_ID, adminAlertMsg, adminOptions);
     }
     
     if (step === 'COMPLETED') {
-        return salonBot.sendMessage(chatId, "Aapka appointment already confirmed hai! Agar aapko naya appointment book karna hai toh kripya 'Hi' likh kar bhejein. ✨");
+        return salonBot.sendMessage(chatId, "Aapka appointment already under process/confirmed hai! Naya appointment book karne ke liye kripya 'Hi' likh kar bhejein. ✨");
     }
 });
 
@@ -858,7 +960,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         sendAdminAlert(chatAdminNotification);
 
         try {
-            // FIXED: Using single dashboard URL api/whatsapp-leads for BOTH telegram and whatsapp so it syncs properly
             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', { 
                 client_name: cleanName, 
                 whatsapp_number: displayPhone, 

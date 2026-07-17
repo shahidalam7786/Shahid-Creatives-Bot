@@ -1172,3 +1172,4 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log("✅ Salon Telegram Bot Active!");
     console.log("✅ WhatsApp Webhook Active!");
 });
+// Test automation

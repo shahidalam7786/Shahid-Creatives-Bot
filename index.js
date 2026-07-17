@@ -7,21 +7,19 @@ const app = express();
 app.use(bodyParser.json());
 
 
-// 🚀 1. TELEGRAM BOT SETUP (INTEGRATED)
+// 🚀 1. TELEGRAM BOT SETUP (ORIGINAL SHAHID CREATIVES)
 // ==========================================
 const TELEGRAM_TOKEN = '8563313484:AAHo9aqVSETs4aXntUXn01yIuHN3OdzxTq8';
 const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: true });
 
-
 // 🛠️ FIX FOR 409 CONFLICT ERROR
 bot.on('polling_error', (error) => {
-    console.log("Telegram Polling Error (Ignored to prevent crash):", error.message);
+    console.log("Original Telegram Polling Error (Ignored to prevent crash):", error.message);
 });
 
 // Telegram - Handling User Inputs & Routing to Master Engine
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id.toString();
-    
     const text = msg.text;
 
     if (!text) return; // Ignore non-text messages (photos, etc.)
@@ -31,7 +29,91 @@ bot.on('message', async (msg) => {
 });
 
 // ==========================================
-// 🟢 2. WHATSAPP ENGINE & SERVER LOGIC (ORIGINAL CODE)
+// ✨ NEW: SALON AI VIRTUAL RECEPTIONIST BOT
+// ==========================================
+const SALON_TELEGRAM_TOKEN = '8602924285:AAGRgdN8F6pr5BhzCysFaM8uXoXNo93gyeY';
+const salonBot = new TelegramBot(SALON_TELEGRAM_TOKEN, { polling: true });
+
+salonBot.on('polling_error', (error) => {
+    console.log("Salon Bot Polling Error:", error.message);
+});
+
+// Lightweight memory for Salon Bot
+const salonSessions = {};
+
+salonBot.on('message', async (msg) => {
+    const chatId = msg.chat.id.toString();
+    const text = msg.text;
+
+    if (!text) return; 
+
+    const lowerText = text.toLowerCase();
+    const resetTriggers = ['hi', 'hello', 'hey', 'start', '/start', 'menu'];
+
+    // 1. GREETING
+    if (!salonSessions[chatId] || resetTriggers.includes(lowerText)) {
+        salonSessions[chatId] = { step: 'SERVICE_SELECTION' };
+        const greetingMsg = "Hello! Welcome to *Fit hair artist Unisex Family Salon*! ✨\n\nHum Mohali ke top-rated 4.9-star salon hain. 💇‍♀️\n\n🔥 *Current Special Offers (Valid for ANY LENGTH of hair):*\n🔹 Smoothing: ₹2499\n🔹 Keratin: ₹1999\n🔹 Botox: ₹2999\n🔹 Nanoplastia: ₹3999\n\nAap aaj kaunsi service dekh rahe hain? 💅";
+        return salonBot.sendMessage(chatId, greetingMsg, { parse_mode: "Markdown" });
+    }
+
+    const session = salonSessions[chatId];
+    const step = session.step;
+
+    // CONSTRAINTS: Redirect unrelated queries smoothly
+    const salonKeywords = ['smoothing', 'keratin', 'botox', 'nanoplastia', 'haircut', 'facial', 'pedicure', 'hair', 'salon', 'appointment', 'price', 'book', 'time', 'date', 'baje', 'am', 'pm'];
+    const isRelated = salonKeywords.some(kw => lowerText.includes(kw)) || step !== 'SERVICE_SELECTION';
+
+    if (!isRelated && step === 'SERVICE_SELECTION') {
+        return salonBot.sendMessage(chatId, "Sorry, hum yahan sirf salon bookings and services assist karte hain. Kya aap appointment book karna chahenge? 📅");
+    }
+
+    // 2. SERVICE SELECTION
+    if (step === 'SERVICE_SELECTION') {
+        session.service = text; 
+        session.step = 'COLLECT_DATE';
+        
+        let priceReply = "";
+        if (lowerText.includes('smoothing')) priceReply = "Excellent! Smoothing sirf ₹2499 mein available hai (Valid for Any Length).";
+        else if (lowerText.includes('keratin')) priceReply = "Excellent! Keratin sirf ₹1999 mein available hai (Valid for Any Length).";
+        else if (lowerText.includes('botox')) priceReply = "Excellent! Botox sirf ₹2999 mein available hai (Valid for Any Length).";
+        else if (lowerText.includes('nanoplastia')) priceReply = "Excellent! Nanoplastia sirf ₹3999 mein available hai (Valid for Any Length).";
+        else priceReply = "Great choice! Prices vary based on consultation, but we offer the best rates in Mohali. ✨";
+
+        return salonBot.sendMessage(chatId, `${priceReply}\n\nKripya apna preferred Date aur Time batayein (jaise: Kal sham 4 baje). 📅`);
+    }
+
+    // 3. BOOKING PROCESS - DATE & TIME
+    if (step === 'COLLECT_DATE') {
+        session.dateTime = text;
+        session.step = 'COLLECT_NAME';
+        return salonBot.sendMessage(chatId, "Perfect! Ab kripya apna shubh naam (Name) bataiye. ✨");
+    }
+
+    // 3. BOOKING PROCESS - NAME
+    if (step === 'COLLECT_NAME') {
+        session.name = text;
+        session.step = 'COLLECT_PHONE';
+        return salonBot.sendMessage(chatId, `Shukriya ${session.name}! Last step, apna Contact Number share karein taaki hum booking secure kar sakein. 📱`);
+    }
+
+    // 4. CONFIRMATION
+    if (step === 'COLLECT_PHONE') {
+        session.phone = text;
+        session.step = 'COMPLETED';
+        
+        const confirmMsg = `Thank you ${session.name}! Your appointment for ${session.service} is confirmed for ${session.dateTime}. Our team is excited to pamper you. See you at Phase 11, Mohali! ✨`;
+        return salonBot.sendMessage(chatId, confirmMsg);
+    }
+    
+    if (step === 'COMPLETED') {
+        return salonBot.sendMessage(chatId, "Aapka appointment already confirmed hai! Agar aapko naya appointment book karna hai toh kripya 'Hi' likh kar bhejein. ✨");
+    }
+});
+
+
+// ==========================================
+// 🟢 2. WHATSAPP ENGINE & SERVER LOGIC (ORIGINAL CODE UNTOUCHED)
 // ==========================================
 
 // 🟢 LIGHTWEIGHT IN-MEMORY STORAGE (Render Safe Ecosystem)
@@ -1086,6 +1168,7 @@ async function sendWhatsAppMessage(to, text) {
 const PORT = process.env.PORT || 10000; 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`ChatBot engine live on port ${PORT}`);
-    console.log("✅ Telegram Bot Active!");
+    console.log("✅ Original Telegram Bot Active!");
+    console.log("✅ Salon Telegram Bot Active!");
     console.log("✅ WhatsApp Webhook Active!");
 });

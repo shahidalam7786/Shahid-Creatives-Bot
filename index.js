@@ -17,6 +17,19 @@ bot.on('polling_error', (error) => {
     console.log("Original Telegram Polling Error (Ignored to prevent crash):", error.message);
 });
 
+// Telegram - Handling Callback Queries for Consultation Buttons
+bot.on('callback_query', async (query) => {
+    const chatId = query.message.chat.id.toString();
+    const data = query.data;
+
+    if (data.startsWith('cons_time_')) {
+        const selectedTime = data.replace('cons_time_', '');
+        // Route this to processUnifiedMessage as a text message so the existing flow works!
+        await processUnifiedMessage(chatId, `Custom Time: ${selectedTime}`, 'telegram');
+        bot.answerCallbackQuery(query.id);
+    }
+});
+
 // Telegram - Handling User Inputs & Routing to Master Engine
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id.toString();
@@ -167,7 +180,12 @@ salonBot.on('message', async (msg) => {
     // 🚨 ADMIN TIME UPDATE ROUTING
     if (chatId === SALON_ADMIN_CHAT_ID && salonAdminState) {
         const clientChatId = salonAdminState;
-        const updateMsg = `⚠️ **Update from Salon / Salon se Sandesh**\n\nMaafi chahte hain, aapka purana slot available nahi hai. Admin ne aapka naya samay tay kiya hai:\n\n🔄 **Updated Time/Message:**\n${text}\n\n🌐 _Powered by Shahid Creatives_`;
+        const clientLang = salonSessions[clientChatId] ? salonSessions[clientChatId].lang : 'HIN';
+        const isEn = clientLang === 'EN';
+
+        const updateMsg = isEn 
+            ? `⚠️ **Update from Salon**\n\nSorry, your previous slot is unavailable. The Admin has set a new time for you:\n\n🔄 **Updated Time/Message:**\n${text}\n\n🌐 _Powered by Shahid Creatives_`
+            : `⚠️ **Update from Salon / Salon se Sandesh**\n\nMaafi chahte hain, aapka purana slot available nahi hai. Admin ne aapka naya samay tay kiya hai:\n\n🔄 **Updated Time/Message:**\n${text}\n\n🌐 _Powered by Shahid Creatives_`;
         
         await salonBot.sendMessage(clientChatId, updateMsg, { parse_mode: 'Markdown' });
         await salonBot.sendMessage(chatId, `✅ Update sent successfully to Client!`, { parse_mode: 'Markdown' });
@@ -351,7 +369,7 @@ zamZamBot.on('callback_query', async (query) => {
             inline_keyboard: [
                 [{ text: "📅 Today", callback_data: "zz_date_today" }, { text: "📅 Tomorrow", callback_data: "zz_date_tomorrow" }]
             ]
-        };
+        }
         const dateMsg = isEn 
             ? `📅 *Appointment Booking:*\n\nPlease select your preferred **Date** first: 👇`
             : `📅 *Appointment Booking:*\n\nKripya pehle preferred **Date** select karein: 👇`;
@@ -406,7 +424,12 @@ zamZamBot.on('message', async (msg) => {
     // 🚨 ADMIN TIME UPDATE ROUTING (CLINIC)
     if (chatId === ZAMZAM_ADMIN_CHAT_ID && zamzamAdminState) {
         const clientChatId = zamzamAdminState;
-        const updateMsg = `⚠️ **Update from Clinic / Clinic se Sandesh**\n\nMaafi chahte hain, aapka purana slot available nahi hai. Doctor/Admin ne aapka naya samay tay kiya hai:\n\n🔄 **Updated Time/Message:**\n${text}\n\n🌐 _Powered by Shahid Creatives_`;
+        const clientLang = zamzamSessions[clientChatId] ? zamzamSessions[clientChatId].lang : 'HIN';
+        const isEn = clientLang === 'EN';
+
+        const updateMsg = isEn 
+            ? `⚠️ **Update from Clinic**\n\nSorry, your previous slot is unavailable. The Doctor/Admin has set a new time for you:\n\n🔄 **Updated Time/Message:**\n${text}\n\n🌐 _Powered by Shahid Creatives_`
+            : `⚠️ **Update from Clinic / Clinic se Sandesh**\n\nMaafi chahte hain, aapka purana slot available nahi hai. Doctor/Admin ne aapka naya samay tay kiya hai:\n\n🔄 **Updated Time/Message:**\n${text}\n\n🌐 _Powered by Shahid Creatives_`;
         
         await zamZamBot.sendMessage(clientChatId, updateMsg, { parse_mode: 'Markdown' });
         await zamZamBot.sendMessage(chatId, `✅ Update sent successfully to Patient!`, { parse_mode: 'Markdown' });
@@ -855,16 +878,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         } 
         else if (userText === '2' || userText.includes("consult") || userText.includes("book") || userText.includes("talk")) {
             userSessions[from].step = 'awaiting_consultation_slot';
-            const currentHourIST = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Kolkata"})).getHours();
-            
-            const optionA = (currentHourIST >= 17) ? "🅰️ *Kal Shaam 5:00 Baje*" : "🅰️ *Aaj Shaam 5:00 Baje*";
-            const optionB = (currentHourIST >= 17) ? "🅱️ *Parso Dopahar 12:00 Baje*" : "🅱️ *Kal Dopahar 12:00 Baje*";
-            const optionA_EN = (currentHourIST >= 17) ? "🅰️ *Tomorrow at 5:00 PM*" : "🅰️ *Today at 5:00 PM*";
-            const optionB_EN = (currentHourIST >= 17) ? "🅱️ *Day After Tomorrow at 12:00 PM*" : "🅱️ *Tomorrow at 12:00 PM*";
-
-            return sendUnifiedMessage(from, (userLang === 'EN') 
-                ? `👤 *Direct Consultation Setup:*\n\n${optionA_EN}\n${optionB_EN}\n🅲️ *Custom Time (Type preferred time below)*\n\n👉 Reply with A, B, or C!` 
-                : `👤 *Direct Consultation Setup:*\n\n${optionA}\n${optionB}\n🅲️ *Custom Time (Apna secure timing niche type karein)*\n\n👉 Kripya **A, B, ya C** likh kar reply kijiye!`, platform);
+            return triggerConsultationTimeMenu(from, userLang, platform);
         } else {
             return sendUnifiedMessage(from, isINRLead ? "❌ Kripya 1 ya 2 chunein." : "❌ Please reply with 1 or 2.", platform);
         }
@@ -1016,17 +1030,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         const positiveTriggers = ['yes', 'yeah', 'yup', 'haan', 'ji', 'help', 'ok', 'okay', 'sure', 'help chahiye', 'bataiye'];
         if (positiveTriggers.includes(userText) || userText.length >= 2) {
             userSessions[from].step = 'awaiting_consultation_slot';
-            const currentHourIST = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Kolkata"})).getHours();
-            
-            const optionA = (currentHourIST >= 17) ? "A) *Kal Shaam 5:00 Baje*" : "A) *Aaj Shaam 5:00 Baje*";
-            const optionB = (currentHourIST >= 17) ? "B) *Parso Dopahar 12:00 Baje*" : "B) *Kal Dopahar 12:00 Baje*";
-            const optionA_EN = (currentHourIST >= 17) ? "A) *Tomorrow at 5:00 PM*" : "A) *Today at 5:00 PM*";
-            const optionB_EN = (currentHourIST >= 17) ? "B) *Day After Tomorrow at 12:00 PM*" : "B) *Tomorrow at 12:00 PM*";
-
-            let nudgeResponse = (userLang === 'EN')
-                ? `Awesome! Let's get you connected for a free strategy call. Please choose your slot:\n\n${optionA_EN}\n${optionB_EN}\nC) *Custom Time (Type preferred time below)*\n\n👉 Reply with A, B, or C!`
-                : `Ji bilkul! Aaiye aapka free consulting strategy slot lock kar dete hain. Kripya niche se ek option choose karein:\n\n${optionA}\n${optionB}\nC) *Custom Time (Apna secure timing niche type karein)*\n\n👉 Kripya **A, B, ya C** likh kar reply kijiye!`;
-            return sendUnifiedMessage(from, nudgeResponse, platform);
+            return triggerConsultationTimeMenu(from, userLang, platform);
         }
     }
 
@@ -1055,7 +1059,6 @@ async function processUnifiedMessage(from, rawText, platform) {
 
     // 🎯 DEDICATED CAPTURE ROUTE FOR CUSTOM SCHEDULING TEXT
     if (currentStep === 'awaiting_custom_time_input') {
-        let cleanInputTime = userText.replace(/[cCc🅲🅲️\-\*•\(\)]/g, '').trim();
         userSessions[from].requestedSlot = rawText;
         
         if (!userSessions[from].savedPlan) userSessions[from].savedPlan = userSessions[from].projectScope;
@@ -1329,47 +1332,24 @@ async function processUnifiedMessage(from, rawText, platform) {
 
     // 🎯 STATE 6: CONSULTATION FIXED SLOTS ROUTING (INTEGRATED SMART DATA MEMORY)
     if (currentStep === 'awaiting_consultation_slot') {
-        const currentHourIST = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Kolkata"})).getHours();
-        let chosenOptionClean = userText.replace(/[\-\*•\(\)]/g, '').trim();
+        let chosenTime = rawText.replace('Custom Time: ', '').trim();
         
         // Capture existing details if they already passed them
         if (!userSessions[from].savedPlan) userSessions[from].savedPlan = userSessions[from].projectScope;
         const hasValidIdentity = userSessions[from].clientName && userSessions[from].clientName !== "Valued Client" && userSessions[from].clientEmail && userSessions[from].clientEmail !== "Not Provided" && userSessions[from].clientEmail !== "";
         
-        if (chosenOptionClean === 'a' || chosenOptionClean.includes("today") || chosenOptionClean.includes("5")) {
-            const dynamicSlotLabel = (currentHourIST >= 17) ? "Tomorrow at 5:00 PM" : "Today at 5:00 PM";
-            userSessions[from].requestedSlot = dynamicSlotLabel; 
-            sendAdminAlert(`🚨 *SLOT REQUEST!* 🚨\n📱 ${platform === 'telegram' ? 'TG-' : '+'}${from}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n⏰ Chosen Slot: ${dynamicSlotLabel}`);
-            
-            if (hasValidIdentity) {
-                userSessions[from].step = 'post_registration';
-                return finalizeConsultationLead(from, userSessions[from].savedPlan, null, platform);
-            } else {
-                userSessions[from].step = 'collect_consultation_identity'; 
-                let idPrompt = (userLang === 'EN') 
-                    ? (platform === 'telegram' ? "✍ *Please complete your profile:* Kindly reply with your *Full Name, Email Address, and Mobile Number* (separated by commas, e.g. John Doe, john@email.com, 9876543210)." : "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address* (separated by a comma, e.g. John Doe, john@email.com).")
-                    : (platform === 'telegram' ? "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID, aur Mobile Number* reply mein comma (,) lagakar ek sath bhejien (jaise: Sarfaraj Khan, sarfaraj@gmail.com, 9876543210)." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma (,) lagakar ek sath bhejien (jaise: Sarfaraj Khan, sarfaraj@gmail.com).");
-                return sendUnifiedMessage(from, idPrompt, platform);
-            }
-        } else if (chosenOptionClean === 'b' || chosenOptionClean.includes("tomorrow") || chosenOptionClean.includes("12")) {
-            const dynamicSlotLabel = (currentHourIST >= 17) ? "Day After Tomorrow at 12:00 PM" : "Tomorrow at 12:00 PM";
-            userSessions[from].requestedSlot = dynamicSlotLabel;
-            sendAdminAlert(`🚨 *SLOT REQUEST!* 🚨\n📱 ${platform === 'telegram' ? 'TG-' : '+'}${from}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n⏰ Chosen Slot: ${dynamicSlotLabel}`);
-            
-            if (hasValidIdentity) {
-                userSessions[from].step = 'post_registration';
-                return finalizeConsultationLead(from, userSessions[from].savedPlan, null, platform);
-            } else {
-                userSessions[from].step = 'collect_consultation_identity'; 
-                let idPrompt = (userLang === 'EN') 
-                    ? (platform === 'telegram' ? "✍ *Please complete your profile:* Kindly reply with your *Full Name, Email Address, and Mobile Number* (separated by commas, e.g. John Doe, john@email.com, 9876543210)." : "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address* (separated by a comma, e.g. John Doe, john@email.com).")
-                    : (platform === 'telegram' ? "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID, aur Mobile Number* reply mein comma (,) lagakar ek sath bhejien (jaise: Sarfaraj Khan, sarfaraj@gmail.com, 9876543210)." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma (,) lagakar ek sath bhejien (jaise: Sarfaraj Khan, sarfaraj@gmail.com).");
-                return sendUnifiedMessage(from, idPrompt, platform);
-            }
-        } else if (chosenOptionClean === 'c' || chosenOptionClean.includes("custom")) {
-            userSessions[from].step = 'awaiting_custom_time_input';
-            userSessions[from].skipIdentityCapture = hasValidIdentity; // Setup pass tag
-            return sendUnifiedMessage(from, (userLang === 'EN') ? "📅 *Custom Scheduling Activated!* \n\nPlease type your preferred **Date and Time** below (e.g., *Monday at 3 PM*):" : "📅 *Custom Scheduling Active!* \n\nKripya jis **Date aur Time** par aap call chahte hain, use niche type karke send karein (jaise: *Kal dopahar 3 baje*):", platform);
+        userSessions[from].requestedSlot = chosenTime; 
+        sendAdminAlert(`🚨 *SLOT REQUEST!* 🚨\n📱 ${platform === 'telegram' ? 'TG-' : '+'}${from}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n⏰ Chosen Slot: ${chosenTime}`);
+        
+        if (hasValidIdentity) {
+            userSessions[from].step = 'post_registration';
+            return finalizeConsultationLead(from, userSessions[from].savedPlan, null, platform);
+        } else {
+            userSessions[from].step = 'collect_consultation_identity'; 
+            let idPrompt = (userLang === 'EN') 
+                ? (platform === 'telegram' ? "✍ *Please complete your profile:* Kindly reply with your *Full Name, Email Address, and Mobile Number* (separated by commas, e.g. John Doe, john@email.com, 9876543210)." : "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address* (separated by a comma, e.g. John Doe, john@email.com).")
+                : (platform === 'telegram' ? "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID, aur Mobile Number* reply mein comma (,) lagakar ek sath bhejien (jaise: Sarfaraj Khan, sarfaraj@gmail.com, 9876543210)." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma (,) lagakar ek sath bhejien (jaise: Sarfaraj Khan, sarfaraj@gmail.com).");
+            return sendUnifiedMessage(from, idPrompt, platform);
         }
     }
 
@@ -1413,17 +1393,37 @@ async function processUnifiedMessage(from, rawText, platform) {
                 : "💳 *Direct Booking & Token System (₹999 Slot Lock)*\n\nAap jis project layout ke liye secure token register karna chahte hain, kripya uska option number bheinje:\n\n1️⃣ **Landing Page/Funnel** (Base: ₹12,300)\n2️⃣ **Business/Corporate Website** (Base: ₹25,500)\n3️⃣ **E-commerce Website** (Base: ₹47,500)\n4️⃣ **Custom Web Application / Software** (Base: ₹1,45,000+)", platform);
         } else if (targetMenuRoute === '5') {
             userSessions[from].step = 'awaiting_consultation_slot';
-            const currentHourIST = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Kolkata"})).getHours();
-            
-            const optionA = (currentHourIST >= 17) ? "🅰️ *Kal Shaam 5:00 Baje*" : "🅰️ *Aaj Shaam 5:00 Baje*";
-            const optionB = (currentHourIST >= 17) ? "🅱️ *Parso Dopahar 12:00 Baje*" : "🅱️ *Kal Dopahar 12:00 Baje*";
-            const optionA_EN = (currentHourIST >= 17) ? "🅰️ *Tomorrow at 5:00 PM*" : "🅰️ *Today at 5:00 PM*";
-            const optionB_EN = (currentHourIST >= 17) ? "🅱️ *Day After Tomorrow at 12:00 PM*" : "🅱️ *Tomorrow at 12:00 PM*";
-
-            return sendUnifiedMessage(from, (userLang === 'EN') 
-                ? `👤 *Direct Consultation with Shahid Creatives' Team:*\n\n${optionA_EN}\n${optionB_EN}\n🅲️ *Custom Time (Type preferred time below)*\n\n👉 Reply with A, B, or C!` 
-                : `👤 *Direct Consultation with Shahid Creatives ki Team:*\n\n${optionA}\n${optionB}\n🅲️ *Custom Time (Apna secure timing niche type karein)*\n\n👉 Kripya **A, B, ya C** likh kar reply kijiye!`, platform);
+            return triggerConsultationTimeMenu(from, userLang, platform);
         }
+    }
+}
+
+// 🎯 REUSABLE LOGIC: TRIGGERS THE TIME BUTTON MENU
+async function triggerConsultationTimeMenu(from, userLang, platform) {
+    const consMsgEN = `👤 *Direct Consultation Setup:*\n\nWorking Hours: 11:00 AM to 05:00 PM (Friday Off)\n\n👉 Please select your preferred time slot:`;
+    const consMsgHIN = `👤 *Direct Consultation Setup:*\n\nWorking Hours: 11:00 AM to 05:00 PM (Friday Off)\n\n👉 Kripya apna preferred time slot chunein:`;
+    
+    const timeOpts = {
+        reply_markup: {
+            inline_keyboard: [
+                [{ text: "⏰ 11:00 AM", callback_data: "cons_time_11:00 AM" }, { text: "⏰ 12:00 PM", callback_data: "cons_time_12:00 PM" }],
+                [{ text: "⏰ 01:00 PM", callback_data: "cons_time_01:00 PM" }, { text: "⏰ 02:00 PM", callback_data: "cons_time_02:00 PM" }],
+                [{ text: "⏰ 03:00 PM", callback_data: "cons_time_03:00 PM" }, { text: "⏰ 04:00 PM", callback_data: "cons_time_04:00 PM" }],
+                [{ text: "⏰ 05:00 PM", callback_data: "cons_time_05:00 PM" }]
+            ]
+        }
+    };
+
+    const waAppendEN = `\n\n_(Reply with a time, e.g., 11 AM, 12 PM, etc.)_`;
+    const waAppendHIN = `\n\n_(Reply mein ek time likhein, jaise: 11 AM, 12 PM, etc.)_`;
+
+    const msg = (userLang === 'EN') ? consMsgEN : consMsgHIN;
+    const waMsg = (userLang === 'EN') ? consMsgEN + waAppendEN : consMsgHIN + waAppendHIN;
+
+    if (platform === 'telegram') {
+        return sendUnifiedMessage(from, msg, platform, timeOpts);
+    } else {
+        return sendUnifiedMessage(from, waMsg, platform);
     }
 }
 
@@ -1475,7 +1475,7 @@ async function finalizeConsultationLead(from, textInput, res, platform) {
 }
 
 // 🛡️ OMNICHANNEL MESSAGE SENDER (Translates WhatsApp Formatting to Telegram)
-async function sendUnifiedMessage(to, text, platform) {
+async function sendUnifiedMessage(to, text, platform, options = null) {
     if (platform === 'telegram') {
         try {
             // Converts WhatsApp Bold (*text*) to Telegram HTML (<b>text</b>) to prevent parser crash
@@ -1483,7 +1483,12 @@ async function sendUnifiedMessage(to, text, platform) {
                 .replace(/\*(.*?)\*/g, '<b>$1</b>')
                 .replace(/_(.*?)_/g, '<i>$1</i>');
                 
-            await bot.sendMessage(to, htmlText, { parse_mode: "HTML" });
+            let tgOptions = { parse_mode: "HTML" };
+            if (options && options.reply_markup) {
+                tgOptions.reply_markup = options.reply_markup;
+            }
+                
+            await bot.sendMessage(to, htmlText, tgOptions);
         } catch (e) {
             await bot.sendMessage(to, text); // Absolute safe fallback
         }

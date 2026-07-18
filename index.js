@@ -70,12 +70,12 @@ salonBot.on('callback_query', async (query) => {
         const clientChatId = parts[3]; // user's chat id
 
         if (action === 'confirm') {
-            await salonBot.editMessageText(query.message.text + "\n\n✅ **STATUS: BOOKING CONFIRMED BY YOU**", { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
-            await salonBot.sendMessage(clientChatId, "🎉 **Great News!**\n\nYour appointment has been **CONFIRMED** by the salon. Hum aapka intezaar kar rahe hain! ✨\n\n🌐 _Powered by Shahid Creatives_", { parse_mode: "Markdown" });
+            await salonBot.editMessageText(query.message.text + "\n\n✅ *STATUS: BOOKING CONFIRMED BY YOU*", { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
+            await salonBot.sendMessage(clientChatId, "🎉 *Great News!*\n\nYour appointment has been *CONFIRMED* by the salon. Hum aapka intezaar kar rahe hain! ✨\n\n🌐 _Powered by Shahid Creatives_", { parse_mode: "Markdown" });
         } else if (action === 'resched') {
             salonAdminState = clientChatId; // Store which client admin is replying to
-            await salonBot.editMessageText(query.message.text + "\n\n🔄 **STATUS: PENDING TIME UPDATE**", { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
-            await salonBot.sendMessage(chatId, `⚠️ Aapne Client (${clientChatId}) ke liye **Reschedule** chuna hai.\n\n👉 **Kripya naya Time ya Message type karke bhejein:**\n_(Yeh message seedha client ko bhej diya jayega)_`, { parse_mode: "Markdown" });
+            await salonBot.editMessageText(query.message.text + "\n\n🔄 *STATUS: PENDING TIME UPDATE*", { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
+            await salonBot.sendMessage(chatId, `⚠️ Aapne Client (${clientChatId}) ke liye *Reschedule* chuna hai.\n\n👉 *Kripya naya Time ya Message type karke bhejein:*\n_(Yeh message seedha client ko bhej diya jayega)_`, { parse_mode: "Markdown" });
         }
         return salonBot.answerCallbackQuery(query.id);
     }
@@ -115,12 +115,12 @@ salonBot.on('callback_query', async (query) => {
         const isEn = session.lang === 'EN';
         
         let priceReply = "";
-        if (serviceChoice === 'smoothing') { priceReply = isEn ? "Excellent! **Smoothing** is available at just ₹2499 (Any Length)." : "Behtareen! **Smoothing** sirf ₹2499 mein available hai (Kisi bhi length ke liye)."; session.service = "Smoothing"; session.price = "₹2499"; }
-        else if (serviceChoice === 'keratin') { priceReply = isEn ? "Excellent! **Keratin** is available at just ₹1999 (Any Length)." : "Behtareen! **Keratin** sirf ₹1999 mein available hai (Kisi bhi length ke liye)."; session.service = "Keratin"; session.price = "₹1999"; }
-        else if (serviceChoice === 'botox') { priceReply = isEn ? "Excellent! **Botox** is available at just ₹2999 (Any Length)." : "Behtareen! **Botox** sirf ₹2999 mein available hai (Kisi bhi length ke liye)."; session.service = "Botox"; session.price = "₹2999"; }
-        else if (serviceChoice === 'nanoplastia') { priceReply = isEn ? "Excellent! **Nanoplastia** is available at just ₹3999 (Any Length)." : "Behtareen! **Nanoplastia** sirf ₹3999 mein available hai (Kisi bhi length ke liye)."; session.service = "Nanoplastia"; session.price = "₹3999"; }
+        if (serviceChoice === 'smoothing') { priceReply = isEn ? "Excellent! *Smoothing* is available at just ₹2499 (Any Length)." : "Behtareen! *Smoothing* sirf ₹2499 mein available hai (Kisi bhi length ke liye)."; session.service = "Smoothing"; session.price = "₹2499"; }
+        else if (serviceChoice === 'keratin') { priceReply = isEn ? "Excellent! *Keratin* is available at just ₹1999 (Any Length)." : "Behtareen! *Keratin* sirf ₹1999 mein available hai (Kisi bhi length ke liye)."; session.service = "Keratin"; session.price = "₹1999"; }
+        else if (serviceChoice === 'botox') { priceReply = isEn ? "Excellent! *Botox* is available at just ₹2999 (Any Length)." : "Behtareen! *Botox* sirf ₹2999 mein available hai (Kisi bhi length ke liye)."; session.service = "Botox"; session.price = "₹2999"; }
+        else if (serviceChoice === 'nanoplastia') { priceReply = isEn ? "Excellent! *Nanoplastia* is available at just ₹3999 (Any Length)." : "Behtareen! *Nanoplastia* sirf ₹3999 mein available hai (Kisi bhi length ke liye)."; session.service = "Nanoplastia"; session.price = "₹3999"; }
 
-        const datePrompt = isEn ? "\n\nPlease select your preferred **Date**: 👇" : "\n\nKripya apna preferred **Date** select karein: 👇";
+        const datePrompt = isEn ? "\n\nPlease select your preferred *Date*: 👇" : "\n\nKripya apna preferred *Date* select karein: 👇";
         const dateOptions = {
             inline_keyboard: [
                 [{ text: "📅 Today", callback_data: "date_today" }, { text: "📅 Tomorrow", callback_data: "date_tomorrow" }]
@@ -148,8 +148,8 @@ salonBot.on('callback_query', async (query) => {
         });
 
         const timePrompt = isEn 
-            ? `You have selected **${session.date}**.\n\nNow please choose your preferred **Time Slot**: 👇`
-            : `Aapne **${session.date}** select kiya hai.\n\nAb kripya apna preferred **Time Slot** choose karein: 👇`;
+            ? `You have selected *${session.date}*.\n\nNow please choose your preferred *Time Slot*: 👇`
+            : `Aapne *${session.date}* select kiya hai.\n\nAb kripya apna preferred *Time Slot* choose karein: 👇`;
 
         await salonBot.editMessageText(timePrompt, { chat_id: chatId, message_id: messageId, parse_mode: "Markdown", reply_markup: { inline_keyboard: timeButtons } });
     }
@@ -161,8 +161,8 @@ salonBot.on('callback_query', async (query) => {
         const isEn = session.lang === 'EN';
         
         const namePrompt = isEn
-            ? `Perfect! Your slot for **${session.dateTime}** has been noted.\n\nNow please type and send your good Name. ✨`
-            : `Perfect! Aapka slot **${session.dateTime}** ke liye note ho gaya hai.\n\nAb kripya apna shubh naam (Name) type karke bhejein. ✨`;
+            ? `Perfect! Your slot for *${session.dateTime}* has been noted.\n\nNow please type and send your good Name. ✨`
+            : `Perfect! Aapka slot *${session.dateTime}* ke liye note ho gaya hai.\n\nAb kripya apna shubh naam (Name) type karke bhejein. ✨`;
 
         await salonBot.editMessageText(namePrompt, { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
     }
@@ -184,8 +184,8 @@ salonBot.on('message', async (msg) => {
         const isEn = clientLang === 'EN';
 
         const updateMsg = isEn 
-            ? `⚠️ **Update from Salon**\n\nSorry, your previous slot is unavailable. The Admin has set a new time for you:\n\n🔄 **Updated Time/Message:**\n${text}\n\n🌐 _Powered by Shahid Creatives_`
-            : `⚠️ **Update from Salon / Salon se Sandesh**\n\nMaafi chahte hain, aapka purana slot available nahi hai. Admin ne aapka naya samay tay kiya hai:\n\n🔄 **Updated Time/Message:**\n${text}\n\n🌐 _Powered by Shahid Creatives_`;
+            ? `⚠️ *Update from Salon*\n\nSorry, your previous slot is unavailable. The Admin has set a new time for you:\n\n🔄 *Updated Time/Message:*\n${text}\n\n🌐 _Powered by Shahid Creatives_`
+            : `⚠️ *Update from Salon / Salon se Sandesh*\n\nMaafi chahte hain, aapka purana slot available nahi hai. Admin ne aapka naya samay tay kiya hai:\n\n🔄 *Updated Time/Message:*\n${text}\n\n🌐 _Powered by Shahid Creatives_`;
         
         await salonBot.sendMessage(clientChatId, updateMsg, { parse_mode: 'Markdown' });
         await salonBot.sendMessage(chatId, `✅ Update sent successfully to Client!`, { parse_mode: 'Markdown' });
@@ -200,7 +200,7 @@ salonBot.on('message', async (msg) => {
     if (!salonSessions[chatId] || resetTriggers.includes(lowerText)) {
         salonSessions[chatId] = { step: 'language_selection' };
         
-        const langPrompt = "👋 **Welcome! / Swagat hai!**\n\nPlease select your preferred language:\nKripya apni bhasha chunein:";
+        const langPrompt = "👋 *Welcome! / Swagat hai!*\n\nPlease select your preferred language:\nKripya apni bhasha chunein:";
         const langOpts = {
             parse_mode: "Markdown",
             reply_markup: {
@@ -244,14 +244,15 @@ salonBot.on('message', async (msg) => {
         session.phone = text; 
         session.step = 'COMPLETED';
         
+        // 🟢 PROFESSIONAL SALON RECEIPT FORMATTING
         const receiptMsg = isEn 
-            ? `🎉 **Booking Request Received!**\n\nThank you, **${session.name}**! We are excited to pamper you.\n\n🧾 **Booking Summary:**\n💇‍♀️ **Service:** ${session.service}\n💰 **Price:** ${session.price}\n📅 **Time:** ${session.dateTime}\n📞 **Contact:** ${session.phone}\n📍 **Location:** Phase 11, Mohali\n\n_Please wait, salon admin is confirming your slot..._ ✨\n\n🌐 _Powered by Shahid Creatives_`
-            : `🎉 **Booking Request Received!**\n\nThank you, **${session.name}**! Humari team aapko pamper karne ke liye excited hai.\n\n🧾 **Booking Details:**\n💇‍♀️ **Service:** ${session.service}\n💰 **Price:** ${session.price}\n📅 **Time:** ${session.dateTime}\n📞 **Contact:** ${session.phone}\n📍 **Location:** Phase 11, Mohali\n\n_Please wait, salon admin is confirming your slot..._ ✨\n\n🌐 _Powered by Shahid Creatives_`;
+            ? `🎉 *Booking Request Sent!*\n\nHello *${session.name}*, your appointment request has been successfully received.\n\n🧾 *Booking Summary:*\n📅 *Date & Time:* ${session.dateTime}\n💇‍♀️ *Service:* ${session.service}\n💰 *Price:* ${session.price}\n\n👤 *Client Details:*\n   ▫️ *Name:* ${session.name}\n   ▫️ *Contact:* ${session.phone}\n\n📍 *Location:* Phase 11, Mohali\n\n_Our team will contact you shortly for final confirmation._ ✨\n\n🌐 _Powered by Shahid Creatives_`
+            : `🎉 *Booking Request Sent!*\n\nNamaste *${session.name}*, aapki appointment request successfully receive ho gayi hai.\n\n🧾 *Booking Summary:*\n📅 *Date & Time:* ${session.dateTime}\n💇‍♀️ *Service:* ${session.service}\n💰 *Price:* ${session.price}\n\n👤 *Client Details:*\n   ▫️ *Name:* ${session.name}\n   ▫️ *Contact:* ${session.phone}\n\n📍 *Location:* Phase 11, Mohali\n\n_Humari team jald hi aapse final confirmation ke liye sampark karegi._ ✨\n\n🌐 _Powered by Shahid Creatives_`;
         
         salonBot.sendMessage(chatId, receiptMsg, { parse_mode: "Markdown", reply_markup: { remove_keyboard: true } });
 
         // 🚨 ALERT TO ADMIN (Includes TG Chat ID)
-        const adminAlertMsg = `🚨 **NEW SALON LEAD ALERT!** 🚨\n\n👤 **Name:** ${session.name}\n📱 **Number:** \`${session.phone}\`\n💬 **Telegram Chat ID:** ${chatId}\n💇‍♀️ **Service:** ${session.service} (${session.price})\n📅 **Slot Requested:** ${session.dateTime}\n\n*Action Required:*`;
+        const adminAlertMsg = `🚨 *NEW SALON LEAD ALERT!* 🚨\n\n👤 *Name:* ${session.name}\n📱 *Number:* \`${session.phone}\`\n💬 *Telegram Chat ID:* ${chatId}\n💇‍♀️ *Service:* ${session.service} (${session.price})\n📅 *Slot Requested:* ${session.dateTime}\n\n*Action Required:*`;
         
         const adminOptions = {
             parse_mode: "Markdown",
@@ -300,12 +301,12 @@ zamZamBot.on('callback_query', async (query) => {
         const clientChatId = parts[3]; 
 
         if (action === 'confirm') {
-            await zamZamBot.editMessageText(query.message.text + "\n\n✅ **STATUS: BOOKING CONFIRMED BY YOU**", { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
-            await zamZamBot.sendMessage(clientChatId, "🎉 **Great News!**\n\nAapki appointment Clinic dwara **CONFIRM** kar di gayi hai. Kripya samay par pahuchein! 🩺\n\n🌐 _Powered by Shahid Creatives_", { parse_mode: "Markdown" });
+            await zamZamBot.editMessageText(query.message.text + "\n\n✅ *STATUS: BOOKING CONFIRMED BY YOU*", { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
+            await zamZamBot.sendMessage(clientChatId, "🎉 *Great News!*\n\nAapki appointment Clinic dwara *CONFIRM* kar di gayi hai. Kripya samay par pahuchein! 🩺\n\n🌐 _Powered by Shahid Creatives_", { parse_mode: "Markdown" });
         } else if (action === 'resched') {
             zamzamAdminState = clientChatId; 
-            await zamZamBot.editMessageText(query.message.text + "\n\n🔄 **STATUS: PENDING TIME UPDATE**", { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
-            await zamZamBot.sendMessage(chatId, `⚠️ Aapne Patient (${clientChatId}) ke liye **Reschedule/Update Time** chuna hai.\n\n👉 **Kripya naya Time ya Message type karke bhejein:**\n_(Yeh message seedha patient ko bhej diya jayega)_`, { parse_mode: "Markdown" });
+            await zamZamBot.editMessageText(query.message.text + "\n\n🔄 *STATUS: PENDING TIME UPDATE*", { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
+            await zamZamBot.sendMessage(chatId, `⚠️ Aapne Patient (${clientChatId}) ke liye *Reschedule/Update Time* chuna hai.\n\n👉 *Kripya naya Time ya Message type karke bhejein:*\n_(Yeh message seedha patient ko bhej diya jayega)_`, { parse_mode: "Markdown" });
         }
         return zamZamBot.answerCallbackQuery(query.id);
     }
@@ -371,8 +372,8 @@ zamZamBot.on('callback_query', async (query) => {
             ]
         }
         const dateMsg = isEn 
-            ? `📅 *Appointment Booking:*\n\nPlease select your preferred **Date** first: 👇`
-            : `📅 *Appointment Booking:*\n\nKripya pehle preferred **Date** select karein: 👇`;
+            ? `📅 *Appointment Booking:*\n\nPlease select your preferred *Date* first: 👇`
+            : `📅 *Appointment Booking:*\n\nKripya pehle preferred *Date* select karein: 👇`;
         zamZamBot.sendMessage(chatId, dateMsg, { parse_mode: 'Markdown', reply_markup: dateOptions });
     }
     
@@ -393,8 +394,8 @@ zamZamBot.on('callback_query', async (query) => {
         });
 
         const timeMsg = isEn
-            ? `You selected **${session.date}**.\n\nNow please choose a clinic **Time Slot**: 👇`
-            : `Aapne **${session.date}** select kiya hai.\n\nAb kripya clinic ka preferred **Time Slot** choose karein: 👇`;
+            ? `You selected *${session.date}*.\n\nNow please choose a clinic *Time Slot*: 👇`
+            : `Aapne *${session.date}* select kiya hai.\n\nAb kripya clinic ka preferred *Time Slot* choose karein: 👇`;
         
         zamZamBot.editMessageText(timeMsg, { chat_id: chatId, message_id: messageId, parse_mode: "Markdown", reply_markup: { inline_keyboard: timeButtons } });
     }
@@ -404,9 +405,10 @@ zamZamBot.on('callback_query', async (query) => {
         session.time = data.replace('zz_time_', '');
         session.step = 'COLLECT_DETAILS';
         
+        // Updated to ask for Name, Age, Gender, Mobile specifically
         const detailsMsg = isEn 
-            ? `Perfect! Slot **${session.date} at ${session.time}** is noted.\n\nNow please type and send your *Name, Age, and Mobile Number* in one message.\n\n_(Example: Rahul, 30, 9876543210)_`
-            : `Perfect! Aapka slot **${session.date} at ${session.time}** select ho gaya hai.\n\nAb kripya apna *Naam, Umar (Age), aur Mobile Number* ek hi message mein type karke bhejein.\n\n_(Udaharan: Rahul, 30, 9876543210)_`;
+            ? `Perfect! Slot *${session.date} at ${session.time}* is noted.\n\nNow please type and send your *Name, Age, Gender, and Mobile Number* separated by commas.\n\n_(Example: Shahid Alam, 30, Male, 9097617846)_`
+            : `Perfect! Aapka slot *${session.date} at ${session.time}* select ho gaya hai.\n\nAb kripya apna *Naam, Umar (Age), Gender, aur Mobile Number* ek hi message mein type karke bhejein.\n\n_(Udaharan: Shahid Alam, 30, Male, 9097617846)_`;
 
         zamZamBot.editMessageText(detailsMsg, { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
     }
@@ -428,8 +430,8 @@ zamZamBot.on('message', async (msg) => {
         const isEn = clientLang === 'EN';
 
         const updateMsg = isEn 
-            ? `⚠️ **Update from Clinic**\n\nSorry, your previous slot is unavailable. The Doctor/Admin has set a new time for you:\n\n🔄 **Updated Time/Message:**\n${text}\n\n🌐 _Powered by Shahid Creatives_`
-            : `⚠️ **Update from Clinic / Clinic se Sandesh**\n\nMaafi chahte hain, aapka purana slot available nahi hai. Doctor/Admin ne aapka naya samay tay kiya hai:\n\n🔄 **Updated Time/Message:**\n${text}\n\n🌐 _Powered by Shahid Creatives_`;
+            ? `⚠️ *Update from Clinic*\n\nSorry, your previous slot is unavailable. The Doctor/Admin has set a new time for you:\n\n🔄 *Updated Time/Message:*\n${text}\n\n🌐 _Powered by Shahid Creatives_`
+            : `⚠️ *Update from Clinic / Clinic se Sandesh*\n\nMaafi chahte hain, aapka purana slot available nahi hai. Doctor/Admin ne aapka naya samay tay kiya hai:\n\n🔄 *Updated Time/Message:*\n${text}\n\n🌐 _Powered by Shahid Creatives_`;
         
         await zamZamBot.sendMessage(clientChatId, updateMsg, { parse_mode: 'Markdown' });
         await zamZamBot.sendMessage(chatId, `✅ Update sent successfully to Patient!`, { parse_mode: 'Markdown' });
@@ -443,7 +445,7 @@ zamZamBot.on('message', async (msg) => {
     // 🟢 HI/HELLO TRIGGER - SHOW LANGUAGE MENU
     if (!zamzamSessions[chatId] || triggers.includes(lowerText)) {
         zamzamSessions[chatId] = { step: 'language_selection' };
-        const langPrompt = "👋 **Welcome! / Swagat hai!**\n\nPlease select your preferred language:\nKripya apni bhasha chunein:";
+        const langPrompt = "👋 *Welcome! / Swagat hai!*\n\nPlease select your preferred language:\nKripya apni bhasha chunein:";
         const langOpts = {
             parse_mode: "Markdown",
             reply_markup: {
@@ -463,10 +465,24 @@ zamZamBot.on('message', async (msg) => {
         const userUsername = msg.from.username ? `@${msg.from.username}` : 'No Username';
         const isEn = session.lang === 'EN';
 
-        // 1. Professional Message to Client (🟢 BRANDING ADDED)
+        // 🟢 PROFESSIONAL CLINIC RECEIPT FORMATTING & SMART PARSING
+        let detailsArr = text.split(/[,|\n]+/).map(s => s.trim());
+        let formattedPatientDetails = "";
+        
+        if (detailsArr.length >= 3) {
+            formattedPatientDetails = `\n   ▫️ *Name:* ${detailsArr[0]}\n   ▫️ *Age:* ${detailsArr[1]}`;
+            if (detailsArr.length >= 4) {
+                 formattedPatientDetails += `\n   ▫️ *Gender:* ${detailsArr[2]}\n   ▫️ *Mobile:* ${detailsArr[3]}`;
+            } else {
+                 formattedPatientDetails += `\n   ▫️ *Mobile:* ${detailsArr[2]}`;
+            }
+        } else {
+            formattedPatientDetails = `\n   ▫️ *Info:* ${text}`;
+        }
+
         const clientReceipt = isEn 
-            ? `🎉 *Appointment Request Sent!*\n\nHello **${userName}**, your appointment request has been successfully received.\n\n🧾 *Booking Summary:*\n📅 *Date:* ${session.date}\n⏰ *Time:* ${session.time}\n👤 *Patient Details:* ${text}\n📍 *Location:* Zam Zam Clinic\n👨‍⚕️ *Doctor:* Dr. Munna Bengali\n\nOur team will contact you shortly for final confirmation. 🙏\n\n🌐 _Powered by Shahid Creatives_`
-            : `🎉 *Appointment Request Sent!*\n\nNamaste **${userName}**, aapki appointment request successfully receive ho gayi hai.\n\n🧾 *Booking Summary:*\n📅 *Date:* ${session.date}\n⏰ *Time:* ${session.time}\n👤 *Patient Details:* ${text}\n📍 *Location:* Zam Zam Clinic\n👨‍⚕️ *Doctor:* Dr. Munna Bengali\n\nHumari team jald hi aapse final confirmation ke liye sampark karegi. Kripya samay par clinic pahuchein. 🙏\n\n🌐 _Powered by Shahid Creatives_`;
+            ? `🎉 *Appointment Request Sent!*\n\nHello *${userName}*, your appointment request has been successfully received.\n\n🧾 *Booking Summary:*\n📅 *Date:* ${session.date}\n⏰ *Time:* ${session.time}\n👤 *Patient Details:*${formattedPatientDetails}\n💰 *Clinic Appoint Fee:* 500/- INR\n📍 *Location:* Zam Zam Clinic\n👨‍⚕️ *Doctor:* Dr. Munna Bengali\n\nOur team will contact you shortly for final confirmation. 🙏\n\n🌐 _Powered by Shahid Creatives_`
+            : `🎉 *Appointment Request Sent!*\n\nNamaste *${userName}*, aapki appointment request successfully receive ho gayi hai.\n\n🧾 *Booking Summary:*\n📅 *Date:* ${session.date}\n⏰ *Time:* ${session.time}\n👤 *Patient Details:*${formattedPatientDetails}\n💰 *Clinic Appoint Fee:* 500/- INR\n📍 *Location:* Zam Zam Clinic\n👨‍⚕️ *Doctor:* Dr. Munna Bengali\n\nHumari team jald hi aapse final confirmation ke liye sampark karegi. Kripya samay par clinic pahuchein. 🙏\n\n🌐 _Powered by Shahid Creatives_`;
 
         zamZamBot.sendMessage(chatId, clientReceipt, { parse_mode: 'Markdown' });
 

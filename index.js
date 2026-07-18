@@ -234,6 +234,102 @@ salonBot.on('message', async (msg) => {
 
 
 // ==========================================
+// ✨ NEW: ZAM ZAM CLINIC VIRTUAL RECEPTIONIST BOT (PREMIUM)
+// ==========================================
+const ZAMZAM_TELEGRAM_TOKEN = '8707737273:AAEIKAFSF4pxb3gKnbQTNZVxhwEKaYE_mE0';
+const zamZamBot = new TelegramBot(ZAMZAM_TELEGRAM_TOKEN, { polling: true });
+const ZAMZAM_ADMIN_CHAT_ID = '8885973325'; // 🚨 ADMIN CHAT ID SET HERE
+
+zamZamBot.on('polling_error', (error) => {
+    console.log("Zam Zam Bot Polling Error:", error.message);
+});
+
+// Lightweight memory for Zam Zam Bot
+const zamzamSessions = {};
+
+// 1. /start Command & Welcome Menu
+zamZamBot.onText(/\/start/, (msg) => {
+    const chatId = msg.chat.id.toString();
+    zamzamSessions[chatId] = null; // Reset state
+
+    const welcomeMessage = `👋 *Namaste! Zam Zam Clinic mein aapka swagat hai.*\n\n`
+                         + `Main aapka Virtual Assistant hoon. Yahan *Dr. Munna Bengali (General Physician)* dwara behtareen chikitsa di jati hai. 🩺\n\n`
+                         + `Kripya niche diye gaye options mein se chunein:`;
+
+    const options = {
+        parse_mode: 'Markdown',
+        reply_markup: {
+            inline_keyboard: [
+                [{ text: '📅 Book Appointment', callback_data: 'book' }],
+                [{ text: '🕒 Clinic Timings', callback_data: 'timings' }, { text: '📍 Location', callback_data: 'location' }],
+                [{ text: '🩺 Our Services', callback_data: 'services' }, { text: '📞 Contact', callback_data: 'contact' }],
+                [{ text: '🌐 Powered by Shahid Creatives', url: 'https://shahidcreatives.com' }] // Branding
+            ]
+        }
+    };
+
+    zamZamBot.sendMessage(chatId, welcomeMessage, options);
+});
+
+// 2. Handle Button Clicks (Callback Queries)
+zamZamBot.on('callback_query', (query) => {
+    const chatId = query.message.chat.id.toString();
+    const data = query.data;
+
+    if (data === 'timings') {
+        zamZamBot.sendMessage(chatId, `🕒 *Zam Zam Clinic - Timings*\n\n🌅 *Morning:* 8:00 AM - 2:00 PM\n🌆 *Evening:* 4:00 PM - 10:00 PM\n_Monday to Sunday_`, { parse_mode: 'Markdown' });
+    } 
+    else if (data === 'location') {
+        zamZamBot.sendMessage(chatId, `📍 *Zam Zam Clinic - Address*\n\nStreet Number 1, Wall Singh Nagar Rd, Barsal Nagar, Bal Singh Nagar, Ludhiana, Punjab 141007\n\n🗺️ *Map:* [View on Google Maps](https://maps.google.com/?q=Ludhiana+Punjab)`, { parse_mode: 'Markdown', disable_web_page_preview: true });
+    } 
+    else if (data === 'services') {
+        zamZamBot.sendMessage(chatId, `🩺 *Humari Medical Services*\n\n*Dr. Munna Bengali* (General Physician):\n🔹 General OPD (Sardi, Khasi, Bukhar)\n🔹 Blood Pressure (BP) & Sugar Checkup\n🔹 First Aid & Minor Injuries\n🔹 Pain Management`, { parse_mode: 'Markdown' });
+    } 
+    else if (data === 'contact') {
+        zamZamBot.sendMessage(chatId, `📞 *Contact & Support*\n\nKisi bhi jankari ya emergency ke liye aap sampark kar sakte hain:\n\n📱 *Help Line:* +91 XXXXXXXXXX`, { parse_mode: 'Markdown' });
+    } 
+    else if (data === 'book') {
+        // User state change to 'booking'
+        zamzamSessions[chatId] = 'booking';
+        zamZamBot.sendMessage(chatId, `📅 *Appointment Booking:*\n\nKripya apna *Naam, Umar (Age), aur Mobile Number* ek hi message mein type karke bhejein.\n\n_(Udaharan: Rahul, 30, 9876543210)_`, { parse_mode: 'Markdown' });
+    }
+
+    zamZamBot.answerCallbackQuery(query.id);
+});
+
+// 3. Handle Messages & Admin Alert Logic
+zamZamBot.on('message', (msg) => {
+    const chatId = msg.chat.id.toString();
+    const text = msg.text;
+
+    // Ignore commands like /start
+    if (!text || text.startsWith('/')) return;
+
+    // Agar user booking state mein hai
+    if (zamzamSessions[chatId] === 'booking') {
+        const userName = msg.from.first_name || 'User';
+        const userUsername = msg.from.username ? `@${msg.from.username}` : 'No Username';
+
+        // 1. User ko confirmation bhejein
+        zamZamBot.sendMessage(chatId, `✅ *Booking Request Sent!*\n\nAapki details admin ko bhej di gayi hain. Hum jaldi hi aapse sampark karenge. 🙏`, { parse_mode: 'Markdown' });
+
+        // 2. ADMIN KO ALERT BHEJEIN (To TG ID: 8885973325)
+        const adminAlertMsg = `🚨 *New Clinic Appointment Alert!* 🚨\n\n`
+                            + `👤 *Client Info:* ${userName} (${userUsername})\n`
+                            + `📝 *Details Provided:* ${text}\n`
+                            + `📅 *Date:* ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}\n\n`
+                            + `_Powered by shahidcreatives.com_`;
+
+        zamZamBot.sendMessage(ZAMZAM_ADMIN_CHAT_ID, adminAlertMsg, { parse_mode: 'Markdown' })
+            .catch((err) => console.error('Failed to send Zam Zam admin alert:', err));
+
+        // State reset karein
+        zamzamSessions[chatId] = null;
+    }
+});
+
+
+// ==========================================
 // 🟢 2. WHATSAPP ENGINE & SERVER LOGIC (ORIGINAL CODE UNTOUCHED)
 // ==========================================
 
@@ -1290,5 +1386,6 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`ChatBot engine live on port ${PORT}`);
     console.log("✅ Original Telegram Bot Active!");
     console.log("✅ Salon Telegram Bot Active!");
+    console.log("✅ Zam Zam Clinic Bot Active!");
     console.log("✅ WhatsApp Webhook Active!");
 });

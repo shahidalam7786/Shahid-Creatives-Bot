@@ -57,10 +57,10 @@ salonBot.on('callback_query', async (query) => {
 
         if (action === 'confirm') {
             await salonBot.editMessageText(query.message.text + "\n\n✅ **STATUS: BOOKING CONFIRMED BY YOU**", { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
-            await salonBot.sendMessage(clientChatId, "🎉 **Great News!**\n\nYour appointment has been **CONFIRMED** by the salon. Hum aapka intezaar kar rahe hain! ✨", { parse_mode: "Markdown" });
+            await salonBot.sendMessage(clientChatId, "🎉 **Great News!**\n\nYour appointment has been **CONFIRMED** by the salon. Hum aapka intezaar kar rahe hain! ✨\n\n🌐 _Powered by Shahid Creatives_", { parse_mode: "Markdown" });
         } else if (action === 'reject') {
             await salonBot.editMessageText(query.message.text + "\n\n❌ **STATUS: REJECTED / RESCHEDULED BY YOU**", { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
-            await salonBot.sendMessage(clientChatId, "⚠️ **Notice from Salon**\n\nMaafi chahte hain, aapka select kiya hua slot abhi full hai. Humari team aapse jald hi call par connect karke naya time set karegi. 🙏", { parse_mode: "Markdown" });
+            await salonBot.sendMessage(clientChatId, "⚠️ **Notice from Salon**\n\nMaafi chahte hain, aapka select kiya hua slot abhi full hai. Humari team aapse jald hi call par connect karke naya time set karegi. 🙏\n\n🌐 _Powered by Shahid Creatives_", { parse_mode: "Markdown" });
         }
         return salonBot.answerCallbackQuery(query.id);
     }
@@ -159,7 +159,8 @@ salonBot.on('message', async (msg) => {
                     [{ text: "🔹 Smoothing: ₹2499", callback_data: "srv_smoothing" }],
                     [{ text: "🔹 Keratin: ₹1999", callback_data: "srv_keratin" }],
                     [{ text: "🔹 Botox: ₹2999", callback_data: "srv_botox" }],
-                    [{ text: "🔹 Nanoplastia: ₹3999", callback_data: "srv_nanoplastia" }]
+                    [{ text: "🔹 Nanoplastia: ₹3999", callback_data: "srv_nanoplastia" }],
+                    [{ text: "🌐 Powered by Shahid Creatives", url: "https://shahidcreatives.com" }] // 🟢 BRANDING ADDED
                 ]
             }
         };
@@ -203,8 +204,8 @@ salonBot.on('message', async (msg) => {
         session.phone = text; // Captures actual typed number or shared contact
         session.step = 'COMPLETED';
         
-        // 🔹 Digital Receipt for User
-        const receiptMsg = `🎉 **Booking Request Received!**\n\nThank you, **${session.name}**! Humari team aapko pamper karne ke liye excited hai.\n\n🧾 **Booking Details:**\n💇‍♀️ **Service:** ${session.service}\n💰 **Price:** ${session.price}\n📅 **Time:** ${session.dateTime}\n📞 **Contact:** ${session.phone}\n📍 **Location:** Phase 11, Mohali\n\n_Please wait, salon admin is confirming your slot..._ ✨`;
+        // 🔹 Digital Receipt for User (🟢 BRANDING ADDED)
+        const receiptMsg = `🎉 **Booking Request Received!**\n\nThank you, **${session.name}**! Humari team aapko pamper karne ke liye excited hai.\n\n🧾 **Booking Details:**\n💇‍♀️ **Service:** ${session.service}\n💰 **Price:** ${session.price}\n📅 **Time:** ${session.dateTime}\n📞 **Contact:** ${session.phone}\n📍 **Location:** Phase 11, Mohali\n\n_Please wait, salon admin is confirming your slot..._ ✨\n\n🌐 _Powered by Shahid Creatives_`;
         
         salonBot.sendMessage(chatId, receiptMsg, { 
             parse_mode: "Markdown", 
@@ -250,7 +251,7 @@ const zamzamSessions = {};
 // 1. /start Command & Welcome Menu
 zamZamBot.onText(/\/start/, (msg) => {
     const chatId = msg.chat.id.toString();
-    zamzamSessions[chatId] = null; // Reset state
+    zamzamSessions[chatId] = { step: 'welcome' }; // Reset state
 
     const welcomeMessage = `👋 *Namaste! Zam Zam Clinic mein aapka swagat hai.*\n\n`
                          + `Main aapka Virtual Assistant hoon. Yahan *Dr. Munna Bengali (General Physician)* dwara behtareen chikitsa di jati hai. 🩺\n\n`
@@ -263,7 +264,7 @@ zamZamBot.onText(/\/start/, (msg) => {
                 [{ text: '📅 Book Appointment', callback_data: 'book' }],
                 [{ text: '🕒 Clinic Timings', callback_data: 'timings' }, { text: '📍 Location', callback_data: 'location' }],
                 [{ text: '🩺 Our Services', callback_data: 'services' }, { text: '📞 Contact', callback_data: 'contact' }],
-                [{ text: '🌐 Powered by Shahid Creatives', url: 'https://shahidcreatives.com' }] // Branding
+                [{ text: '🌐 Powered by Shahid Creatives', url: 'https://shahidcreatives.com' }] // 🟢 BRANDING
             ]
         }
     };
@@ -275,6 +276,7 @@ zamZamBot.onText(/\/start/, (msg) => {
 zamZamBot.on('callback_query', (query) => {
     const chatId = query.message.chat.id.toString();
     const data = query.data;
+    const messageId = query.message.message_id;
 
     if (data === 'timings') {
         zamZamBot.sendMessage(chatId, `🕒 *Zam Zam Clinic - Timings*\n\n🌅 *Morning:* 8:00 AM - 2:00 PM\n🌆 *Evening:* 4:00 PM - 10:00 PM\n_Monday to Sunday_`, { parse_mode: 'Markdown' });
@@ -288,16 +290,61 @@ zamZamBot.on('callback_query', (query) => {
     else if (data === 'contact') {
         zamZamBot.sendMessage(chatId, `📞 *Contact & Support*\n\nKisi bhi jankari ya emergency ke liye aap sampark kar sakte hain:\n\n📱 *Help Line:* +91 XXXXXXXXXX`, { parse_mode: 'Markdown' });
     } 
+    
+    // 🟢 DATE SELECTION FOR CLINIC
     else if (data === 'book') {
-        // User state change to 'booking'
-        zamzamSessions[chatId] = 'booking';
-        zamZamBot.sendMessage(chatId, `📅 *Appointment Booking:*\n\nKripya apna *Naam, Umar (Age), aur Mobile Number* ek hi message mein type karke bhejein.\n\n_(Udaharan: Rahul, 30, 9876543210)_`, { parse_mode: 'Markdown' });
+        zamzamSessions[chatId] = { step: 'AWAITING_DATE' };
+        const dateOptions = {
+            inline_keyboard: [
+                [{ text: "📅 Today", callback_data: "zz_date_today" }, { text: "📅 Tomorrow", callback_data: "zz_date_tomorrow" }]
+            ]
+        };
+        zamZamBot.sendMessage(chatId, `📅 *Appointment Booking:*\n\nKripya pehle preferred **Date** select karein: 👇`, { parse_mode: 'Markdown', reply_markup: dateOptions });
+    }
+    
+    // 🟢 TIME SELECTION FOR CLINIC
+    else if (data.startsWith('zz_date_')) {
+        if(!zamzamSessions[chatId]) zamzamSessions[chatId] = {};
+        zamzamSessions[chatId].date = data === 'zz_date_today' ? 'Today' : 'Tomorrow';
+        zamzamSessions[chatId].step = 'AWAITING_TIME';
+
+        // Clinic Timings (Morning & Evening)
+        const timeButtons = [];
+        let row = [];
+        const times = ["8:00 AM", "10:00 AM", "12:00 PM", "2:00 PM", "4:00 PM", "6:00 PM", "8:00 PM", "9:30 PM"];
+        times.forEach((time, index) => {
+            row.push({ text: `⏰ ${time}`, callback_data: `zz_time_${time}` });
+            if (row.length === 2 || index === times.length - 1) { // 2 buttons per row looks clean
+                timeButtons.push(row);
+                row = [];
+            }
+        });
+
+        zamZamBot.editMessageText(`Aapne **${zamzamSessions[chatId].date}** select kiya hai.\n\nAb kripya clinic ka preferred **Time Slot** choose karein: 👇`, {
+            chat_id: chatId,
+            message_id: messageId,
+            parse_mode: "Markdown",
+            reply_markup: { inline_keyboard: timeButtons }
+        });
+    }
+
+    // 🟢 DETAILS COLLECTION FOR CLINIC
+    else if (data.startsWith('zz_time_')) {
+        if(!zamzamSessions[chatId]) return zamZamBot.answerCallbackQuery(query.id);
+        zamzamSessions[chatId].time = data.replace('zz_time_', '');
+        zamzamSessions[chatId].step = 'COLLECT_DETAILS';
+        
+        zamZamBot.editMessageText(`Perfect! Aapka slot **${zamzamSessions[chatId].date} at ${zamzamSessions[chatId].time}** select ho gaya hai.\n\nAb kripya apna *Naam, Umar (Age), aur Mobile Number* ek hi message mein type karke bhejein.\n\n_(Udaharan: Rahul, 30, 9876543210)_`, {
+            chat_id: chatId,
+            message_id: messageId,
+            parse_mode: "Markdown"
+        });
     }
 
     zamZamBot.answerCallbackQuery(query.id);
 });
 
-// 3. Handle Messages & Admin Alert Logic
+// 3. Handle Messages & Admin Alert Logic (Zam Zam)
 zamZamBot.on('message', (msg) => {
     const chatId = msg.chat.id.toString();
     const text = msg.text;
@@ -305,26 +352,30 @@ zamZamBot.on('message', (msg) => {
     // Ignore commands like /start
     if (!text || text.startsWith('/')) return;
 
-    // Agar user booking state mein hai
-    if (zamzamSessions[chatId] === 'booking') {
+    // Agar user details collection state mein hai
+    if (zamzamSessions[chatId] && zamzamSessions[chatId].step === 'COLLECT_DETAILS') {
+        const session = zamzamSessions[chatId];
         const userName = msg.from.first_name || 'User';
         const userUsername = msg.from.username ? `@${msg.from.username}` : 'No Username';
 
-        // 1. User ko confirmation bhejein
-        zamZamBot.sendMessage(chatId, `✅ *Booking Request Sent!*\n\nAapki details admin ko bhej di gayi hain. Hum jaldi hi aapse sampark karenge. 🙏`, { parse_mode: 'Markdown' });
+        // 1. Professional Message to Client (🟢 BRANDING ADDED)
+        const clientReceipt = `🎉 *Appointment Booking Successful!*\n\nNamaste **${userName}**, aapki appointment request successfully receive ho gayi hai.\n\n🧾 *Booking Summary:*\n📅 *Date:* ${session.date}\n⏰ *Time:* ${session.time}\n👤 *Patient Details:* ${text}\n📍 *Location:* Zam Zam Clinic\n👨‍⚕️ *Doctor:* Dr. Munna Bengali\n\nHumari team jald hi aapse final confirmation ke liye sampark karegi. Kripya samay par clinic pahuchein. 🙏\n\n🌐 _Powered by Shahid Creatives_`;
+
+        zamZamBot.sendMessage(chatId, clientReceipt, { parse_mode: 'Markdown' });
 
         // 2. ADMIN KO ALERT BHEJEIN (To TG ID: 8885973325)
-        const adminAlertMsg = `🚨 *New Clinic Appointment Alert!* 🚨\n\n`
-                            + `👤 *Client Info:* ${userName} (${userUsername})\n`
-                            + `📝 *Details Provided:* ${text}\n`
-                            + `📅 *Date:* ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}\n\n`
-                            + `_Powered by shahidcreatives.com_`;
+        const adminAlertMsg = `🚨 *NEW CLINIC APPOINTMENT!* 🚨\n\n`
+                            + `👤 *Client Telegram:* ${userName} (${userUsername})\n`
+                            + `📅 *Date:* ${session.date}\n`
+                            + `⏰ *Time Slot:* ${session.time}\n`
+                            + `📝 *Patient Details:* ${text}\n\n`
+                            + `🌐 _Powered by Shahid Creatives_`;
 
         zamZamBot.sendMessage(ZAMZAM_ADMIN_CHAT_ID, adminAlertMsg, { parse_mode: 'Markdown' })
             .catch((err) => console.error('Failed to send Zam Zam admin alert:', err));
 
         // State reset karein
-        zamzamSessions[chatId] = null;
+        zamzamSessions[chatId] = { step: 'COMPLETED' };
     }
 });
 
@@ -680,8 +731,8 @@ async function processUnifiedMessage(from, rawText, platform) {
         if (userText === '1' || userText.includes("debit") || userText.includes("kat gaya")) {
             userSessions[from].step = 'completed';
             let waitMsg = isINRLead
-                ? `Dhanyawad *${session.clientName}*. 🙏 Agar amount debited ho gaya hai, to kripya 30 minute tak intezaar karein. System payment ko automatically verify kar raha hai. Agar koi dikkat hoti hai, to Shahid Creatives ki Team aapse jald hi manual verification ke liye sampark karegi. Aapka slot 100% safe hai! 🛡️`
-                : `Thank you, *${session.clientName}*. 🙏 If the amount has been debited, please wait for up to 30 minutes. Our system is auto-verifying the payment. If there's any issue, Shahid Creatives' Team will contact you shortly for manual verification. Your slot is perfectly safe! 🛡️`;
+                ? `Dhanyawad *${session.clientName}*. 🙏 Agar amount debited ho gaya hai, to kripya 30 minute tak intezaar karein. System payment ko automatically verify kar raha hai. Agar koi dikkat hoti hai, to Shahid Creatives ki Team aapse jald hi manual verification ke liye sampark karegi. Aapka slot 100% safe hai! 🛡️\n\n🌐 _Powered by Shahid Creatives_`
+                : `Thank you, *${session.clientName}*. 🙏 If the amount has been debited, please wait for up to 30 minutes. Our system is auto-verifying the payment. If there's any issue, Shahid Creatives' Team will contact you shortly for manual verification. Your slot is perfectly safe! 🛡️\n\n🌐 _Powered by Shahid Creatives_`;
             return sendUnifiedMessage(from, waitMsg, platform);
         } 
         else if (userText === '2' || userText.includes("fail") || userText.includes("cancel")) {
@@ -703,8 +754,8 @@ async function processUnifiedMessage(from, rawText, platform) {
         if (userText === '1' || userText.includes("pay") || userText.includes("retry") || userText.includes("dubara")) {
             userSessions[from].step = 'completed';
             let payReply = isINRLead
-                ? `Great! Apna slot secure karne ke liye kripya niche diye gaye link ka upyog karein:\n\n🔗 *Secure Checkout Portal:* ${payLink}\n\n_Note: Payment successful hote hi Shahid Creatives ki Team aapko turant contact karegi!_`
-                : `Great! Please use the secure link below to lock your slot:\n\n🔗 *Secure Checkout Portal:* ${payLink}\n\n_Note: Shahid Creatives' Team will reach out immediately upon confirmation!_`;
+                ? `Great! Apna slot secure karne ke liye kripya niche diye gaye link ka upyog karein:\n\n🔗 *Secure Checkout Portal:* ${payLink}\n\n_Note: Payment successful hote hi Shahid Creatives ki Team aapko turant contact karegi!_\n\n🌐 _Powered by Shahid Creatives_`
+                : `Great! Please use the secure link below to lock your slot:\n\n🔗 *Secure Checkout Portal:* ${payLink}\n\n_Note: Shahid Creatives' Team will reach out immediately upon confirmation!_\n\n🌐 _Powered by Shahid Creatives_`;
             return sendUnifiedMessage(from, payReply, platform);
         } 
         else if (userText === '2' || userText.includes("consult") || userText.includes("book") || userText.includes("talk")) {
@@ -728,8 +779,8 @@ async function processUnifiedMessage(from, rawText, platform) {
     if (courtesyTriggers.includes(userText)) {
         userSessions[from] = null; 
         let courtesyReply = (userLang === 'EN')
-            ? "You're most welcome! 👍 Glad to help. Type 'Menu' anytime if you want to explore again."
-            : "Aapka swagat hai! 👍 Milte hain aapse bohot jald discovery call par. Dobara shuru karne ke liye kisi bhi waqt 'Menu' ya 'Hi' bheinje.";
+            ? "You're most welcome! 👍 Glad to help. Type 'Menu' anytime if you want to explore again.\n\n🌐 _Powered by Shahid Creatives_"
+            : "Aapka swagat hai! 👍 Milte hain aapse bohot jald discovery call par. Dobara shuru karne ke liye kisi bhi waqt 'Menu' ya 'Hi' bheinje.\n\n🌐 _Powered by Shahid Creatives_";
         return sendUnifiedMessage(from, courtesyReply, platform);
     }
 
@@ -812,8 +863,8 @@ async function processUnifiedMessage(from, rawText, platform) {
             }
             
             let paidSuccessReply = (userSessions[from].lang === 'EN')
-                ? `Thank you *${clientName}*! 🙏 Your paid booking has been successfully verified on our dashboard.\n\n⚡ *Status:* **Project Consultation Stage Activated!**`
-                : `Mubarak ho *${clientName}*! 🙏 Aapki payment received data hamare dashboard par successfully sync ho gayi hai.\n\n⚡ *Status:* **Project Consultation Stage Active!**`;
+                ? `Thank you *${clientName}*! 🙏 Your paid booking has been successfully verified on our dashboard.\n\n⚡ *Status:* **Project Consultation Stage Activated!**\n\n🌐 _Powered by Shahid Creatives_`
+                : `Mubarak ho *${clientName}*! 🙏 Aapki payment received data hamare dashboard par successfully sync ho gayi hai.\n\n⚡ *Status:* **Project Consultation Stage Active!**\n\n🌐 _Powered by Shahid Creatives_`;
             return sendUnifiedMessage(from, paidSuccessReply, platform);
         }
 
@@ -1096,8 +1147,8 @@ async function processUnifiedMessage(from, rawText, platform) {
         const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${isUSDTrack ? 49 : 999}&currency=${isUSDTrack ? 'USD' : 'INR'}&totalPrice=${finalPayable}&name=${encodedName}&email=${encodedEmail}&phone=${displayPhone}&plan=${encodedPlan}&coupon=LAUNCH20`;
 
         let replyText = isUSDTrack 
-            ? `🎉 *Success!* Your requirement for *${userSessions[from].projectScope}* is formally registered.\n\n🔥 *URGENT:* A special **Flat 20% OFF (LAUNCH20)** coupon has been automatically applied to your base price! You are saving **$${savingAmount}** today. Lock your price now before the offer expires. (*T&C Apply*)\n\n*Next Steps:*\nTo initiate your project development slot, please process the standard booking token ($49 USD) via our secure gateway below:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Shahid Creatives' Team will reach out immediately upon confirmation!_`
-            : `🎉 *Mubarak ho!* Aapki requirement (*${userSessions[from].projectScope}*) successfully hamare dashboard mein register ho gayi hai.\n\n🔥 *URGENT:* Aapke base price par **Flat 20% OFF (LAUNCH20)** coupon automatically apply kar diya gaya hai! Aaj is deal par aap **₹${savingAmount}** bacha rahe hain. Offer expire hone se pehle apna price lock karein. (*T&C Apply*)\n\n*Next Steps:*\nApna slot pakka karne aur project shuru karne ke liye kripya apna Token Amount (₹999 INR) niche diye gaye secure payment link par clear karein:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Payment verify hote hi Shahid Creatives ki Team seedha aapse sampark karegi!_`;
+            ? `🎉 *Success!* Your requirement for *${userSessions[from].projectScope}* is formally registered.\n\n🔥 *URGENT:* A special **Flat 20% OFF (LAUNCH20)** coupon has been automatically applied to your base price! You are saving **$${savingAmount}** today. Lock your price now before the offer expires. (*T&C Apply*)\n\n*Next Steps:*\nTo initiate your project development slot, please process the standard booking token ($49 USD) via our secure gateway below:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Shahid Creatives' Team will reach out immediately upon confirmation!_\n\n🌐 _Powered by Shahid Creatives_`
+            : `🎉 *Mubarak ho!* Aapki requirement (*${userSessions[from].projectScope}*) successfully hamare dashboard mein register ho gayi hai.\n\n🔥 *URGENT:* Aapke base price par **Flat 20% OFF (LAUNCH20)** coupon automatically apply kar diya gaya hai! Aaj is deal par aap **₹${savingAmount}** bacha rahe hain. Offer expire hone se pehle apna price lock karein. (*T&C Apply*)\n\n*Next Steps:*\nApna slot pakka karne aur project shuru karne ke liye kripya apna Token Amount (₹999 INR) niche diye gaye secure payment link par clear karein:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Payment verify hote hi Shahid Creatives ki Team seedha aapse sampark karegi!_\n\n🌐 _Powered by Shahid Creatives_`;
         
         return sendUnifiedMessage(from, replyText, platform);
     }
@@ -1112,7 +1163,7 @@ async function processUnifiedMessage(from, rawText, platform) {
             return sendUnifiedMessage(from, requirementPrompt, platform);
         } else if (userText === '2' || userText.includes("discuss") || userText.includes("call") || userText.includes("strategy")) {
             userSessions[from].step = 'post_registration';
-            return sendUnifiedMessage(from, (userLang === 'EN') ? "👤 Perfect! Shahid Creatives' Team will connect with you shortly for a strategy sync call." : "👤 Perfect! Shahid Creatives ki Team bohot jald aapke sath strategy call par connect karegi. Get ready to launch! 🚀", platform);
+            return sendUnifiedMessage(from, (userLang === 'EN') ? "👤 Perfect! Shahid Creatives' Team will connect with you shortly for a strategy sync call.\n\n🌐 _Powered by Shahid Creatives_" : "👤 Perfect! Shahid Creatives ki Team bohot jald aapke sath strategy call par connect karegi. Get ready to launch! 🚀\n\n🌐 _Powered by Shahid Creatives_", platform);
         }
     }
 
@@ -1323,8 +1374,8 @@ async function finalizeConsultationLead(from, textInput, res, platform) {
     } catch (apiErr) { console.error("Dashboard parameters execution failure handler."); }
 
     let confirmationText = (userLang === 'EN')
-        ? `✅ *Booking Profile Complete!* \n\nThank you *${cleanName}*! Your specifications have been securely routed to Shahid Creatives. We will connect with you shortly! 🚀`
-        : `✅ *Booking Profile Complete!* \n\nThank you *${cleanName}*! Aapka requirement details Shahid Creatives ki Team tak pahunch gaya hai. Hamari team aapse jald hi raabta karegi! 🚀`;
+        ? `✅ *Booking Profile Complete!* \n\nThank you *${cleanName}*! Your specifications have been securely routed to Shahid Creatives. We will connect with you shortly! 🚀\n\n🌐 _Powered by Shahid Creatives_`
+        : `✅ *Booking Profile Complete!* \n\nThank you *${cleanName}*! Aapka requirement details Shahid Creatives ki Team tak pahunch gaya hai. Hamari team aapse jald hi raabta karegi! 🚀\n\n🌐 _Powered by Shahid Creatives_`;
     return sendUnifiedMessage(from, confirmationText, platform);
 }
 

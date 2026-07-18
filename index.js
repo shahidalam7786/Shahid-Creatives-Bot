@@ -42,116 +42,45 @@ salonBot.on('polling_error', (error) => {
 
 // Lightweight memory for Salon Bot
 const salonSessions = {};
+let salonAdminState = null; // To track admin reschedule targets
 
-// 🟢 ADMIN & USER INLINE BUTTON HANDLER
+// 🟢 ADMIN & USER INLINE BUTTON HANDLER (SALON)
 salonBot.on('callback_query', async (query) => {
     const chatId = query.message.chat.id.toString();
     const data = query.data;
     const messageId = query.message.message_id;
 
-    // 1. ADMIN ACTIONS (Confirm or Reject)
-    if (chatId === SALON_ADMIN_CHAT_ID && data.startsWith('admin_')) {
+    // 1. ADMIN ACTIONS (Confirm or Reschedule)
+    if (chatId === SALON_ADMIN_CHAT_ID && data.startsWith('admin_sln_')) {
         const parts = data.split('_'); 
-        const action = parts[1]; // confirm / reject
-        const clientChatId = parts[2]; // user's chat id
+        const action = parts[2]; // confirm / resched
+        const clientChatId = parts[3]; // user's chat id
 
         if (action === 'confirm') {
             await salonBot.editMessageText(query.message.text + "\n\n✅ **STATUS: BOOKING CONFIRMED BY YOU**", { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
             await salonBot.sendMessage(clientChatId, "🎉 **Great News!**\n\nYour appointment has been **CONFIRMED** by the salon. Hum aapka intezaar kar rahe hain! ✨\n\n🌐 _Powered by Shahid Creatives_", { parse_mode: "Markdown" });
-        } else if (action === 'reject') {
-            await salonBot.editMessageText(query.message.text + "\n\n❌ **STATUS: REJECTED / RESCHEDULED BY YOU**", { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
-            await salonBot.sendMessage(clientChatId, "⚠️ **Notice from Salon**\n\nMaafi chahte hain, aapka select kiya hua slot abhi full hai. Humari team aapse jald hi call par connect karke naya time set karegi. 🙏\n\n🌐 _Powered by Shahid Creatives_", { parse_mode: "Markdown" });
+        } else if (action === 'resched') {
+            salonAdminState = clientChatId; // Store which client admin is replying to
+            await salonBot.editMessageText(query.message.text + "\n\n🔄 **STATUS: PENDING TIME UPDATE**", { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
+            await salonBot.sendMessage(chatId, `⚠️ Aapne Client (${clientChatId}) ke liye **Reschedule** chuna hai.\n\n👉 **Kripya naya Time ya Message type karke bhejein:**\n_(Yeh message seedha client ko bhej diya jayega)_`, { parse_mode: "Markdown" });
         }
         return salonBot.answerCallbackQuery(query.id);
     }
 
-    // 2. USER ACTIONS (Service, Date & Time Buttons)
-    if (!salonSessions[chatId]) return salonBot.answerCallbackQuery(query.id);
+    // 2. USER ACTIONS (Language, Service, Date & Time Buttons)
+    if (!salonSessions[chatId]) salonSessions[chatId] = { step: 'start' };
     const session = salonSessions[chatId];
 
-    // SERVICE SELECTION BUTTONS
-    if (data.startsWith('srv_')) {
-        const serviceChoice = data.split('_')[1];
-        session.step = 'AWAITING_DATE_BTN';
-        
-        let priceReply = "";
-        if (serviceChoice === 'smoothing') { priceReply = "Excellent! **Smoothing** sirf ₹2499 mein available hai (Valid for Any Length)."; session.service = "Smoothing"; session.price = "₹2499"; }
-        else if (serviceChoice === 'keratin') { priceReply = "Excellent! **Keratin** sirf ₹1999 mein available hai (Valid for Any Length)."; session.service = "Keratin"; session.price = "₹1999"; }
-        else if (serviceChoice === 'botox') { priceReply = "Excellent! **Botox** sirf ₹2999 mein available hai (Valid for Any Length)."; session.service = "Botox"; session.price = "₹2999"; }
-        else if (serviceChoice === 'nanoplastia') { priceReply = "Excellent! **Nanoplastia** sirf ₹3999 mein available hai (Valid for Any Length)."; session.service = "Nanoplastia"; session.price = "₹3999"; }
+    // LANGUAGE SELECTION
+    if (data === 'sln_lang_en' || data === 'sln_lang_hin') {
+        session.lang = data === 'sln_lang_en' ? 'EN' : 'HIN';
+        session.step = 'AWAITING_SERVICE_BTN';
 
-        const dateOptions = {
-            inline_keyboard: [
-                [{ text: "📅 Today", callback_data: "date_today" }, { text: "📅 Tomorrow", callback_data: "date_tomorrow" }]
-            ]
-        };
-        
-        await salonBot.editMessageText(`${priceReply}\n\nKripya apna preferred **Date** select karein: 👇`, {
-            chat_id: chatId,
-            message_id: messageId,
-            parse_mode: "Markdown",
-            reply_markup: dateOptions
-        });
-    }
-    // DATE SELECTION BUTTONS
-    else if (data.startsWith('date_')) {
-        session.date = data === 'date_today' ? 'Today' : 'Tomorrow';
-        session.step = 'AWAITING_TIME_BTN';
+        const isEn = session.lang === 'EN';
+        const greetingMsg = isEn 
+            ? "Hello! Welcome to *Fit hair artist Unisex Family Salon*! ✨\n\nWe are Mohali's top-rated 4.9-star salon. 💇‍♀️\n\n🔥 *Current Special Offers (Valid for ANY LENGTH of hair):*\n\nWhich service are you looking for today? 👇\n*(Please click an option below)*"
+            : "Namaste! *Fit hair artist Unisex Family Salon* mein aapka swagat hai! ✨\n\nHum Mohali ke top-rated 4.9-star salon hain. 💇‍♀️\n\n🔥 *Current Special Offers (Valid for ANY LENGTH of hair):*\n\nAap aaj kaunsi service dekh rahe hain? 👇\n*(Kripya niche diye gaye options par click karein)*";
 
-        // Dynamic 9 AM to 8 PM Buttons Generation
-        const timeButtons = [];
-        let row = [];
-        const times = ["9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM", "6:00 PM", "7:00 PM", "8:00 PM"];
-        
-        times.forEach((time, index) => {
-            row.push({ text: `⏰ ${time}`, callback_data: `time_${time}` });
-            if (row.length === 3 || index === times.length - 1) { // 3 buttons per row
-                timeButtons.push(row);
-                row = [];
-            }
-        });
-
-        await salonBot.editMessageText(`Aapne **${session.date}** select kiya hai.\n\nAb kripya apna preferred **Time Slot** choose karein:`, {
-            chat_id: chatId,
-            message_id: messageId,
-            parse_mode: "Markdown",
-            reply_markup: { inline_keyboard: timeButtons }
-        });
-    }
-    // TIME SELECTION BUTTONS
-    else if (data.startsWith('time_')) {
-        session.time = data.replace('time_', '');
-        session.dateTime = `${session.date} at ${session.time}`;
-        session.step = 'COLLECT_NAME';
-        
-        await salonBot.editMessageText(`Perfect! Aapka slot **${session.dateTime}** ke liye note ho gaya hai.\n\nAb kripya apna shubh naam (Name) type karke bhejein. ✨`, {
-            chat_id: chatId,
-            message_id: messageId,
-            parse_mode: "Markdown"
-        });
-    }
-
-    salonBot.answerCallbackQuery(query.id);
-});
-
-// 🟢 USER MESSAGES ROUTER
-salonBot.on('message', async (msg) => {
-    const chatId = msg.chat.id.toString();
-    
-    // Support Contact Button & Normal Text
-    let text = msg.text;
-    if (msg.contact) { text = msg.contact.phone_number; }
-    if (!text) return; 
-
-    const lowerText = text.toLowerCase();
-    const resetTriggers = ['hi', 'hello', 'hey', 'start', '/start', 'menu'];
-
-    // 1. GREETING WITH SERVICE BUTTONS
-    if (!salonSessions[chatId] || resetTriggers.includes(lowerText)) {
-        salonSessions[chatId] = { step: 'AWAITING_SERVICE_BTN' };
-        
-        const greetingMsg = "Hello! Welcome to *Fit hair artist Unisex Family Salon*! ✨\n\nHum Mohali ke top-rated 4.9-star salon hain. 💇‍♀️\n\n🔥 *Current Special Offers (Valid for ANY LENGTH of hair):*\n\nAap aaj kaunsi service dekh rahe hain? 👇\n*(Kripya niche diye gaye options par click karein)*";
-        
         const serviceOpts = {
             parse_mode: "Markdown",
             reply_markup: {
@@ -160,67 +89,158 @@ salonBot.on('message', async (msg) => {
                     [{ text: "🔹 Keratin: ₹1999", callback_data: "srv_keratin" }],
                     [{ text: "🔹 Botox: ₹2999", callback_data: "srv_botox" }],
                     [{ text: "🔹 Nanoplastia: ₹3999", callback_data: "srv_nanoplastia" }],
-                    [{ text: "🌐 Powered by Shahid Creatives", url: "https://shahidcreatives.com" }] // 🟢 BRANDING ADDED
+                    [{ text: "🌐 Powered by Shahid Creatives", url: "https://shahidcreatives.com" }]
                 ]
             }
         };
-        return salonBot.sendMessage(chatId, greetingMsg, serviceOpts);
+        await salonBot.editMessageText(greetingMsg, { chat_id: chatId, message_id: messageId, parse_mode: "Markdown", reply_markup: serviceOpts.reply_markup });
+    }
+    // SERVICE SELECTION BUTTONS
+    else if (data.startsWith('srv_')) {
+        const serviceChoice = data.split('_')[1];
+        session.step = 'AWAITING_DATE_BTN';
+        const isEn = session.lang === 'EN';
+        
+        let priceReply = "";
+        if (serviceChoice === 'smoothing') { priceReply = isEn ? "Excellent! **Smoothing** is available at just ₹2499 (Any Length)." : "Behtareen! **Smoothing** sirf ₹2499 mein available hai (Kisi bhi length ke liye)."; session.service = "Smoothing"; session.price = "₹2499"; }
+        else if (serviceChoice === 'keratin') { priceReply = isEn ? "Excellent! **Keratin** is available at just ₹1999 (Any Length)." : "Behtareen! **Keratin** sirf ₹1999 mein available hai (Kisi bhi length ke liye)."; session.service = "Keratin"; session.price = "₹1999"; }
+        else if (serviceChoice === 'botox') { priceReply = isEn ? "Excellent! **Botox** is available at just ₹2999 (Any Length)." : "Behtareen! **Botox** sirf ₹2999 mein available hai (Kisi bhi length ke liye)."; session.service = "Botox"; session.price = "₹2999"; }
+        else if (serviceChoice === 'nanoplastia') { priceReply = isEn ? "Excellent! **Nanoplastia** is available at just ₹3999 (Any Length)." : "Behtareen! **Nanoplastia** sirf ₹3999 mein available hai (Kisi bhi length ke liye)."; session.service = "Nanoplastia"; session.price = "₹3999"; }
+
+        const datePrompt = isEn ? "\n\nPlease select your preferred **Date**: 👇" : "\n\nKripya apna preferred **Date** select karein: 👇";
+        const dateOptions = {
+            inline_keyboard: [
+                [{ text: "📅 Today", callback_data: "date_today" }, { text: "📅 Tomorrow", callback_data: "date_tomorrow" }]
+            ]
+        };
+        
+        await salonBot.editMessageText(`${priceReply}${datePrompt}`, { chat_id: chatId, message_id: messageId, parse_mode: "Markdown", reply_markup: dateOptions });
+    }
+    // DATE SELECTION BUTTONS
+    else if (data.startsWith('date_')) {
+        session.date = data === 'date_today' ? 'Today' : 'Tomorrow';
+        session.step = 'AWAITING_TIME_BTN';
+        const isEn = session.lang === 'EN';
+
+        const timeButtons = [];
+        let row = [];
+        const times = ["9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM", "6:00 PM", "7:00 PM", "8:00 PM"];
+        
+        times.forEach((time, index) => {
+            row.push({ text: `⏰ ${time}`, callback_data: `time_${time}` });
+            if (row.length === 3 || index === times.length - 1) { 
+                timeButtons.push(row);
+                row = [];
+            }
+        });
+
+        const timePrompt = isEn 
+            ? `You have selected **${session.date}**.\n\nNow please choose your preferred **Time Slot**: 👇`
+            : `Aapne **${session.date}** select kiya hai.\n\nAb kripya apna preferred **Time Slot** choose karein: 👇`;
+
+        await salonBot.editMessageText(timePrompt, { chat_id: chatId, message_id: messageId, parse_mode: "Markdown", reply_markup: { inline_keyboard: timeButtons } });
+    }
+    // TIME SELECTION BUTTONS
+    else if (data.startsWith('time_')) {
+        session.time = data.replace('time_', '');
+        session.dateTime = `${session.date} at ${session.time}`;
+        session.step = 'COLLECT_NAME';
+        const isEn = session.lang === 'EN';
+        
+        const namePrompt = isEn
+            ? `Perfect! Your slot for **${session.dateTime}** has been noted.\n\nNow please type and send your good Name. ✨`
+            : `Perfect! Aapka slot **${session.dateTime}** ke liye note ho gaya hai.\n\nAb kripya apna shubh naam (Name) type karke bhejein. ✨`;
+
+        await salonBot.editMessageText(namePrompt, { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
+    }
+
+    salonBot.answerCallbackQuery(query.id);
+});
+
+// 🟢 USER MESSAGES ROUTER (SALON)
+salonBot.on('message', async (msg) => {
+    const chatId = msg.chat.id.toString();
+    let text = msg.text;
+    if (msg.contact) { text = msg.contact.phone_number; }
+    if (!text) return; 
+
+    // 🚨 ADMIN TIME UPDATE ROUTING
+    if (chatId === SALON_ADMIN_CHAT_ID && salonAdminState) {
+        const clientChatId = salonAdminState;
+        const updateMsg = `⚠️ **Update from Salon / Salon se Sandesh**\n\nMaafi chahte hain, aapka purana slot available nahi hai. Admin ne aapka naya samay tay kiya hai:\n\n🔄 **Updated Time/Message:**\n${text}\n\n🌐 _Powered by Shahid Creatives_`;
+        
+        await salonBot.sendMessage(clientChatId, updateMsg, { parse_mode: 'Markdown' });
+        await salonBot.sendMessage(chatId, `✅ Update sent successfully to Client!`, { parse_mode: 'Markdown' });
+        salonAdminState = null; // Clear state
+        return;
+    }
+
+    const lowerText = text.toLowerCase();
+    const resetTriggers = ['hi', 'hello', 'hey', 'start', '/start', 'menu'];
+
+    // 1. LANGUAGE SELECTION TRIGGER
+    if (!salonSessions[chatId] || resetTriggers.includes(lowerText)) {
+        salonSessions[chatId] = { step: 'language_selection' };
+        
+        const langPrompt = "👋 **Welcome! / Swagat hai!**\n\nPlease select your preferred language:\nKripya apni bhasha chunein:";
+        const langOpts = {
+            parse_mode: "Markdown",
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: "🇬🇧 English", callback_data: "sln_lang_en" }, { text: "🇮🇳 Hinglish", callback_data: "sln_lang_hin" }]
+                ]
+            }
+        };
+        return salonBot.sendMessage(chatId, langPrompt, langOpts);
     }
 
     const session = salonSessions[chatId];
     const step = session.step;
+    const isEn = session.lang === 'EN';
 
-    // CONSTRAINTS: Intercept manual typing during button phases
-    if (step === 'AWAITING_SERVICE_BTN') {
-        return salonBot.sendMessage(chatId, "Kripya upar diye gaye buttons par click karke apni service select karein. 👇");
-    }
-    if (step === 'AWAITING_DATE_BTN') {
-        return salonBot.sendMessage(chatId, "Kripya Date select karne ke liye upar diye gaye (Today/Tomorrow) buttons par click karein. 👇");
-    }
-    if (step === 'AWAITING_TIME_BTN') {
-        return salonBot.sendMessage(chatId, "Kripya Time select karne ke liye upar diye gaye Time Slot buttons par click karein. 👇");
-    }
+    // CONSTRAINTS
+    if (step === 'AWAITING_SERVICE_BTN') return salonBot.sendMessage(chatId, isEn ? "Please select a service using the buttons above. 👇" : "Kripya upar diye gaye buttons par click karke apni service select karein. 👇");
+    if (step === 'AWAITING_DATE_BTN') return salonBot.sendMessage(chatId, isEn ? "Please click the Date buttons (Today/Tomorrow) above. 👇" : "Kripya Date select karne ke liye upar diye gaye (Today/Tomorrow) buttons par click karein. 👇");
+    if (step === 'AWAITING_TIME_BTN') return salonBot.sendMessage(chatId, isEn ? "Please select your Time Slot from the buttons above. 👇" : "Kripya Time select karne ke liye upar diye gaye Time Slot buttons par click karein. 👇");
 
     // 3. BOOKING PROCESS - NAME
     if (step === 'COLLECT_NAME') {
         session.name = text;
         session.step = 'COLLECT_PHONE';
         
-        // Telegram in-built Request Contact Button
         const contactOpts = {
             reply_markup: {
-                keyboard: [
-                    [{ text: "📱 Share Contact Number", request_contact: true }]
-                ],
-                one_time_keyboard: true,
-                resize_keyboard: true
+                keyboard: [[{ text: isEn ? "📱 Share Contact Number" : "📱 Contact Number Share Karein", request_contact: true }]],
+                one_time_keyboard: true, resize_keyboard: true
             }
         };
-        return salonBot.sendMessage(chatId, `Shukriya ${session.name}! Last step, apna verified Contact Number share karne ke liye niche **"📱 Share Contact Number"** button par click karein. 👇`, contactOpts);
+        const phonePrompt = isEn 
+            ? `Thank you ${session.name}! Last step, please click the button below to share your verified Contact Number. 👇`
+            : `Shukriya ${session.name}! Last step, apna verified Contact Number share karne ke liye niche button par click karein. 👇`;
+
+        return salonBot.sendMessage(chatId, phonePrompt, contactOpts);
     }
 
     // 4. CONFIRMATION & ADMIN ALERT ENGINE
     if (step === 'COLLECT_PHONE') {
-        session.phone = text; // Captures actual typed number or shared contact
+        session.phone = text; 
         session.step = 'COMPLETED';
         
-        // 🔹 Digital Receipt for User (🟢 BRANDING ADDED)
-        const receiptMsg = `🎉 **Booking Request Received!**\n\nThank you, **${session.name}**! Humari team aapko pamper karne ke liye excited hai.\n\n🧾 **Booking Details:**\n💇‍♀️ **Service:** ${session.service}\n💰 **Price:** ${session.price}\n📅 **Time:** ${session.dateTime}\n📞 **Contact:** ${session.phone}\n📍 **Location:** Phase 11, Mohali\n\n_Please wait, salon admin is confirming your slot..._ ✨\n\n🌐 _Powered by Shahid Creatives_`;
+        const receiptMsg = isEn 
+            ? `🎉 **Booking Request Received!**\n\nThank you, **${session.name}**! We are excited to pamper you.\n\n🧾 **Booking Summary:**\n💇‍♀️ **Service:** ${session.service}\n💰 **Price:** ${session.price}\n📅 **Time:** ${session.dateTime}\n📞 **Contact:** ${session.phone}\n📍 **Location:** Phase 11, Mohali\n\n_Please wait, salon admin is confirming your slot..._ ✨\n\n🌐 _Powered by Shahid Creatives_`
+            : `🎉 **Booking Request Received!**\n\nThank you, **${session.name}**! Humari team aapko pamper karne ke liye excited hai.\n\n🧾 **Booking Details:**\n💇‍♀️ **Service:** ${session.service}\n💰 **Price:** ${session.price}\n📅 **Time:** ${session.dateTime}\n📞 **Contact:** ${session.phone}\n📍 **Location:** Phase 11, Mohali\n\n_Please wait, salon admin is confirming your slot..._ ✨\n\n🌐 _Powered by Shahid Creatives_`;
         
-        salonBot.sendMessage(chatId, receiptMsg, { 
-            parse_mode: "Markdown", 
-            reply_markup: { remove_keyboard: true } // Removes the contact button cleanly
-        });
+        salonBot.sendMessage(chatId, receiptMsg, { parse_mode: "Markdown", reply_markup: { remove_keyboard: true } });
 
-        // 🚨 Instant Alert to Admin with Control Buttons
-        const adminAlertMsg = `🚨 **NEW SALON LEAD ALERT!** 🚨\n\n👤 **Name:** ${session.name}\n📱 **Number:** \`${session.phone}\`\n💇‍♀️ **Service:** ${session.service} (${session.price})\n📅 **Slot Requested:** ${session.dateTime}\n\n*Action Required:*`;
+        // 🚨 ALERT TO ADMIN (Includes TG Chat ID)
+        const adminAlertMsg = `🚨 **NEW SALON LEAD ALERT!** 🚨\n\n👤 **Name:** ${session.name}\n📱 **Number:** \`${session.phone}\`\n💬 **Telegram Chat ID:** ${chatId}\n💇‍♀️ **Service:** ${session.service} (${session.price})\n📅 **Slot Requested:** ${session.dateTime}\n\n*Action Required:*`;
         
         const adminOptions = {
             parse_mode: "Markdown",
             reply_markup: {
                 inline_keyboard: [
-                    [{ text: "✅ Confirm Booking", callback_data: `admin_confirm_${chatId}` }],
-                    [{ text: "❌ Slot Full / Reschedule", callback_data: `admin_reject_${chatId}` }]
+                    [{ text: "✅ Confirm Booking", callback_data: `admin_sln_confirm_${chatId}` }],
+                    [{ text: "🔄 Reschedule / Update Time", callback_data: `admin_sln_resched_${chatId}` }]
                 ]
             }
         };
@@ -229,7 +249,7 @@ salonBot.on('message', async (msg) => {
     }
     
     if (step === 'COMPLETED') {
-        return salonBot.sendMessage(chatId, "Aapka appointment already under process/confirmed hai! Naya appointment book karne ke liye kripya 'Hi' likh kar bhejein. ✨");
+        return salonBot.sendMessage(chatId, isEn ? "Your appointment is already processed! Type 'Hi' to start over. ✨" : "Aapka appointment process ho chuka hai! Naya book karne ke liye 'Hi' bhejein. ✨");
     }
 });
 
@@ -247,135 +267,210 @@ zamZamBot.on('polling_error', (error) => {
 
 // Lightweight memory for Zam Zam Bot
 const zamzamSessions = {};
+let zamzamAdminState = null; // To track admin reschedule targets
 
-// 1. /start Command & Welcome Menu
-zamZamBot.onText(/\/start/, (msg) => {
-    const chatId = msg.chat.id.toString();
-    zamzamSessions[chatId] = { step: 'welcome' }; // Reset state
-
-    const welcomeMessage = `👋 *Namaste! Zam Zam Clinic mein aapka swagat hai.*\n\n`
-                         + `Main aapka Virtual Assistant hoon. Yahan *Dr. Munna Bengali (General Physician)* dwara behtareen chikitsa di jati hai. 🩺\n\n`
-                         + `Kripya niche diye gaye options mein se chunein:`;
-
-    const options = {
-        parse_mode: 'Markdown',
-        reply_markup: {
-            inline_keyboard: [
-                [{ text: '📅 Book Appointment', callback_data: 'book' }],
-                [{ text: '🕒 Clinic Timings', callback_data: 'timings' }, { text: '📍 Location', callback_data: 'location' }],
-                [{ text: '🩺 Our Services', callback_data: 'services' }, { text: '📞 Contact', callback_data: 'contact' }],
-                [{ text: '🌐 Powered by Shahid Creatives', url: 'https://shahidcreatives.com' }] // 🟢 BRANDING
-            ]
-        }
-    };
-
-    zamZamBot.sendMessage(chatId, welcomeMessage, options);
-});
-
-// 2. Handle Button Clicks (Callback Queries)
-zamZamBot.on('callback_query', (query) => {
+// 1. Handle Button Clicks (Callback Queries)
+zamZamBot.on('callback_query', async (query) => {
     const chatId = query.message.chat.id.toString();
     const data = query.data;
     const messageId = query.message.message_id;
 
-    if (data === 'timings') {
-        zamZamBot.sendMessage(chatId, `🕒 *Zam Zam Clinic - Timings*\n\n🌅 *Morning:* 8:00 AM - 2:00 PM\n🌆 *Evening:* 4:00 PM - 10:00 PM\n_Monday to Sunday_`, { parse_mode: 'Markdown' });
+    // 🚨 ADMIN ACTIONS (Confirm or Reschedule)
+    if (chatId === ZAMZAM_ADMIN_CHAT_ID && data.startsWith('admin_zz_')) {
+        const parts = data.split('_'); 
+        const action = parts[2]; // confirm / resched
+        const clientChatId = parts[3]; 
+
+        if (action === 'confirm') {
+            await zamZamBot.editMessageText(query.message.text + "\n\n✅ **STATUS: BOOKING CONFIRMED BY YOU**", { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
+            await zamZamBot.sendMessage(clientChatId, "🎉 **Great News!**\n\nAapki appointment Clinic dwara **CONFIRM** kar di gayi hai. Kripya samay par pahuchein! 🩺\n\n🌐 _Powered by Shahid Creatives_", { parse_mode: "Markdown" });
+        } else if (action === 'resched') {
+            zamzamAdminState = clientChatId; 
+            await zamZamBot.editMessageText(query.message.text + "\n\n🔄 **STATUS: PENDING TIME UPDATE**", { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
+            await zamZamBot.sendMessage(chatId, `⚠️ Aapne Patient (${clientChatId}) ke liye **Reschedule/Update Time** chuna hai.\n\n👉 **Kripya naya Time ya Message type karke bhejein:**\n_(Yeh message seedha patient ko bhej diya jayega)_`, { parse_mode: "Markdown" });
+        }
+        return zamZamBot.answerCallbackQuery(query.id);
+    }
+
+    if (!zamzamSessions[chatId]) zamzamSessions[chatId] = { step: 'start', lang: 'HIN' };
+    const session = zamzamSessions[chatId];
+    const isEn = session.lang === 'EN';
+
+    // 🟢 LANGUAGE SET & SHOW WELCOME
+    if (data === 'zz_lang_en' || data === 'zz_lang_hin') {
+        session.lang = data === 'zz_lang_en' ? 'EN' : 'HIN';
+        const updatedIsEn = session.lang === 'EN';
+
+        const welcomeMessage = updatedIsEn 
+            ? `👋 *Hello! Welcome to Zam Zam Clinic.*\n\nI am your Virtual Assistant. We offer the best medical care by *Dr. Munna Bengali (General Physician)*. 🩺\n\nPlease select an option below:`
+            : `👋 *Namaste! Zam Zam Clinic mein aapka swagat hai.*\n\nMain aapka Virtual Assistant hoon. Yahan *Dr. Munna Bengali (General Physician)* dwara behtareen chikitsa di jati hai. 🩺\n\nKripya niche diye gaye options mein se chunein:`;
+
+        const options = {
+            parse_mode: 'Markdown',
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: updatedIsEn ? '📅 Book Appointment' : '📅 Book Appointment', callback_data: 'book' }],
+                    [{ text: updatedIsEn ? '🕒 Clinic Timings' : '🕒 Clinic Timings', callback_data: 'timings' }, { text: updatedIsEn ? '📍 Location' : '📍 Location', callback_data: 'location' }],
+                    [{ text: updatedIsEn ? '🩺 Our Services' : '🩺 Our Services', callback_data: 'services' }, { text: updatedIsEn ? '📞 Contact' : '📞 Contact', callback_data: 'contact' }],
+                    [{ text: '🌐 Powered by Shahid Creatives', url: 'https://shahidcreatives.com' }]
+                ]
+            }
+        };
+        await zamZamBot.editMessageText(welcomeMessage, { chat_id: chatId, message_id: messageId, parse_mode: 'Markdown', reply_markup: options.reply_markup });
+    }
+    // 🟢 MENUS
+    else if (data === 'timings') {
+        const timingMsg = isEn 
+            ? `🕒 *Zam Zam Clinic - Timings*\n\n🌅 *Morning:* 8:00 AM - 2:00 PM\n🌆 *Evening:* 4:00 PM - 10:00 PM\n_Monday to Sunday_`
+            : `🕒 *Zam Zam Clinic - Timings*\n\n🌅 *Subah:* 8:00 AM se 2:00 PM\n🌆 *Shaam:* 4:00 PM se 10:00 PM\n_Monday to Sunday_`;
+        zamZamBot.sendMessage(chatId, timingMsg, { parse_mode: 'Markdown' });
     } 
     else if (data === 'location') {
-        zamZamBot.sendMessage(chatId, `📍 *Zam Zam Clinic - Address*\n\nStreet Number 1, Wall Singh Nagar Rd, Barsal Nagar, Bal Singh Nagar, Ludhiana, Punjab 141007\n\n🗺️ *Map:* [View on Google Maps](https://maps.google.com/?q=Ludhiana+Punjab)`, { parse_mode: 'Markdown', disable_web_page_preview: true });
+        const locMsg = isEn 
+            ? `📍 *Zam Zam Clinic - Address*\n\nStreet Number 1, Wall Singh Nagar Rd, Barsal Nagar, Bal Singh Nagar, Ludhiana, Punjab 141007\n\n🗺️ *Map:* [View on Google Maps](https://maps.google.com/?q=Ludhiana+Punjab)`
+            : `📍 *Zam Zam Clinic - Address*\n\nStreet Number 1, Wall Singh Nagar Rd, Barsal Nagar, Bal Singh Nagar, Ludhiana, Punjab 141007\n\n🗺️ *Map:* [Google Maps Par Dekhein](https://maps.google.com/?q=Ludhiana+Punjab)`;
+        zamZamBot.sendMessage(chatId, locMsg, { parse_mode: 'Markdown', disable_web_page_preview: true });
     } 
     else if (data === 'services') {
-        zamZamBot.sendMessage(chatId, `🩺 *Humari Medical Services*\n\n*Dr. Munna Bengali* (General Physician):\n🔹 General OPD (Sardi, Khasi, Bukhar)\n🔹 Blood Pressure (BP) & Sugar Checkup\n🔹 First Aid & Minor Injuries\n🔹 Pain Management`, { parse_mode: 'Markdown' });
+        const srvMsg = isEn 
+            ? `🩺 *Our Medical Services*\n\n*Dr. Munna Bengali* (General Physician):\n🔹 General OPD (Cold, Cough, Fever)\n🔹 Blood Pressure (BP) & Sugar Checkup\n🔹 First Aid & Minor Injuries\n🔹 Pain Management`
+            : `🩺 *Humari Medical Services*\n\n*Dr. Munna Bengali* (General Physician):\n🔹 General OPD (Sardi, Khasi, Bukhar)\n🔹 Blood Pressure (BP) & Sugar Checkup\n🔹 First Aid & Minor Injuries\n🔹 Pain Management`;
+        zamZamBot.sendMessage(chatId, srvMsg, { parse_mode: 'Markdown' });
     } 
     else if (data === 'contact') {
-        zamZamBot.sendMessage(chatId, `📞 *Contact & Support*\n\nKisi bhi jankari ya emergency ke liye aap sampark kar sakte hain:\n\n📱 *Help Line:* +91 XXXXXXXXXX`, { parse_mode: 'Markdown' });
+        const contactMsg = isEn 
+            ? `📞 *Contact & Support*\n\nFor any info or emergency, contact us:\n\n📱 *Help Line:* +91 XXXXXXXXXX`
+            : `📞 *Contact & Support*\n\nKisi bhi jankari ya emergency ke liye aap sampark kar sakte hain:\n\n📱 *Help Line:* +91 XXXXXXXXXX`;
+        zamZamBot.sendMessage(chatId, contactMsg, { parse_mode: 'Markdown' });
     } 
     
     // 🟢 DATE SELECTION FOR CLINIC
     else if (data === 'book') {
-        zamzamSessions[chatId] = { step: 'AWAITING_DATE' };
+        session.step = 'AWAITING_DATE';
         const dateOptions = {
             inline_keyboard: [
                 [{ text: "📅 Today", callback_data: "zz_date_today" }, { text: "📅 Tomorrow", callback_data: "zz_date_tomorrow" }]
             ]
         };
-        zamZamBot.sendMessage(chatId, `📅 *Appointment Booking:*\n\nKripya pehle preferred **Date** select karein: 👇`, { parse_mode: 'Markdown', reply_markup: dateOptions });
+        const dateMsg = isEn 
+            ? `📅 *Appointment Booking:*\n\nPlease select your preferred **Date** first: 👇`
+            : `📅 *Appointment Booking:*\n\nKripya pehle preferred **Date** select karein: 👇`;
+        zamZamBot.sendMessage(chatId, dateMsg, { parse_mode: 'Markdown', reply_markup: dateOptions });
     }
     
     // 🟢 TIME SELECTION FOR CLINIC
     else if (data.startsWith('zz_date_')) {
-        if(!zamzamSessions[chatId]) zamzamSessions[chatId] = {};
-        zamzamSessions[chatId].date = data === 'zz_date_today' ? 'Today' : 'Tomorrow';
-        zamzamSessions[chatId].step = 'AWAITING_TIME';
+        session.date = data === 'zz_date_today' ? 'Today' : 'Tomorrow';
+        session.step = 'AWAITING_TIME';
 
-        // Clinic Timings (Morning & Evening)
         const timeButtons = [];
         let row = [];
         const times = ["8:00 AM", "10:00 AM", "12:00 PM", "2:00 PM", "4:00 PM", "6:00 PM", "8:00 PM", "9:30 PM"];
         times.forEach((time, index) => {
             row.push({ text: `⏰ ${time}`, callback_data: `zz_time_${time}` });
-            if (row.length === 2 || index === times.length - 1) { // 2 buttons per row looks clean
+            if (row.length === 2 || index === times.length - 1) { 
                 timeButtons.push(row);
                 row = [];
             }
         });
 
-        zamZamBot.editMessageText(`Aapne **${zamzamSessions[chatId].date}** select kiya hai.\n\nAb kripya clinic ka preferred **Time Slot** choose karein: 👇`, {
-            chat_id: chatId,
-            message_id: messageId,
-            parse_mode: "Markdown",
-            reply_markup: { inline_keyboard: timeButtons }
-        });
+        const timeMsg = isEn
+            ? `You selected **${session.date}**.\n\nNow please choose a clinic **Time Slot**: 👇`
+            : `Aapne **${session.date}** select kiya hai.\n\nAb kripya clinic ka preferred **Time Slot** choose karein: 👇`;
+        
+        zamZamBot.editMessageText(timeMsg, { chat_id: chatId, message_id: messageId, parse_mode: "Markdown", reply_markup: { inline_keyboard: timeButtons } });
     }
 
     // 🟢 DETAILS COLLECTION FOR CLINIC
     else if (data.startsWith('zz_time_')) {
-        if(!zamzamSessions[chatId]) return zamZamBot.answerCallbackQuery(query.id);
-        zamzamSessions[chatId].time = data.replace('zz_time_', '');
-        zamzamSessions[chatId].step = 'COLLECT_DETAILS';
+        session.time = data.replace('zz_time_', '');
+        session.step = 'COLLECT_DETAILS';
         
-        zamZamBot.editMessageText(`Perfect! Aapka slot **${zamzamSessions[chatId].date} at ${zamzamSessions[chatId].time}** select ho gaya hai.\n\nAb kripya apna *Naam, Umar (Age), aur Mobile Number* ek hi message mein type karke bhejein.\n\n_(Udaharan: Rahul, 30, 9876543210)_`, {
-            chat_id: chatId,
-            message_id: messageId,
-            parse_mode: "Markdown"
-        });
+        const detailsMsg = isEn 
+            ? `Perfect! Slot **${session.date} at ${session.time}** is noted.\n\nNow please type and send your *Name, Age, and Mobile Number* in one message.\n\n_(Example: Rahul, 30, 9876543210)_`
+            : `Perfect! Aapka slot **${session.date} at ${session.time}** select ho gaya hai.\n\nAb kripya apna *Naam, Umar (Age), aur Mobile Number* ek hi message mein type karke bhejein.\n\n_(Udaharan: Rahul, 30, 9876543210)_`;
+
+        zamZamBot.editMessageText(detailsMsg, { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
     }
 
     zamZamBot.answerCallbackQuery(query.id);
 });
 
 // 3. Handle Messages & Admin Alert Logic (Zam Zam)
-zamZamBot.on('message', (msg) => {
+zamZamBot.on('message', async (msg) => {
     const chatId = msg.chat.id.toString();
     const text = msg.text;
 
-    // Ignore commands like /start
-    if (!text || text.startsWith('/')) return;
+    if (!text) return;
+
+    // 🚨 ADMIN TIME UPDATE ROUTING (CLINIC)
+    if (chatId === ZAMZAM_ADMIN_CHAT_ID && zamzamAdminState) {
+        const clientChatId = zamzamAdminState;
+        const updateMsg = `⚠️ **Update from Clinic / Clinic se Sandesh**\n\nMaafi chahte hain, aapka purana slot available nahi hai. Doctor/Admin ne aapka naya samay tay kiya hai:\n\n🔄 **Updated Time/Message:**\n${text}\n\n🌐 _Powered by Shahid Creatives_`;
+        
+        await zamZamBot.sendMessage(clientChatId, updateMsg, { parse_mode: 'Markdown' });
+        await zamZamBot.sendMessage(chatId, `✅ Update sent successfully to Patient!`, { parse_mode: 'Markdown' });
+        zamzamAdminState = null; // Clear state
+        return;
+    }
+
+    const lowerText = text.toLowerCase();
+    const triggers = ['hi', 'hello', 'hey', 'start', '/start', 'menu'];
+
+    // 🟢 HI/HELLO TRIGGER - SHOW LANGUAGE MENU
+    if (!zamzamSessions[chatId] || triggers.includes(lowerText)) {
+        zamzamSessions[chatId] = { step: 'language_selection' };
+        const langPrompt = "👋 **Welcome! / Swagat hai!**\n\nPlease select your preferred language:\nKripya apni bhasha chunein:";
+        const langOpts = {
+            parse_mode: "Markdown",
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: "🇬🇧 English", callback_data: "zz_lang_en" }, { text: "🇮🇳 Hinglish", callback_data: "zz_lang_hin" }]
+                ]
+            }
+        };
+        return zamZamBot.sendMessage(chatId, langPrompt, langOpts);
+    }
+
+    const session = zamzamSessions[chatId];
 
     // Agar user details collection state mein hai
-    if (zamzamSessions[chatId] && zamzamSessions[chatId].step === 'COLLECT_DETAILS') {
-        const session = zamzamSessions[chatId];
+    if (session && session.step === 'COLLECT_DETAILS') {
         const userName = msg.from.first_name || 'User';
         const userUsername = msg.from.username ? `@${msg.from.username}` : 'No Username';
+        const isEn = session.lang === 'EN';
 
         // 1. Professional Message to Client (🟢 BRANDING ADDED)
-        const clientReceipt = `🎉 *Appointment Booking Successful!*\n\nNamaste **${userName}**, aapki appointment request successfully receive ho gayi hai.\n\n🧾 *Booking Summary:*\n📅 *Date:* ${session.date}\n⏰ *Time:* ${session.time}\n👤 *Patient Details:* ${text}\n📍 *Location:* Zam Zam Clinic\n👨‍⚕️ *Doctor:* Dr. Munna Bengali\n\nHumari team jald hi aapse final confirmation ke liye sampark karegi. Kripya samay par clinic pahuchein. 🙏\n\n🌐 _Powered by Shahid Creatives_`;
+        const clientReceipt = isEn 
+            ? `🎉 *Appointment Request Sent!*\n\nHello **${userName}**, your appointment request has been successfully received.\n\n🧾 *Booking Summary:*\n📅 *Date:* ${session.date}\n⏰ *Time:* ${session.time}\n👤 *Patient Details:* ${text}\n📍 *Location:* Zam Zam Clinic\n👨‍⚕️ *Doctor:* Dr. Munna Bengali\n\nOur team will contact you shortly for final confirmation. 🙏\n\n🌐 _Powered by Shahid Creatives_`
+            : `🎉 *Appointment Request Sent!*\n\nNamaste **${userName}**, aapki appointment request successfully receive ho gayi hai.\n\n🧾 *Booking Summary:*\n📅 *Date:* ${session.date}\n⏰ *Time:* ${session.time}\n👤 *Patient Details:* ${text}\n📍 *Location:* Zam Zam Clinic\n👨‍⚕️ *Doctor:* Dr. Munna Bengali\n\nHumari team jald hi aapse final confirmation ke liye sampark karegi. Kripya samay par clinic pahuchein. 🙏\n\n🌐 _Powered by Shahid Creatives_`;
 
         zamZamBot.sendMessage(chatId, clientReceipt, { parse_mode: 'Markdown' });
 
-        // 2. ADMIN KO ALERT BHEJEIN (To TG ID: 8885973325)
+        // 2. ADMIN KO ALERT BHEJEIN (To TG ID: 8885973325 WITH TELEGRAM ID)
         const adminAlertMsg = `🚨 *NEW CLINIC APPOINTMENT!* 🚨\n\n`
                             + `👤 *Client Telegram:* ${userName} (${userUsername})\n`
+                            + `💬 *Telegram Chat ID:* ${chatId}\n`
                             + `📅 *Date:* ${session.date}\n`
                             + `⏰ *Time Slot:* ${session.time}\n`
                             + `📝 *Patient Details:* ${text}\n\n`
-                            + `🌐 _Powered by Shahid Creatives_`;
+                            + `*Action Required:*`;
 
-        zamZamBot.sendMessage(ZAMZAM_ADMIN_CHAT_ID, adminAlertMsg, { parse_mode: 'Markdown' })
+        const adminOptions = {
+            parse_mode: 'Markdown',
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: "✅ Confirm Booking", callback_data: `admin_zz_confirm_${chatId}` }],
+                    [{ text: "🔄 Reschedule / Update Time", callback_data: `admin_zz_resched_${chatId}` }]
+                ]
+            }
+        };
+
+        zamZamBot.sendMessage(ZAMZAM_ADMIN_CHAT_ID, adminAlertMsg, adminOptions)
             .catch((err) => console.error('Failed to send Zam Zam admin alert:', err));
 
         // State reset karein
-        zamzamSessions[chatId] = { step: 'COMPLETED' };
+        session.step = 'COMPLETED';
     }
 });
 

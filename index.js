@@ -85,6 +85,12 @@ bot.on('callback_query', async (query) => {
         await processUnifiedMessage(chatId, `Custom Time: ${selectedTime}`, 'telegram');
         bot.answerCallbackQuery(query.id);
     }
+    // 🟢 NEW: Route UI button selections seamlessly to the text mapping engine
+    else if (data.startsWith('sel_web_') || data.startsWith('sel_ai_')) {
+        const number = data.split('_')[2];
+        await processUnifiedMessage(chatId, number, 'telegram');
+        bot.answerCallbackQuery(query.id);
+    }
 });
 
 // Telegram - Handling User Inputs & Routing to Master Engine
@@ -339,12 +345,21 @@ salonBot.on('message', async (msg) => {
         const slotKey = `${session.date}_${session.time}`;
         bookedSlots.salon[slotKey] = (bookedSlots.salon[slotKey] || 0) + 1;
 
+        // Calculate precise offset so past reminders automatically toggle true and skip
+        const apptTimestamp = getApptTimestamp(session.date, session.time);
+        const diffMs = apptTimestamp - Date.now();
+        const diffHoursInitial = diffMs / (1000 * 60 * 60);
+
         // Schedule Reminder (10h, 2h, 1h)
         activeAppointments.push({
             bot: 'salon', chatId, lang: session.lang,
-            timestamp: getApptTimestamp(session.date, session.time),
+            timestamp: apptTimestamp,
             clientName: session.name,
-            reminded: { '10': false, '2': false, '1': false }
+            reminded: { 
+                '10': diffHoursInitial <= 10, // Avoid firing 10h reminder if booked under 10h 
+                '2': diffHoursInitial <= 2,   // Avoid firing 2h reminder if booked under 2h
+                '1': diffHoursInitial <= 1    // Avoid firing 1h reminder if booked under 1h
+            }
         });
         
         // 🟢 PROFESSIONAL SALON RECEIPT FORMATTING (WITH MAP & SPECIALIST)
@@ -621,12 +636,21 @@ zamZamBot.on('message', async (msg) => {
         const slotKey = `${session.date}_${session.time}`;
         bookedSlots.clinic[slotKey] = (bookedSlots.clinic[slotKey] || 0) + 1;
 
+        // Calculate precise offset so past reminders automatically toggle true and skip
+        const apptTimestamp = getApptTimestamp(session.date, session.time);
+        const diffMs = apptTimestamp - Date.now();
+        const diffHoursInitial = diffMs / (1000 * 60 * 60);
+
         // Schedule Reminder (10h, 2h, 1h)
         activeAppointments.push({
             bot: 'clinic', chatId, lang: session.lang,
-            timestamp: getApptTimestamp(session.date, session.time),
+            timestamp: apptTimestamp,
             clientName: (detailsArr[0] || userName),
-            reminded: { '10': false, '2': false, '1': false }
+            reminded: { 
+                '10': diffHoursInitial <= 10, // Avoid firing 10h reminder if booked under 10h 
+                '2': diffHoursInitial <= 2,   // Avoid firing 2h reminder if booked under 2h
+                '1': diffHoursInitial <= 1    // Avoid firing 1h reminder if booked under 1h
+            }
         });
 
         // Receipt Generation with Maps Link
@@ -680,7 +704,7 @@ setInterval(() => {
         let shouldRemind = false;
         let timeLabel = "";
 
-        // Trigger correctly within the window
+        // Trigger correctly within the exact bracket bounds
         if (diffHours <= 10 && diffHours > 2 && !appt.reminded['10']) {
             shouldRemind = true; timeLabel = "10 hours"; appt.reminded['10'] = true;
         } else if (diffHours <= 2 && diffHours > 1 && !appt.reminded['2']) {
@@ -1363,21 +1387,85 @@ async function processUnifiedMessage(from, rawText, platform) {
 
         if (userText === '1' || userText === '2' || userText === 'type 1' || userText === 'type 2') {
             userSessions[from].step = 'awaiting_specific_service_selection';
+            userSessions[from].lastSelectedType = userText.includes('1') ? 'web' : 'ai';
             
-            let interceptorReply = (userText.includes('1'))
-                ? (isUSDTrack ? "⚠️ Please be specific! Which Web scope do you need? \n\n👉 Type one: *Starter Plan* ($199), *Basic Plan* ($299), *Starter Business Site* ($499), or *E-Commerce Hub* ($899)" : "⚠️ Kripya clear batayein! Aapko hamare active modules mein se kis tarah ki website chahiye? \n\n👉 Niche diye gaye active plans mein se ek naam type karein:\n🔹 *Landing Page/Funnel* (₹12,300)\n🔹 *Business/Corporate Website* (₹25,500)\n🔹 *E-commerce Website (Online Store)* (₹47,500)\n🔹 *Custom Web Application* (₹1,45,000+)")
-                : (isUSDTrack ? "⚠️ Please be specific! What AI architecture do you want? \n\n👉 Type one: *Starter Digital Maintainer* ($77), *Web Conversion Engine* ($155), *Omnichannel Growth Partner* ($311), *Full-Scale Ecosystem Operations* ($499), *Elite Intelligence* ($799), *Telegram Universal Automation - Starter* ($77), *Telegram Universal Automation - Growth* ($155), or *Telegram Universal Automation - Elite* ($311)" : "⚠️ Kripya clear batayein! Aapko kis tarah ka automation stack design karwana hai? \n\n👉 Niche diye gaye models mein se ek naam type karein:\n🤖 *Starter Digital Maintainer* (₹4,999/Mo)\n💼 *Web Conversion Engine* (₹9,499/Mo)\n📅 *Omnichannel Growth Partner* (₹18,999/Mo)\n🛒 *Full-Scale Ecosystem Operations* (₹29,999/Mo)\n🌐 *Elite Intelligence & Bespoke Systems* (₹49,999/Mo)\n🤖 *Telegram Universal Automation - Starter* (₹3,999/Mo)\n🤖 *Telegram Universal Automation - Growth* (₹7,599/Mo)\n🤖 *Telegram Universal Automation - Elite* (₹15,199/Mo)");
-            return sendUnifiedMessage(from, interceptorReply, platform);
+            let interceptorReply = "";
+            let options = null;
+
+            // WhatsApp/Text Numbered Structure
+            if (userText.includes('1')) {
+                interceptorReply = isUSDTrack 
+                    ? "⚠️ Please be specific! Which Web scope do you need? \n\n👉 Reply with an option number (1-4):\n1️⃣ *Starter Plan* ($199)\n2️⃣ *Basic Plan* ($299)\n3️⃣ *Starter Business Site* ($499)\n4️⃣ *E-Commerce Hub* ($899)"
+                    : "⚠️ Kripya clear batayein! Aapko hamare active modules mein se kis tarah ki website chahiye? \n\n👉 Niche diye gaye options mein se ek number (1-4) reply karein:\n1️⃣ *Landing Page/Funnel* (₹12,300)\n2️⃣ *Business/Corporate Website* (₹25,500)\n3️⃣ *E-commerce Website (Online Store)* (₹47,500)\n4️⃣ *Custom Web Application* (₹1,45,000+)";
+            } else {
+                interceptorReply = isUSDTrack 
+                    ? "⚠️ Please be specific! What AI architecture do you want? \n\n👉 Reply with an option number (1-8):\n1️⃣ *Starter Digital Maintainer* ($77)\n2️⃣ *Web Conversion Engine* ($155)\n3️⃣ *Omnichannel Growth Partner* ($311)\n4️⃣ *Full-Scale Ecosystem Operations* ($499)\n5️⃣ *Elite Intelligence* ($799)\n6️⃣ *Telegram Universal Automation - Starter* ($77)\n7️⃣ *Telegram Universal Automation - Growth* ($155)\n8️⃣ *Telegram Universal Automation - Elite* ($311)"
+                    : "⚠️ Kripya clear batayein! Aapko kis tarah ka automation stack design karwana hai? \n\n👉 Niche diye gaye options mein se ek number (1-8) reply karein:\n1️⃣ *Starter Digital Maintainer* (₹4,999/Mo)\n2️⃣ *Web Conversion Engine* (₹9,499/Mo)\n3️⃣ *Omnichannel Growth Partner* (₹18,999/Mo)\n4️⃣ *Full-Scale Ecosystem Operations* (₹29,999/Mo)\n5️⃣ *Elite Intelligence & Bespoke Systems* (₹49,999/Mo)\n6️⃣ *Telegram Universal Automation - Starter* (₹3,999/Mo)\n7️⃣ *Telegram Universal Automation - Growth* (₹7,599/Mo)\n8️⃣ *Telegram Universal Automation - Elite* (₹15,199/Mo)";
+            }
+
+            // Interactive Inline Keyboards for Telegram
+            if (platform === 'telegram') {
+                if (userText.includes('1')) {
+                    options = {
+                        reply_markup: {
+                            inline_keyboard: [
+                                [{ text: "1️⃣ Starter Plan", callback_data: "sel_web_1" }, { text: "2️⃣ Basic Plan", callback_data: "sel_web_2" }],
+                                [{ text: "3️⃣ Business Site", callback_data: "sel_web_3" }, { text: "4️⃣ E-Commerce Hub", callback_data: "sel_web_4" }]
+                            ]
+                        }
+                    };
+                } else {
+                     options = {
+                        reply_markup: {
+                            inline_keyboard: [
+                                [{ text: "1️⃣ Starter Digital", callback_data: "sel_ai_1" }, { text: "2️⃣ Web Conv.", callback_data: "sel_ai_2" }],
+                                [{ text: "3️⃣ Omnichannel", callback_data: "sel_ai_3" }, { text: "4️⃣ Ecosystem", callback_data: "sel_ai_4" }],
+                                [{ text: "5️⃣ Elite Intel", callback_data: "sel_ai_5" }, { text: "6️⃣ TG Starter", callback_data: "sel_ai_6" }],
+                                [{ text: "7️⃣ TG Growth", callback_data: "sel_ai_7" }, { text: "8️⃣ TG Elite", callback_data: "sel_ai_8" }]
+                            ]
+                        }
+                    };
+                }
+            }
+            
+            return sendUnifiedMessage(from, interceptorReply, platform, options);
         }
 
         userSessions[from].step = 'post_registration';
         return finalizeConsultationLead(from, rawText, null, platform);
     }
 
-    // 🎯 STATE 2.1: FINAL DISPATCH AFTER SUB-MENU SELECTION
+    // 🎯 STATE 2.1: FINAL DISPATCH AFTER SUB-MENU SELECTION (Mapped from Text or Button Input)
     if (currentStep === 'awaiting_specific_service_selection') {
+        let selectedScope = rawText;
+        const isUSDTrack = (userLang === 'EN');
+        const cat = userSessions[from].lastSelectedType || 'ai';
+
+        if (cat === 'web') {
+            if (isUSDTrack) {
+                if (userText === '1') selectedScope = "Starter Plan";
+                else if (userText === '2') selectedScope = "Basic Plan";
+                else if (userText === '3') selectedScope = "Starter Business Site";
+                else if (userText === '4') selectedScope = "E-Commerce Hub";
+            } else {
+                if (userText === '1') selectedScope = "Landing Page/Funnel";
+                else if (userText === '2') selectedScope = "Business/Corporate Website";
+                else if (userText === '3') selectedScope = "E-commerce Website";
+                else if (userText === '4') selectedScope = "Custom Web Application";
+            }
+        } else {
+            if (userText === '1') selectedScope = "Starter Digital Maintainer";
+            else if (userText === '2') selectedScope = "Web Conversion Engine";
+            else if (userText === '3') selectedScope = "Omnichannel Growth Partner";
+            else if (userText === '4') selectedScope = "Full-Scale Ecosystem Operations";
+            else if (userText === '5') selectedScope = "Elite Intelligence & Bespoke Systems";
+            else if (userText === '6') selectedScope = "Telegram Universal Automation - Starter";
+            else if (userText === '7') selectedScope = "Telegram Universal Automation - Growth";
+            else if (userText === '8') selectedScope = "Telegram Universal Automation - Elite";
+        }
+
         userSessions[from].step = 'post_registration';
-        return finalizeConsultationLead(from, rawText, null, platform);
+        return finalizeConsultationLead(from, selectedScope, null, platform);
     }
 
     // 🎯 STATE 3: INBOUND SEQUENCE (Fallback)

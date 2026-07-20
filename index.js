@@ -369,10 +369,10 @@ salonBot.on('message', async (msg) => {
         
         salonBot.sendMessage(chatId, receiptMsg, { parse_mode: "Markdown", disable_web_page_preview: true, reply_markup: { remove_keyboard: true } });
 
-        // 🚀 --- NEW API WEBHOOK INTEGRATION (CLIENT PORTAL POST) ---
+        // 🚀 --- API WEBHOOK INTEGRATION (CLIENT PORTAL POST) ---
         try {
             const webhookPayload = {
-                projectId: `SALON-${Math.floor(1000 + Math.random() * 9000)}`,
+                projectId: "CREATIVE-106",
                 name: session.name,
                 phone: session.phone,
                 email: "Not Provided",
@@ -381,7 +381,8 @@ salonBot.on('message', async (msg) => {
                 source: "@AI_Virtual_Receptionist_bot"
             };
 
-            await axios.post('https://shahidcreatives.com/api/bot-leads', webhookPayload, {
+            // Hit the requested Active Development URL
+            await axios.post('https://shahidcreatives.com/api/bot-leads?projectId=CREATIVE-106', webhookPayload, {
                 headers: { 'Content-Type': 'application/json' }
             });
             console.log("✅ Salon Lead Successfully Sent to Client Portal Webhook!");

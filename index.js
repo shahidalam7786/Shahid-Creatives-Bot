@@ -369,6 +369,27 @@ salonBot.on('message', async (msg) => {
         
         salonBot.sendMessage(chatId, receiptMsg, { parse_mode: "Markdown", disable_web_page_preview: true, reply_markup: { remove_keyboard: true } });
 
+        // 🚀 --- NEW API WEBHOOK INTEGRATION (CLIENT PORTAL POST) ---
+        try {
+            const webhookPayload = {
+                projectId: `SALON-${Math.floor(1000 + Math.random() * 9000)}`,
+                name: session.name,
+                phone: session.phone,
+                email: "Not Provided",
+                project_type: "Fit hair artist Unisex Family Salon",
+                notes: `Service: ${session.service}, Specialist: ${session.specialist}, Slot: ${session.dateTime}, Client Notes: ${session.hairstyleDetails}`,
+                source: "@AI_Virtual_Receptionist_bot"
+            };
+
+            await axios.post('https://shahidcreatives.com/api/bot-leads', webhookPayload, {
+                headers: { 'Content-Type': 'application/json' }
+            });
+            console.log("✅ Salon Lead Successfully Sent to Client Portal Webhook!");
+        } catch (webhookErr) {
+            console.error("❌ Salon Webhook Delivery Failed:", webhookErr.message);
+        }
+        // 🚀 --- END OF WEBHOOK INTEGRATION ---
+
         // 🚨 ALERT TO ADMIN (Includes TG Chat ID)
         const adminAlertMsg = `🚨 *NEW SALON LEAD ALERT!* 🚨\n\n👤 *Name:* ${session.name}\n📱 *Number:* \`${session.phone}\`\n💬 *Telegram Chat ID:* ${chatId}\n💇‍♀️ *Service:* ${session.service}\n👨‍🎨 *Specialist:* ${session.specialist}\n📅 *Slot Requested:* ${session.dateTime}\n📝 *Pre-details:* ${session.hairstyleDetails}\n\n*Action Required:*`;
         

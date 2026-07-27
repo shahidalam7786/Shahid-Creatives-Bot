@@ -1075,6 +1075,56 @@ async function processUnifiedMessage(from, rawText, platform) {
         return sendUnifiedMessage(from, replyMsg, platform);
     }
 
+    // 🎯 TOP PRIORITY INTERCEPTOR: WHATSAPP PRE-FILLED LEAD FORM (Skips Profile Collection)
+    if (rawText.includes("Name:") && rawText.includes("Phone:") && rawText.includes("Email:")) {
+        let clientName = "Valued Client";
+        let clientEmail = "Not Provided";
+        let clientPhone = platform === 'whatsapp' ? from : "";
+        let projectScope = "Consultation Inquiry";
+        
+        try {
+            const nameMatch = rawText.match(/Name:\s*([^\n\r]+)/i);
+            const phoneMatch = rawText.match(/Phone:\s*([^\n\r]+)/i);
+            const emailMatch = rawText.match(/Email:\s*([^\n\r]+)/i);
+            const interestMatch = rawText.match(/interested in\s*([^\.\n]+)/i);
+
+            if (nameMatch) clientName = nameMatch[1].replace(/[*_📌]/g, '').trim();
+            if (phoneMatch) clientPhone = phoneMatch[1].replace(/[*_📞]/g, '').trim();
+            if (emailMatch) clientEmail = emailMatch[1].replace(/[*_✉️]/g, '').trim();
+            if (interestMatch) projectScope = interestMatch[1].trim();
+        } catch (e) {}
+
+        const isExplicitUSD = rawText.includes('USD') || rawText.includes('$');
+        const isExplicitINR = rawText.includes('INR') || rawText.includes('₹') || rawText.toLowerCase().includes('punjab') || rawText.toLowerCase().includes('india');
+        const isUSDTrack = isExplicitUSD ? true : (isExplicitINR ? false : isInternationalNumber);
+
+        userSessions[from] = {
+            step: 'awaiting_consultation_slot',
+            lang: isUSDTrack ? 'EN' : 'HINGLISH',
+            platform: platform,
+            clientName: clientName,
+            clientEmail: clientEmail,
+            clientPhone: clientPhone, // Saves phone directly!
+            projectScope: projectScope,
+            savedPlan: projectScope,
+            lastInteractionTime: Date.now(),
+            nudgeSent: false
+        };
+
+        const currentHourIST = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Kolkata"})).getHours();
+        
+        const optionA = (currentHourIST >= 17) ? "A) *Kal Shaam 5:00 Baje*" : "A) *Aaj Shaam 5:00 Baje*";
+        const optionB = (currentHourIST >= 17) ? "B) *Parso Dopahar 12:00 Baje*" : "B) *Kal Dopahar 12:00 Baje*";
+        const optionA_EN = (currentHourIST >= 17) ? "A) *Tomorrow at 5:00 PM*" : "A) *Today at 5:00 PM*";
+        const optionB_EN = (currentHourIST >= 17) ? "B) *Day After Tomorrow at 12:00 PM*" : "B) *Tomorrow at 12:00 PM*";
+
+        const replyMsg = isUSDTrack 
+            ? `Awesome! Let's get you connected for a free strategy call. Please choose your slot:\n\n${optionA_EN}\n${optionB_EN}\nC) *Custom Time (Type preferred time below)*\n\n👉 Reply with A, B, or C!`
+            : `Ji bilkul! Aaiye aapka free consulting strategy slot lock kar dete hain. Kripya niche se ek option choose karein:\n\n${optionA}\n${optionB}\nC) *Custom Time (Apna secure timing niche type karein)*\n\n👉 Kripya *A, B, ya C* likh kar reply kijiye!`;
+
+        return sendUnifiedMessage(from, replyMsg, platform);
+    }
+
     if (!userSessions[from]) {
         userSessions[from] = { 
             step: 'region_check', 

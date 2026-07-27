@@ -737,14 +737,23 @@ setInterval(() => {
 
         if (shouldRemind) {
             const isEn = appt.lang === 'EN';
-            const reminderMsg = isEn 
-                ? `⏰ *Reminder:* Hello ${appt.clientName}, your appointment is scheduled in exactly *${timeLabel}*! We look forward to seeing you. ✨`
-                : `⏰ *Reminder:* Namaste ${appt.clientName}, aapki appointment theek *${timeLabel}* mein shuru hone wali hai! Kripya samay par pahuchein. ✨`;
-                
+            
             if (appt.bot === 'salon') {
+                const reminderMsg = isEn 
+                    ? `⏰ *Reminder:* Hello ${appt.clientName}, your appointment is scheduled in exactly *${timeLabel}*! We look forward to seeing you. ✨`
+                    : `⏰ *Reminder:* Namaste ${appt.clientName}, aapki appointment theek *${timeLabel}* mein shuru hone wali hai! Kripya samay par pahuchein. ✨`;
                 salonBot.sendMessage(appt.chatId, reminderMsg, { parse_mode: "Markdown" });
             } else if (appt.bot === 'clinic') {
+                const reminderMsg = isEn 
+                    ? `⏰ *Reminder:* Hello ${appt.clientName}, your appointment is scheduled in exactly *${timeLabel}*! We look forward to seeing you. ✨`
+                    : `⏰ *Reminder:* Namaste ${appt.clientName}, aapki appointment theek *${timeLabel}* mein shuru hone wali hai! Kripya samay par pahuchein. ✨`;
                 zamZamBot.sendMessage(appt.chatId, reminderMsg, { parse_mode: "Markdown" });
+            } else if (appt.bot === 'consultation') {
+                // 🟢 NEW: Consultation Custom Time Reminders
+                const consReminder = isEn 
+                    ? `⏰ *Consultation Reminder:* Hello ${appt.clientName}, your strategy consultation call with Shahid Creatives is starting in exactly *${timeLabel}*! Please be ready. 🚀\n\n🌐 _Powered by Shahid Creatives_`
+                    : `⏰ *Consultation Reminder:* Namaste ${appt.clientName}, Shahid Creatives ke sath aapki strategy call theek *${timeLabel}* mein shuru hone wali hai! Kripya taiyar rahein. 🚀\n\n🌐 _Powered by Shahid Creatives_`;
+                sendUnifiedMessage(appt.chatId, consReminder, appt.platform);
             }
         }
     });
@@ -934,16 +943,21 @@ app.post('/send-client-credentials', async (req, res) => {
 });
 
 
-// 🟢 ROUTE HANDLER: Payment Reminders Dispatch Engine
+// 🟢 ROUTE HANDLER: Payment Reminders Dispatch Engine (UPDATED)
 app.post('/send-payment-reminder', async (req, res) => {
     try {
         const payload = req.body;
         const clientPhone = payload.phone || payload.whatsapp_number;
+        const isUSD = payload.currency === 'USD' || payload.is_usd === true;
+        
         if (!clientPhone) {
             return res.status(400).json({ success: false, error: "Missing number" });
         }
 
-        const reminderMessage = `⚠️ *Payment Pending Reminder - Shahid Creatives* 🚀\n\nHello,\n\nThis is a quick reminder regarding your slot confirmation booking using your dynamic pay gateway dashboard link to avoid slot cancellation. 👍`;
+        const reminderMessage = isUSD
+            ? `⚠️ *Payment Pending Reminder - Shahid Creatives* 🚀\n\nHello,\n\nThis is a quick reminder regarding your slot confirmation. Please complete your token payment ($49 USD) using your secure dashboard link to avoid slot cancellation. 👍\n\n🌐 _Powered by Shahid Creatives_`
+            : `⚠️ *Payment Pending Reminder - Shahid Creatives* 🚀\n\nHello,\n\nThis is a quick reminder regarding your slot confirmation. Kripya apna pending token payment (₹999 INR) secure link se poora karein taki aapka slot cancel na ho. 👍\n\n🌐 _Powered by Shahid Creatives_`;
+
         await sendWhatsAppMessage(clientPhone, reminderMessage);
         res.status(200).json({ success: true });
     } catch (err) {
@@ -981,7 +995,7 @@ app.post('/webhook', async (req, res) => {
                     const rawText = message.text.body;
                     console.log(`Received message from ${from}: ${rawText}`);
                     
-                    // Route directly to Unified Engine (Removed the hardcoded double-reply block)
+                    // Route directly to Unified Engine
                     await processUnifiedMessage(from, rawText, 'whatsapp');
                 }            
             }
@@ -1075,7 +1089,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         return sendUnifiedMessage(from, replyMsg, platform);
     }
 
-    // 🎯 TOP PRIORITY INTERCEPTOR: WHATSAPP PRE-FILLED LEAD FORM (Skips Profile Collection)
+    // 🎯 NEW INTERCEPTOR: WHATSAPP PRE-FILLED LEAD FORM (Skips Profile Collection but keeps consultation flow)
     if (rawText.includes("Name:") && rawText.includes("Phone:") && rawText.includes("Email:")) {
         let clientName = "Valued Client";
         let clientEmail = "Not Provided";
@@ -1099,7 +1113,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         const isUSDTrack = isExplicitUSD ? true : (isExplicitINR ? false : isInternationalNumber);
 
         userSessions[from] = {
-            step: 'awaiting_consultation_slot',
+            step: 'awaiting_consultation_slot', // Goes to slot selection directly
             lang: isUSDTrack ? 'EN' : 'HINGLISH',
             platform: platform,
             clientName: clientName,
@@ -1108,7 +1122,8 @@ async function processUnifiedMessage(from, rawText, platform) {
             projectScope: projectScope,
             savedPlan: projectScope,
             lastInteractionTime: Date.now(),
-            nudgeSent: false
+            nudgeSent: false,
+            skipIdentityCapture: true // Tag to skip asking for name/email
         };
 
         const currentHourIST = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Kolkata"})).getHours();
@@ -1119,8 +1134,8 @@ async function processUnifiedMessage(from, rawText, platform) {
         const optionB_EN = (currentHourIST >= 17) ? "B) *Day After Tomorrow at 12:00 PM*" : "B) *Tomorrow at 12:00 PM*";
 
         const replyMsg = isUSDTrack 
-            ? `Awesome! Let's get you connected for a free strategy call. Please choose your slot:\n\n${optionA_EN}\n${optionB_EN}\nC) *Custom Time (Type preferred time below)*\n\n👉 Reply with A, B, or C!`
-            : `Ji bilkul! Aaiye aapka free consulting strategy slot lock kar dete hain. Kripya niche se ek option choose karein:\n\n${optionA}\n${optionB}\nC) *Custom Time (Apna secure timing niche type karein)*\n\n👉 Kripya *A, B, ya C* likh kar reply kijiye!`;
+            ? `Hello *${clientName}*! We have received your details for *${projectScope}*.\n\nLet's get you connected for a free strategy call. Please choose your slot:\n\n${optionA_EN}\n${optionB_EN}\nC) *Custom Time (Type preferred time below)*\n\n👉 Reply with A, B, or C!`
+            : `Hello *${clientName}*! Humne aapki details save kar li hain (*${projectScope}*).\n\nJi bilkul! Aaiye aapka free consulting strategy slot lock kar dete hain. Kripya niche se ek option choose karein:\n\n${optionA}\n${optionB}\nC) *Custom Time (Apna secure timing niche type karein)*\n\n👉 Kripya *A, B, ya C* likh kar reply kijiye!`;
 
         return sendUnifiedMessage(from, replyMsg, platform);
     }
@@ -1386,9 +1401,13 @@ async function processUnifiedMessage(from, rawText, platform) {
         
         if (!userSessions[from].savedPlan) userSessions[from].savedPlan = userSessions[from].projectScope;
 
+        // 🟢 ROUTE FIX: Instead of ending the flow, we send them to Plan Selection Menu!
         if (userSessions[from].skipIdentityCapture || (userSessions[from].clientName && userSessions[from].clientName !== "Valued Client" && userSessions[from].clientEmail && userSessions[from].clientEmail !== "Not Provided" && userSessions[from].clientEmail !== "")) {
-            userSessions[from].step = 'post_registration';
-            return finalizeConsultationLead(from, userSessions[from].savedPlan || "Consultation Booking", null, platform);
+            userSessions[from].step = 'collect_custom_query_and_time';
+            let descriptivePrompt = (userLang === 'EN')
+                ? `Thank you *${session.clientName}*! 🙏\n\nTo lock a high-converting strategy blueprint, please share your goals in the next reply:\n\n🌐 **1. Website Development:**\nWhich plan fits your vision? (Starter Plan, Basic Plan, Starter Business Site, or E-Commerce Hub?)\n\n🤖 **2. AI-Powered Growth Retainers:**\nWhat precise processes do you want to automate?`
+                : `Thank you *${session.clientName}*! 🙏\n\nStrategy call ko 100% efficient banane ke liye, kripya agle message mein niche di gayi details batayein:\n\n🌐 **Type 1:** Agar aapko Website chahiye toh specific type likhein (e.g., Landing Page, Corporate Showcase, ya Online Store).\n\n🤖 **Type 2:** Agar AI Architecture/Bot chahiye toh details likhein (e.g., AI SEO, WhatsApp Lead Bot, Sales Engine).`;
+            return sendUnifiedMessage(from, descriptivePrompt, platform);
         } else {
             userSessions[from].step = 'collect_consultation_identity';
             userSessions[from].projectScope = `Custom Slot Input ("${rawText}")`;
@@ -1724,16 +1743,20 @@ async function processUnifiedMessage(from, rawText, platform) {
         
         // Capture existing details if they already passed them
         if (!userSessions[from].savedPlan) userSessions[from].savedPlan = userSessions[from].projectScope;
-        const hasValidIdentity = userSessions[from].clientName && userSessions[from].clientName !== "Valued Client" && userSessions[from].clientEmail && userSessions[from].clientEmail !== "Not Provided" && userSessions[from].clientEmail !== "";
+        const hasValidIdentity = userSessions[from].skipIdentityCapture || (userSessions[from].clientName && userSessions[from].clientName !== "Valued Client" && userSessions[from].clientEmail && userSessions[from].clientEmail !== "Not Provided" && userSessions[from].clientEmail !== "");
         
         if (chosenOptionClean === 'a' || chosenOptionClean.includes("today") || chosenOptionClean.includes("5")) {
             const dynamicSlotLabel = (currentHourIST >= 17) ? "Tomorrow at 5:00 PM" : "Today at 5:00 PM";
             userSessions[from].requestedSlot = dynamicSlotLabel; 
             sendAdminAlert(`🚨 *SLOT REQUEST!* 🚨\n📱 ${platform === 'telegram' ? 'TG-' : '+'}${from}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n⏰ Chosen Slot: ${dynamicSlotLabel}`);
             
+            // 🟢 ROUTE FIX: Send back to Plan Selection Menu for complete Professional Flow
             if (hasValidIdentity) {
-                userSessions[from].step = 'post_registration';
-                return finalizeConsultationLead(from, userSessions[from].savedPlan, null, platform);
+                userSessions[from].step = 'collect_custom_query_and_time'; 
+                let descriptivePrompt = (userLang === 'EN')
+                    ? `Thank you *${session.clientName}*! 🙏\n\nTo lock a high-converting strategy blueprint, please share your goals in the next reply:\n\n🌐 **1. Website Development:**\nWhich plan fits your vision? (Starter Plan, Basic Plan, Starter Business Site, or E-Commerce Hub?)\n\n🤖 **2. AI-Powered Growth Retainers:**\nWhat precise processes do you want to automate?`
+                    : `Thank you *${session.clientName}*! 🙏\n\nStrategy call ko 100% efficient banane ke liye, kripya agle message mein niche di gayi details batayein:\n\n🌐 **Type 1:** Agar aapko Website chahiye toh specific type likhein (e.g., Landing Page, Corporate Showcase, ya Online Store).\n\n🤖 **Type 2:** Agar AI Architecture/Bot chahiye toh details likhein (e.g., AI SEO, WhatsApp Lead Bot, Sales Engine).`;
+                return sendUnifiedMessage(from, descriptivePrompt, platform);
             } else {
                 userSessions[from].step = 'collect_consultation_identity'; 
                 let idPrompt = (userLang === 'EN') 
@@ -1746,9 +1769,13 @@ async function processUnifiedMessage(from, rawText, platform) {
             userSessions[from].requestedSlot = dynamicSlotLabel;
             sendAdminAlert(`🚨 *SLOT REQUEST!* 🚨\n📱 ${platform === 'telegram' ? 'TG-' : '+'}${from}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n⏰ Chosen Slot: ${dynamicSlotLabel}`);
             
+            // 🟢 ROUTE FIX: Send back to Plan Selection Menu for complete Professional Flow
             if (hasValidIdentity) {
-                userSessions[from].step = 'post_registration';
-                return finalizeConsultationLead(from, userSessions[from].savedPlan, null, platform);
+                userSessions[from].step = 'collect_custom_query_and_time'; 
+                let descriptivePrompt = (userLang === 'EN')
+                    ? `Thank you *${session.clientName}*! 🙏\n\nTo lock a high-converting strategy blueprint, please share your goals in the next reply:\n\n🌐 **1. Website Development:**\nWhich plan fits your vision? (Starter Plan, Basic Plan, Starter Business Site, or E-Commerce Hub?)\n\n🤖 **2. AI-Powered Growth Retainers:**\nWhat precise processes do you want to automate?`
+                    : `Thank you *${session.clientName}*! 🙏\n\nStrategy call ko 100% efficient banane ke liye, kripya agle message mein niche di gayi details batayein:\n\n🌐 **Type 1:** Agar aapko Website chahiye toh specific type likhein (e.g., Landing Page, Corporate Showcase, ya Online Store).\n\n🤖 **Type 2:** Agar AI Architecture/Bot chahiye toh details likhein (e.g., AI SEO, WhatsApp Lead Bot, Sales Engine).`;
+                return sendUnifiedMessage(from, descriptivePrompt, platform);
             } else {
                 userSessions[from].step = 'collect_consultation_identity'; 
                 let idPrompt = (userLang === 'EN') 
@@ -1839,6 +1866,45 @@ async function finalizeConsultationLead(from, textInput, res, platform) {
     
     const currency = isUSDTrack ? '$' : '₹';
     const taxLabel = isUSDTrack ? 'incl Gateway Fees' : 'incl GST';
+
+    // 🟢 SCHEDULE CONSULTATION REMINDER FOR THE CHOSEN TIME
+    let apptTimestamp = null;
+    const nowIST = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
+    
+    if (dynamicSlot.includes("Today at 5:00 PM") || dynamicSlot.includes("Aaj Shaam 5:00 Baje")) {
+        nowIST.setHours(17, 0, 0, 0);
+        apptTimestamp = nowIST.getTime();
+    } else if (dynamicSlot.includes("Tomorrow at 5:00 PM") || dynamicSlot.includes("Kal Shaam 5:00 Baje")) {
+        nowIST.setDate(nowIST.getDate() + 1);
+        nowIST.setHours(17, 0, 0, 0);
+        apptTimestamp = nowIST.getTime();
+    } else if (dynamicSlot.includes("Tomorrow at 12:00 PM") || dynamicSlot.includes("Kal Dopahar 12:00 Baje")) {
+        nowIST.setDate(nowIST.getDate() + 1);
+        nowIST.setHours(12, 0, 0, 0);
+        apptTimestamp = nowIST.getTime();
+    } else if (dynamicSlot.includes("Day After Tomorrow at 12:00 PM") || dynamicSlot.includes("Parso Dopahar 12:00 Baje")) {
+        nowIST.setDate(nowIST.getDate() + 2);
+        nowIST.setHours(12, 0, 0, 0);
+        apptTimestamp = nowIST.getTime();
+    }
+
+    if (apptTimestamp && apptTimestamp > Date.now()) {
+        const diffMs = apptTimestamp - Date.now();
+        const diffHoursInitial = diffMs / (1000 * 60 * 60);
+        activeAppointments.push({
+            bot: 'consultation',
+            platform: platform,
+            chatId: from,
+            lang: userLang,
+            timestamp: apptTimestamp,
+            clientName: cleanName,
+            reminded: { 
+                '10': diffHoursInitial <= 10, 
+                '2': diffHoursInitial <= 2,   
+                '1': diffHoursInitial <= 1    
+            }
+        });
+    }
 
     const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* ${displayPhone} ${platform === 'telegram' ? '(Telegram)' : '(WhatsApp)'}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details & Parameters:* Direct Consultation Slot: ${dynamicSlot}\n💬 *User Stated Objectives:* "${textInput}"\n💵 *Base Price:* ${currency}${matchedBasePrice}\n🔥 *Discount Applied:* ${currency}${savingAmount} (LAUNCH20)\n💰 *Calculated Price:* ${currency}${finalCalculatedPrice} (${taxLabel})\n\n🤖 *Status:* Live details captured securely!`;
     sendAdminAlert(comprehensiveAdminAlert); // Omnichannel Admin Alert

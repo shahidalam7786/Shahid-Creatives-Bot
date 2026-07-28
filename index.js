@@ -1,4 +1,4 @@
-process.env.TZ = 'Asia/Kolkata'; // 🟢 DEFAULT INDIAN STANDARDIZED TIME
+process.env.TZ = 'Asia/Kolkata'; // 🟢 DEFAULT INDIAN STANDARDIZED TIME ADDED
 
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -1796,6 +1796,62 @@ async function processUnifiedMessage(from, rawText, platform) {
         }
     }
 
+    // 🎯 STATE 6: CONSULTATION FIXED SLOTS ROUTING (INTEGRATED SMART DATA MEMORY)
+    if (currentStep === 'awaiting_consultation_slot') {
+        const currentHourIST = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Kolkata"})).getHours();
+        let chosenOptionClean = userText.replace(/[\-\*•\(\)]/g, '').trim();
+        
+        // Capture existing details if they already passed them
+        if (!userSessions[from].savedPlan) userSessions[from].savedPlan = userSessions[from].projectScope;
+        const hasValidIdentity = userSessions[from].skipIdentityCapture || (userSessions[from].clientName && userSessions[from].clientName !== "Valued Client" && userSessions[from].clientEmail && userSessions[from].clientEmail !== "Not Provided" && userSessions[from].clientEmail !== "");
+        
+        if (chosenOptionClean === 'a' || chosenOptionClean.includes("today") || chosenOptionClean.includes("5")) {
+            const dynamicSlotLabel = (currentHourIST >= 17) ? "Tomorrow at 5:00 PM" : "Today at 5:00 PM";
+            userSessions[from].requestedSlot = dynamicSlotLabel; 
+            sendAdminAlert(`🚨 *SLOT REQUEST!* 🚨\n📱 ${platform === 'telegram' ? 'TG-' : '+'}${from}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n⏰ Chosen Slot: ${dynamicSlotLabel}`);
+            
+            // 🟢 ROUTE FIX: Send back to Plan Selection Menu for complete Professional Flow
+            if (hasValidIdentity) {
+                userSessions[from].step = 'collect_custom_query_and_time'; 
+                let descriptivePrompt = (userLang === 'EN')
+                    ? `Thank you *${session.clientName}*! 🙏\n\nTo lock a high-converting strategy blueprint, please share your goals in the next reply:\n\n🌐 **1. Website Development:**\nWhich plan fits your vision? (Starter Plan, Basic Plan, Starter Business Site, or E-Commerce Hub?)\n\n🤖 **2. AI-Powered Growth Retainers:**\nWhat precise processes do you want to automate?`
+                    : `Thank you *${session.clientName}*! 🙏\n\nStrategy call ko 100% efficient banane ke liye, kripya agle message mein niche di gayi details batayein:\n\n🌐 **Type 1:** Agar aapko Website chahiye toh specific type likhein (e.g., Landing Page, Corporate Showcase, ya Online Store).\n\n🤖 **Type 2:** Agar AI Architecture/Bot chahiye toh details likhein (e.g., AI SEO, WhatsApp Lead Bot, Sales Engine).`;
+                return sendUnifiedMessage(from, descriptivePrompt, platform);
+            } else {
+                userSessions[from].step = 'collect_consultation_identity'; 
+                let idPrompt = (userLang === 'EN') 
+                    ? (platform === 'telegram' ? "✍ *Please complete your profile:* Kindly reply with your *Full Name, Email Address, and Mobile Number* (separated by commas, e.g. John Doe, john@email.com, 9876543210)." : "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address* (separated by a comma, e.g. John Doe, john@email.com).")
+                    : (platform === 'telegram' ? "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID, aur Mobile Number* reply mein comma (,) lagakar ek sath bhejien (jaise: Sarfaraj Khan, sarfaraj@gmail.com, 9876543210)." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma (,) lagakar ek sath bhejien (jaise: Sarfaraj Khan, sarfaraj@gmail.com).");
+                return sendUnifiedMessage(from, idPrompt, platform);
+            }
+        } else if (chosenOptionClean === 'b' || chosenOptionClean.includes("tomorrow") || chosenOptionClean.includes("12")) {
+            const dynamicSlotLabel = (currentHourIST >= 17) ? "Day After Tomorrow at 12:00 PM" : "Tomorrow at 12:00 PM";
+            userSessions[from].requestedSlot = dynamicSlotLabel;
+            sendAdminAlert(`🚨 *SLOT REQUEST!* 🚨\n📱 ${platform === 'telegram' ? 'TG-' : '+'}${from}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n⏰ Chosen Slot: ${dynamicSlotLabel}`);
+            
+            // 🟢 ROUTE FIX: Send back to Plan Selection Menu for complete Professional Flow
+            if (hasValidIdentity) {
+                userSessions[from].step = 'collect_custom_query_and_time'; 
+                let descriptivePrompt = (userLang === 'EN')
+                    ? `Thank you *${session.clientName}*! 🙏\n\nTo lock a high-converting strategy blueprint, please share your goals in the next reply:\n\n🌐 **1. Website Development:**\nWhich plan fits your vision? (Starter Plan, Basic Plan, Starter Business Site, or E-Commerce Hub?)\n\n🤖 **2. AI-Powered Growth Retainers:**\nWhat precise processes do you want to automate?`
+                    : `Thank you *${session.clientName}*! 🙏\n\nStrategy call ko 100% efficient banane ke liye, kripya agle message mein niche di gayi details batayein:\n\n🌐 **Type 1:** Agar aapko Website chahiye toh specific type likhein (e.g., Landing Page, Corporate Showcase, ya Online Store).\n\n🤖 **Type 2:** Agar AI Architecture/Bot chahiye toh details likhein (e.g., AI SEO, WhatsApp Lead Bot, Sales Engine).`;
+                return sendUnifiedMessage(from, descriptivePrompt, platform);
+            } else {
+                userSessions[from].step = 'collect_consultation_identity'; 
+                let idPrompt = (userLang === 'EN') 
+                    ? (platform === 'telegram' ? "✍ *Please complete your profile:* Kindly reply with your *Full Name, Email Address, and Mobile Number* (separated by commas, e.g. John Doe, john@email.com, 9876543210)." : "✍ *Please complete your profile:* Kindly reply with your *Full Name and Email Address* (separated by a comma, e.g. John Doe, john@email.com).")
+                    : (platform === 'telegram' ? "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID, aur Mobile Number* reply mein comma (,) lagakar ek sath bhejien (jaise: Sarfaraj Khan, sarfaraj@gmail.com, 9876543210)." : "✍ *Apna profile register karein:* Kripya apna *Full Name, Email ID* reply mein comma (,) lagakar ek sath bhejien (jaise: Sarfaraj Khan, sarfaraj@gmail.com).");
+                return sendUnifiedMessage(from, idPrompt, platform);
+            }
+        } else if (chosenOptionClean === 'c' || chosenOptionClean.includes("custom")) {
+            userSessions[from].step = 'awaiting_custom_time_input';
+            userSessions[from].skipIdentityCapture = hasValidIdentity; // Setup pass tag
+            return sendUnifiedMessage(from, (userLang === 'EN') 
+                ? "📅 *Custom Scheduling Activated!*\n\nOur timing is *11:00 AM to 5:00 PM (Friday OFF)*.\nPlease type your preferred **Date and Time** below (e.g., *Tomorrow at 3 PM*):" 
+                : "📅 *Custom Scheduling Active!*\n\nHumari timing *11:00 AM se 5:00 PM (Friday OFF)* hai.\nKripya jis **Date aur Time** par aap call chahte hain, use niche type karke send karein (jaise: *Kal dopahar 3 baje*):", platform);
+        }
+    }
+
     // 🎯 STATE 8: CORE ENGINE - MAIN MENU ROUTER
     if (currentStep === 'welcome' || currentStep === 'main_menu') {
         userSessions[from].step = 'main_menu';
@@ -1871,43 +1927,61 @@ async function finalizeConsultationLead(from, textInput, res, platform) {
     const currency = isUSDTrack ? '$' : '₹';
     const taxLabel = isUSDTrack ? 'incl Gateway Fees' : 'incl GST';
 
-    // 🟢 SCHEDULE CONSULTATION REMINDER FOR THE CHOSEN TIME (WITH TRANSLATION)
+    // 🟢 SCHEDULE CONSULTATION REMINDER FOR THE CHOSEN TIME
     let apptTimestamp = null;
     const dateObjCons = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
-    
     let inputStr = dynamicSlot.toLowerCase();
 
-    // Parse Date
+    // 1. Parsing Date (Kal / Tomorrow / Day After / Parso)
     if (inputStr.includes('tomorrow') || inputStr.includes('kal')) {
         dateObjCons.setDate(dateObjCons.getDate() + 1);
     } else if (inputStr.includes('day after') || inputStr.includes('parso')) {
         dateObjCons.setDate(dateObjCons.getDate() + 2);
     }
 
-    // Parse Time
-    const timeMatch = dynamicSlot.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM|am|pm|baje)/i);
-    if (timeMatch) {
-        let h = parseInt(timeMatch[1], 10);
-        let m = timeMatch[2] ? parseInt(timeMatch[2], 10) : 0;
-        let mod = timeMatch[3].toLowerCase();
-
-        if ((mod === 'pm' || mod === 'baje') && h < 12 && h >= 1 && h <= 5) h += 12; // Assuming 1-5 baje is PM
-        if (mod === 'am' && h === 12) h = 0;
-
-        dateObjCons.setHours(h, m, 0, 0);
-        apptTimestamp = dateObjCons.getTime();
+    // 2. Parsing Time
+    let h = 0, m = 0, isValidTimeFound = false;
+    
+    if (inputStr.includes("today at 5:00 pm") || inputStr.includes("aaj shaam 5:00 baje")) {
+        h = 17; m = 0; isValidTimeFound = true;
+    } else if (inputStr.includes("tomorrow at 5:00 pm") || inputStr.includes("kal shaam 5:00 baje")) {
+        h = 17; m = 0; isValidTimeFound = true;
+        dateObjCons.setDate(new Date().getDate() + 1);
+    } else if (inputStr.includes("tomorrow at 12:00 pm") || inputStr.includes("kal dopahar 12:00 baje")) {
+        h = 12; m = 0; isValidTimeFound = true;
+        dateObjCons.setDate(new Date().getDate() + 1);
+    } else if (inputStr.includes("day after tomorrow at 12:00 pm") || inputStr.includes("parso dopahar 12:00 baje")) {
+        h = 12; m = 0; isValidTimeFound = true;
+        dateObjCons.setDate(new Date().getDate() + 2);
     } else {
-        if (inputStr.includes("5:00 pm") || inputStr.includes("5:00 baje") || inputStr.includes("5pm") || inputStr.includes("5 pm")) {
-            dateObjCons.setHours(17, 0, 0, 0);
-            apptTimestamp = dateObjCons.getTime();
-        } else if (inputStr.includes("12:00 pm") || inputStr.includes("12:00 baje") || inputStr.includes("12pm") || inputStr.includes("12 pm")) {
-            dateObjCons.setHours(12, 0, 0, 0);
-            apptTimestamp = dateObjCons.getTime();
+        const timeMatch = dynamicSlot.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM|am|pm|baje)/i);
+        if (timeMatch) {
+            h = parseInt(timeMatch[1], 10);
+            m = timeMatch[2] ? parseInt(timeMatch[2], 10) : 0;
+            let mod = timeMatch[3].toLowerCase();
+
+            if ((mod === 'pm' || mod === 'baje') && h < 12 && h >= 1 && h <= 5) h += 12;
+            if (mod === 'am' && h === 12) h = 0;
+            isValidTimeFound = true;
+        } else {
+            // Backup parsing for implicit times without space (e.g. '11am', '5pm')
+            if (inputStr.includes("5pm") || inputStr.includes("5 pm") || inputStr.includes("5 baje")) { h = 17; m = 0; isValidTimeFound = true; }
+            else if (inputStr.includes("4pm") || inputStr.includes("4 pm") || inputStr.includes("4 baje")) { h = 16; m = 0; isValidTimeFound = true; }
+            else if (inputStr.includes("3pm") || inputStr.includes("3 pm") || inputStr.includes("3 baje")) { h = 15; m = 0; isValidTimeFound = true; }
+            else if (inputStr.includes("2pm") || inputStr.includes("2 pm") || inputStr.includes("2 baje")) { h = 14; m = 0; isValidTimeFound = true; }
+            else if (inputStr.includes("1pm") || inputStr.includes("1 pm") || inputStr.includes("1 baje")) { h = 13; m = 0; isValidTimeFound = true; }
+            else if (inputStr.includes("12pm") || inputStr.includes("12 pm") || inputStr.includes("12 baje")) { h = 12; m = 0; isValidTimeFound = true; }
+            else if (inputStr.includes("11am") || inputStr.includes("11 am") || inputStr.includes("11 baje")) { h = 11; m = 0; isValidTimeFound = true; }
         }
     }
 
-    // Soft Error Handling for Invalid Times (11-5, Friday Off, Max 2/hr)
-    if (!apptTimestamp) {
+    if (isValidTimeFound) {
+        dateObjCons.setHours(h, m, 0, 0);
+        apptTimestamp = dateObjCons.getTime();
+    }
+
+    // 🟢 3. Soft Error Validation (Max 2 per Hour, Friday Off, 11 AM - 5 PM)
+    if (!isValidTimeFound || !apptTimestamp) {
         let errMsg = userLang === 'EN' 
             ? "⚠️ *Invalid Time Format!*\nPlease specify a valid time between 11 AM and 5 PM (e.g., *Tomorrow at 2 PM*)." 
             : "⚠️ *Galat Samay!*\nKripya 11 AM se 5 PM ke beech ka sahi samay likhein (jaise: *Kal 2 PM*).";
@@ -1915,67 +1989,66 @@ async function finalizeConsultationLead(from, textInput, res, platform) {
         return sendUnifiedMessage(from, errMsg, platform);
     }
 
-    if (apptTimestamp) {
-        const d = new Date(apptTimestamp);
-        
-        // Check Friday
-        if (d.getDay() === 5) {
-            let friMsg = userLang === 'EN' 
-                ? "⚠️ *Friday is Off!*\nOur team does not take consultations on Fridays. Please reply with another Date and Time (e.g., *Monday at 2 PM*)." 
-                : "⚠️ *Friday Off!*\nHumari team Friday ko consultation nahi leti hai. Kripya koi dusra din aur samay likhein (jaise: *Monday 2 PM*).";
-            userSessions[from].step = 'awaiting_custom_time_input';
-            return sendUnifiedMessage(from, friMsg, platform);
-        }
-        
-        // Check 11 AM to 5 PM
-        const hr = d.getHours();
-        if (hr < 11 || hr > 17 || (hr === 17 && d.getMinutes() > 0)) {
-            let timeMsg = userLang === 'EN' 
-                ? "⚠️ *Outside Hours!*\nConsultation hours are strictly *11:00 AM to 5:00 PM*. Please reply with a valid time within this window." 
-                : "⚠️ *Samay Seema se Bahar!*\nConsultation ka samay subah *11 AM se shaam 5 PM* tak hai. Kripya iske beech ka koi samay likhein.";
-            userSessions[from].step = 'awaiting_custom_time_input';
-            return sendUnifiedMessage(from, timeMsg, platform);
-        }
-        
-        // Check Max 2 Bookings/Hr
-        const dateKey = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}_${hr}`;
-        if (bookedSlots.consultation_hourly[dateKey] >= 2) {
-            let fullMsg = userLang === 'EN' 
-                ? "⚠️ *Slot Unavailable!*\nThis hour is fully booked (Max 2 slots/hr). Please reply with another time." 
-                : "⚠️ *Slot Unavailable!*\nYe ghanta pehle hi full ho chuka hai (Max 2 bookings). Kripya koi aur samay likhein.";
-            userSessions[from].step = 'awaiting_custom_time_input';
-            return sendUnifiedMessage(from, fullMsg, platform);
-        }
-
-        // Lock Slot successfully
-        bookedSlots.consultation_hourly[dateKey] = (bookedSlots.consultation_hourly[dateKey] || 0) + 1;
-
-        if (apptTimestamp > Date.now()) {
-            const diffMs = apptTimestamp - Date.now();
-            const diffHoursInitial = diffMs / (1000 * 60 * 60);
-            
-            activeAppointments.push({
-                bot: 'consultation',
-                platform: platform,
-                chatId: from,
-                lang: userLang,
-                timestamp: apptTimestamp,
-                clientName: cleanName,
-                reminded: { 
-                    '3': diffHoursInitial <= 3, 
-                    '2': diffHoursInitial <= 2,   
-                    '1': diffHoursInitial <= 1    
-                }
-            });
-        }
+    const d = new Date(apptTimestamp);
+    
+    if (apptTimestamp <= Date.now()) {
+        let pastMsg = userLang === 'EN' 
+            ? "⚠️ *Past Time Selected!*\nPlease select a future time for your consultation." 
+            : "⚠️ *Guzra Hua Samay!*\nKripya aane wale samay ka chunaaw karein.";
+        userSessions[from].step = 'awaiting_custom_time_input';
+        return sendUnifiedMessage(from, pastMsg, platform);
     }
 
-    // Format readable date for Admin
-    let displayAdminDate = dynamicSlot;
-    if (apptTimestamp) {
-        const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' };
-        displayAdminDate = new Date(apptTimestamp).toLocaleString('en-IN', options);
+    if (d.getDay() === 5) {
+        let friMsg = userLang === 'EN' 
+            ? "⚠️ *Friday is Off!*\nOur team does not take consultations on Fridays. Please reply with another Date and Time (e.g., *Monday at 2 PM*)." 
+            : "⚠️ *Friday Off!*\nHumari team Friday ko consultation nahi leti hai. Kripya koi dusra din aur samay likhein (jaise: *Monday 2 PM*).";
+        userSessions[from].step = 'awaiting_custom_time_input';
+        return sendUnifiedMessage(from, friMsg, platform);
     }
+    
+    const hr = d.getHours();
+    if (hr < 11 || hr > 17 || (hr === 17 && d.getMinutes() > 0)) {
+        let timeMsg = userLang === 'EN' 
+            ? "⚠️ *Outside Hours!*\nConsultation hours are strictly *11:00 AM to 5:00 PM*. Please reply with a valid time within this window." 
+            : "⚠️ *Samay Seema se Bahar!*\nConsultation ka samay subah *11 AM se shaam 5 PM* tak hai. Kripya iske beech ka koi samay likhein.";
+        userSessions[from].step = 'awaiting_custom_time_input';
+        return sendUnifiedMessage(from, timeMsg, platform);
+    }
+    
+    const dateKey = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}_${hr}`;
+    if (bookedSlots.consultation_hourly[dateKey] >= 2) {
+        let fullMsg = userLang === 'EN' 
+            ? "⚠️ *Slot Unavailable!*\nThis hour is fully booked (Max 2 slots/hr). Please reply with another time." 
+            : "⚠️ *Slot Unavailable!*\nYe ghanta pehle hi full ho chuka hai (Max 2 bookings). Kripya koi aur samay likhein.";
+        userSessions[from].step = 'awaiting_custom_time_input';
+        return sendUnifiedMessage(from, fullMsg, platform);
+    }
+
+    // Lock Slot successfully
+    bookedSlots.consultation_hourly[dateKey] = (bookedSlots.consultation_hourly[dateKey] || 0) + 1;
+
+    const diffMs = apptTimestamp - Date.now();
+    const diffHoursInitial = diffMs / (1000 * 60 * 60);
+    
+    activeAppointments.push({
+        bot: 'consultation',
+        platform: platform,
+        chatId: from,
+        lang: userLang,
+        timestamp: apptTimestamp,
+        clientName: cleanName,
+        reminded: { 
+            '10': diffHoursInitial <= 10,
+            '3': diffHoursInitial <= 3, 
+            '2': diffHoursInitial <= 2,   
+            '1': diffHoursInitial <= 1    
+        }
+    });
+
+    // 🟢 4. Format readable date for Admin Display (e.g. Wed, 29 Jul 2026, 11:00 AM)
+    const optionsDate = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' };
+    let displayAdminDate = new Date(apptTimestamp).toLocaleString('en-IN', optionsDate);
 
     const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* ${displayPhone} ${platform === 'telegram' ? '(Telegram)' : '(WhatsApp)'}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details:* ${displayAdminDate} (Input: ${dynamicSlot})\n💬 *User Stated Objectives:* "${textInput}"\n💵 *Base Price:* ${currency}${matchedBasePrice}\n🔥 *Discount Applied:* ${currency}${savingAmount} (LAUNCH20)\n💰 *Calculated Price:* ${currency}${finalCalculatedPrice} (${taxLabel})\n\n🤖 *Status:* Live details captured securely!`;
     

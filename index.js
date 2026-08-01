@@ -2181,3 +2181,4 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log("✅ Zam Zam Clinic Bot Active!");
     console.log("✅ WhatsApp Webhook Active!");
 });
+ 

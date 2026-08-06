@@ -869,16 +869,22 @@ function calculateTotalPayable(basePrice, isUSD = false) {
     }
 }
 
-// 🎯 ROBUST PLAN PRICE MAPPER (Strictly Ordered by USD & INR Specifications including Combo Plans)
+// 🎯 ROBUST PLAN PRICE MAPPER (Strictly Ordered by USD & INR Specifications including Dynamic Combo Annual/Monthly Options)
 function getBasePriceByPlan(planScope, isUSD = false) {
     const text = String(planScope).toLowerCase().trim();
     
     if (isUSD) {
-        // 🚀 SPECIAL COMBO OFFERS (USD PRICING)
-        if (text.includes("local ai & gmb growth") || text.includes("plan 1: local ai")) {
+        // 🚀 SPECIAL COMBO OFFERS (USD PRICING - DYNAMIC MONTHLY VS ANNUAL PASS)
+        if (text.includes("local ai & gmb growth") || text.includes("plan 1")) {
+            if (text.includes("annual") || text.includes("year") || text.includes("399")) {
+                return "399"; // $399 / Year (Save $138 / ~25% OFF)
+            }
             return "69"; // One-Time Setup $69 ($39/mo retainer billed separately)
         }
-        if (text.includes("full digital & ai scale launch") || text.includes("plan 2: full digital")) {
+        if (text.includes("full digital & ai scale launch") || text.includes("plan 2")) {
+            if (text.includes("annual") || text.includes("year") || text.includes("799")) {
+                return "799"; // $799 / Year (Save $318 / ~30% OFF)
+            }
             return "169"; // One-Time Setup $169 ($79/mo retainer billed separately)
         }
 
@@ -927,11 +933,17 @@ function getBasePriceByPlan(planScope, isUSD = false) {
         
         return "110";
     } else {
-        // 🚀 SPECIAL COMBO OFFERS (INR PRICING)
-        if (text.includes("local ai & gmb growth") || text.includes("plan 1: local ai")) {
+        // 🚀 SPECIAL COMBO OFFERS (INR PRICING - DYNAMIC MONTHLY VS ANNUAL PASS)
+        if (text.includes("local ai & gmb growth") || text.includes("plan 1")) {
+            if (text.includes("annual") || text.includes("year") || text.includes("24999")) {
+                return "24999"; // ₹24,999 / Year (Save ₹10,000 / ~30% OFF)
+            }
             return "4999"; // One-Time Setup ₹4,999 (Monthly ₹2,499)
         }
-        if (text.includes("full digital & ai scale launch") || text.includes("plan 2: full digital")) {
+        if (text.includes("full digital & ai scale launch") || text.includes("plan 2")) {
+            if (text.includes("annual") || text.includes("year") || text.includes("49999")) {
+                return "49999"; // ₹49,999 / Year (Save ₹23,000 / ~32% OFF)
+            }
             return "12999"; // One-Time Setup ₹12,999 (Monthly ₹4,999)
         }
 
@@ -1564,8 +1576,8 @@ async function processUnifiedMessage(from, rawText, platform) {
         userSessions[from].clientPhone = cleanPhone; // Saved!
 
         let descriptivePrompt = (userLang === 'EN')
-            ? `Thank you *${cleanName}*! 🙏\n\nTo lock a high-converting strategy blueprint, please share your goals in the next reply:\n\n🌐 **1. Website Development:**\nWhich plan fits your vision? (Starter Plan, Basic Plan, Starter Business Site, or E-Commerce Hub?)\n\n🤖 **2. AI-Powered Growth Retainers:**\nWhat precise processes do you want to automate?\n\n🚀 **3. Special Combo Offers:**\nSelect Plan 1 or Plan 2 for all-in-one local or digital scaling!`
-            : `Thank you *${cleanName}*! 🙏\n\nStrategy call ko 100% efficient banane ke liye, kripya agle message mein niche di gayi details batayein:\n\n🌐 **Type 1:** Agar aapko Website chahiye toh specific type likhein (e.g., Landing Page, Corporate Showcase, ya Online Store).\n\n🤖 **Type 2:** Agar AI Architecture/Bot chahiye toh details likhein (e.g., AI SEO, WhatsApp Lead Bot, Sales Engine).\n\n🚀 **Type 3:** Special Combo Offers (Local AI & GMB Growth / Full Digital Scale Launch).`;
+            ? `Thank you *${cleanName}*! 🙏\n\nTo lock a high-converting strategy blueprint, please share your goals in the next reply:\n\n🌐 **1. Website Development:**\nWhich plan fits your vision? (Starter Plan, Basic Plan, Starter Business Site, or E-Commerce Hub?)\n\n🤖 **2. AI-Powered Growth Retainers:**\nWhat precise processes do you want to automate?\n\n🚀 **3. Special Combo Offers:**\nSelect Plan 1 or Plan 2 (Monthly Retainer or 🎁 Annual Pass with ~30% Savings) for all-in-one local or digital scaling!`
+            : `Thank you *${cleanName}*! 🙏\n\nStrategy call ko 100% efficient banane ke liye, kripya agle message mein niche di gayi details batayein:\n\n🌐 **Type 1:** Agar aapko Website chahiye toh specific type likhein (e.g., Landing Page, Corporate Showcase, ya Online Store).\n\n🤖 **Type 2:** Agar AI Architecture/Bot chahiye toh details likhein (e.g., AI SEO, WhatsApp Lead Bot, Sales Engine).\n\n🚀 **Type 3:** Special Combo Offers (Local AI & GMB Growth / Full Digital Scale Launch - Monthly Retainer ya 🎁 Annual Pass).`;
         return sendUnifiedMessage(from, descriptivePrompt, platform);
     }
 
@@ -1592,8 +1604,8 @@ async function processUnifiedMessage(from, rawText, platform) {
                     : "⚠️ Kripya clear batayein! Aapko hamare active modules mein se kis tarah ki website chahiye? \n\n👉 Niche diye gaye options mein se ek number (1-4) reply karein:\n1️⃣ *Landing Page/Funnel* (₹12,300)\n2️⃣ *Business/Corporate Website* (₹25,500)\n3️⃣ *E-commerce Website (Online Store)* (₹47,500)\n4️⃣ *Custom Web Application* (₹1,45,000+)";
             } else if (catType === 'combo') {
                 interceptorReply = isUSDTrack
-                    ? "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\n👉 Reply with 1 or 2:\n\n1️⃣ *PLAN 1: Local AI & GMB Growth (Bina Website Ke)*\n💰 Setup: $69 (Regular $139 - 50% OFF) + $39/mo Retainer\n📍 GMB Verification & Map Pack Top 3 SEO\n🤖 VPS AI Review Bot & WhatsApp AI Lead Bot\n\n2️⃣ *PLAN 2: Full Digital & AI Scale Launch (With High-Speed Website)*\n💰 Setup: $169 (Regular $259 - 35% OFF) + $79/mo Retainer\n💻 Custom Next.js High-Speed Website + Schema\n🤖 Multi-Client AI Review Agent & Chatbot Maintenance\n\n⚠️ *Note:* Domain Name & Hosting Fees are NOT included in the package. Clients can purchase their own, OR Shahid Creatives can assist at actual cost."
-                    : "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\n👉 Niche me se 1 ya 2 reply karein:\n\n1️⃣ *PLAN 1: Local AI & GMB Growth (Bina Website Ke)*\n💰 Setup: ₹4,999 (Regular ₹9,999 - 50% OFF) + Monthly Retainer ₹2,499/mo\n📍 Local Map Pack SEO, Citations & GMB Verification Assist\n🤖 VPS-Hosted AI Review Bot & WhatsApp Lead Bot Maintenance\n\n2️⃣ *PLAN 2: Full Digital & AI Scale Launch (With New High-Speed Website)*\n💰 Setup: ₹12,999 (Regular ₹19,999 - 35% OFF) + Monthly Retainer ₹4,999/mo\n💻 Custom High-Speed Next.js Website + Rich Schema Setup\n🤖 VPS Multi-Client AI Review Agent & Website/WhatsApp AI Maintenance\n\n⚠️ *Note:* Domain Name & Hosting Fees are NOT included in the package. Clients can purchase their own, OR Shahid Creatives can assist at actual cost.";
+                    ? "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\n👉 Reply with option number (1 to 4):\n\n1️⃣ *PLAN 1: Local AI & GMB Growth [MONTHLY]*\n💰 Setup: $69 (50% OFF) + $39/mo Retainer\n📍 GMB Verification & Map Pack Top 3 SEO\n\n2️⃣ *PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - SAVE ~25%]*\n💰 Price: $399 / Year (Save $138)\n🎁 Bonus: Free Domain (.com/.in) + Citation Blast + VIP Support\n\n3️⃣ *PLAN 2: Full Digital & AI Scale Launch [MONTHLY]*\n💰 Setup: $169 (35% OFF) + $79/mo Retainer\n💻 Custom Next.js Site + Multi-Client AI Agent\n\n4️⃣ *PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - SAVE ~30%]*\n💰 Price: $799 / Year (Save $318)\n🎁 Bonus: Free Hosting & Domain + 12 SEO Blogs + WhatsApp AI CRM Sync\n\n⚠️ *Note:* Domain & Hosting Fees are NOT included in monthly setup. Clients can purchase their own OR Shahid Creatives can assist at cost."
+                    : "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\n👉 Niche me se ek number (1 se 4) reply karein:\n\n1️⃣ *PLAN 1: Local AI & GMB Growth [MONTHLY RETAINER]*\n💰 Setup: ₹4,999 (50% OFF) + Monthly ₹2,499/mo\n📍 Local Map Pack SEO, Citations & Review Bot\n\n2️⃣ *PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - SAVE ~30%]*\n💰 Price: ₹24,999 / Year (Save ₹10,000)\n🎁 Perks: Free 1-Yr Domain + Citation Blast + Unlimited AI Credits + VIP Support\n\n3️⃣ *PLAN 2: Full Digital & AI Scale Launch [MONTHLY RETAINER]*\n💰 Setup: ₹12,999 (35% OFF) + Monthly ₹4,999/mo\n💻 High-Speed Next.js Website + Multi-Client AI Agent\n\n4️⃣ *PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - SAVE ~32%]*\n💰 Price: ₹49,999 / Year (Save ₹23,000)\n🎁 Perks: Free Premium Hosting + Domain + 12 SEO Blogs + WhatsApp AI CRM Sync\n\n⚠️ *Note:* Monthly packages me Domain Name & Hosting Fees included nahi hai. Client khud le sakte hain ya Shahid Creatives actual cost par purchase karwa degi.";
             } else {
                 interceptorReply = isUSDTrack 
                     ? "⚠️ Please be specific! What AI architecture do you want? \n\n👉 Reply with an option number (1-8):\n1️⃣ *Starter Digital Maintainer* ($77)\n2️⃣ *Web Conversion Engine* ($155)\n3️⃣ *Omnichannel Growth Partner* ($311)\n4️⃣ *Full-Scale Ecosystem Operations* ($499)\n5️⃣ *Elite Intelligence* ($799)\n6️⃣ *Telegram Universal Automation - Starter* ($77)\n7️⃣ *Telegram Universal Automation - Growth* ($155)\n8️⃣ *Telegram Universal Automation - Elite* ($311)"
@@ -1618,8 +1630,8 @@ async function processUnifiedMessage(from, rawText, platform) {
                     options = {
                         reply_markup: {
                             inline_keyboard: [
-                                [{ text: "🟢 PLAN 1: Local AI & GMB Growth", callback_data: "sel_combo_1" }],
-                                [{ text: "🔵 PLAN 2: Full Digital & AI Scale", callback_data: "sel_combo_2" }]
+                                [{ text: "🟢 PLAN 1 (Monthly)", callback_data: "sel_combo_1" }, { text: "🎁 PLAN 1 (Annual Pass)", callback_data: "sel_combo_2" }],
+                                [{ text: "🔵 PLAN 2 (Monthly)", callback_data: "sel_combo_3" }, { text: "🎁 PLAN 2 (Annual Pass)", callback_data: "sel_combo_4" }]
                             ]
                         }
                     };
@@ -1668,8 +1680,10 @@ async function processUnifiedMessage(from, rawText, platform) {
                 else if (userText === '4') selectedScope = "Custom Web Application";
             }
         } else if (cat === 'combo') {
-            if (userText === '1') selectedScope = "PLAN 1: Local AI & GMB Growth (Bina Website Ke)";
-            else if (userText === '2') selectedScope = "PLAN 2: Full Digital & AI Scale Launch (With New High-Speed Website)";
+            if (userText === '1') selectedScope = "PLAN 1: Local AI & GMB Growth [MONTHLY RETAINER]";
+            else if (userText === '2') selectedScope = "PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - SAVE ~30%]";
+            else if (userText === '3') selectedScope = "PLAN 2: Full Digital & AI Scale Launch [MONTHLY RETAINER]";
+            else if (userText === '4') selectedScope = "PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - SAVE ~32%]";
         } else {
             if (userText === '1') selectedScope = "Starter Digital Maintainer";
             else if (userText === '2') selectedScope = "Web Conversion Engine";
@@ -1862,16 +1876,22 @@ async function processUnifiedMessage(from, rawText, platform) {
         }
     }
 
-    // 🎯 STATE 5.3: PROCESS SPECIAL COMBO SELECTION
+    // 🎯 STATE 5.3: PROCESS SPECIAL COMBO SELECTION (WITH MONTHLY & 🎁 ANNUAL PASS OPTIONS)
     if (currentStep === 'process_combo_menu') {
         let isComboMatch = false;
         let dynamicCategory = "";
 
-        if (userText === '1' || userText.includes("local ai") || userText.includes("gmb")) {
-            dynamicCategory = "PLAN 1: Local AI & GMB Growth (Bina Website Ke)";
+        if (userText === '1') {
+            dynamicCategory = "PLAN 1: Local AI & GMB Growth [MONTHLY RETAINER]";
             isComboMatch = true;
-        } else if (userText === '2' || userText.includes("full digital") || userText.includes("scale launch")) {
-            dynamicCategory = "PLAN 2: Full Digital & AI Scale Launch (With New High-Speed Website)";
+        } else if (userText === '2') {
+            dynamicCategory = "PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - SAVE ~30%]";
+            isComboMatch = true;
+        } else if (userText === '3') {
+            dynamicCategory = "PLAN 2: Full Digital & AI Scale Launch [MONTHLY RETAINER]";
+            isComboMatch = true;
+        } else if (userText === '4') {
+            dynamicCategory = "PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - SAVE ~32%]";
             isComboMatch = true;
         }
 
@@ -1880,12 +1900,12 @@ async function processUnifiedMessage(from, rawText, platform) {
             userSessions[from].projectScope = dynamicCategory;
 
             let promptText = (userLang === 'EN')
-                ? (platform === 'telegram' ? `Awesome! Selected: *${dynamicCategory}*. 🚀\n\n⚠️ *Package Note:* Domain Name & Hosting Fees are NOT included. Clients can purchase their own, OR Shahid Creatives can assist at actual cost.\n\n📝 Kindly reply with your **Full Name, Email Address, and Mobile Number** (comma separated).` : `Awesome! Selected: *${dynamicCategory}*. 🚀\n\n⚠️ *Package Note:* Domain Name & Hosting Fees are NOT included. Clients can purchase their own, OR Shahid Creatives can assist at actual cost.\n\n📝 Kindly reply with your **Full Name** and **Email Address**.`)
-                : (platform === 'telegram' ? `Awesome! Aapne *${dynamicCategory}* select kiya hai. 🚀\n\n⚠️ *Package Note:* Domain Name & Hosting Fees package me included nahi hai. Client khud le sakte hain ya Shahid Creatives actual cost par purchase karwa degi.\n\n📝 Ab kripya apna **Full Name, Email ID, aur Mobile Number** reply mein bhej lijiye.` : `Awesome! Aapne *${dynamicCategory}* select kiya hai. 🚀\n\n⚠️ *Package Note:* Domain Name & Hosting Fees package me included nahi hai. Client khud le sakte hain ya Shahid Creatives actual cost par purchase karwa degi.\n\n📝 Ab kripya apna **Full Name** aur **Email ID** reply mein bhej lijiye.`);
+                ? (platform === 'telegram' ? `Awesome! Selected: *${dynamicCategory}*. 🚀\n\n⚠️ *Package Note:* Domain Name & Hosting Fees are NOT included in Monthly setups. Annual Passes include Free Hosting & Domain Perks!\n\n📝 Kindly reply with your **Full Name, Email Address, and Mobile Number** (comma separated).` : `Awesome! Selected: *${dynamicCategory}*. 🚀\n\n⚠️ *Package Note:* Domain Name & Hosting Fees are NOT included in Monthly setups. Annual Passes include Free Hosting & Domain Perks!\n\n📝 Kindly reply with your **Full Name** and **Email Address**.`)
+                : (platform === 'telegram' ? `Awesome! Aapne *${dynamicCategory}* select kiya hai. 🚀\n\n⚠️ *Package Note:* Monthly setups me Domain/Hosting included nahi hai. Annual Passes me Free Domain & Premium Hosting perks milte hain!\n\n📝 Ab kripya apna **Full Name, Email ID, aur Mobile Number** reply mein bhej lijiye.` : `Awesome! Aapne *${dynamicCategory}* select kiya hai. 🚀\n\n⚠️ *Package Note:* Monthly setups me Domain/Hosting included nahi hai. Annual Passes me Free Domain & Premium Hosting perks milte hain!\n\n📝 Ab kripya apna **Full Name** aur **Email ID** reply mein bhej lijiye.`);
 
             return sendUnifiedMessage(from, promptText, platform);
         } else {
-            return sendUnifiedMessage(from, userLang === 'EN' ? "❌ Invalid selection. Please reply with 1 or 2." : "❌ Kripya 1 ya 2 likh kar reply karein.", platform);
+            return sendUnifiedMessage(from, userLang === 'EN' ? "❌ Invalid selection. Please reply with 1, 2, 3, or 4." : "❌ Kripya 1, 2, 3 ya 4 likh kar reply karein.", platform);
         }
     }
 
@@ -1907,8 +1927,8 @@ async function processUnifiedMessage(from, rawText, platform) {
             if (hasValidIdentity) {
                 userSessions[from].step = 'collect_custom_query_and_time'; 
                 let descriptivePrompt = (userLang === 'EN')
-                    ? `Thank you *${session.clientName}*! 🙏\n\nTo lock a high-converting strategy blueprint, please share your goals in the next reply:\n\n🌐 **1. Website Development:**\nWhich plan fits your vision? (Starter Plan, Basic Plan, Starter Business Site, or E-Commerce Hub?)\n\n🤖 **2. AI-Powered Growth Retainers:**\nWhat precise processes do you want to automate?\n\n🚀 **3. Special Combo Offers:**\nSelect Plan 1 or Plan 2 for all-in-one local or digital scaling!`
-                    : `Thank you *${session.clientName}*! 🙏\n\nStrategy call ko 100% efficient banane ke liye, kripya agle message mein niche di gayi details batayein:\n\n🌐 **Type 1:** Agar aapko Website chahiye toh specific type likhein (e.g., Landing Page, Corporate Showcase, ya Online Store).\n\n🤖 **Type 2:** Agar AI Architecture/Bot chahiye toh details likhein (e.g., AI SEO, WhatsApp Lead Bot, Sales Engine).\n\n🚀 **Type 3:** Special Combo Offers (Local AI & GMB Growth / Full Digital Scale Launch).`;
+                    ? `Thank you *${session.clientName}*! 🙏\n\nTo lock a high-converting strategy blueprint, please share your goals in the next reply:\n\n🌐 **1. Website Development:**\nWhich plan fits your vision? (Starter Plan, Basic Plan, Starter Business Site, or E-Commerce Hub?)\n\n🤖 **2. AI-Powered Growth Retainers:**\nWhat precise processes do you want to automate?\n\n🚀 **3. Special Combo Offers:**\nSelect Plan 1 or Plan 2 (Monthly Retainer or 🎁 Annual Pass with ~30% Savings) for all-in-one local or digital scaling!`
+                    : `Thank you *${session.clientName}*! 🙏\n\nStrategy call ko 100% efficient banane ke liye, kripya agle message mein niche di gayi details batayein:\n\n🌐 **Type 1:** Agar aapko Website chahiye toh specific type likhein (e.g., Landing Page, Corporate Showcase, ya Online Store).\n\n🤖 **Type 2:** Agar AI Architecture/Bot chahiye toh details likhein (e.g., AI SEO, WhatsApp Lead Bot, Sales Engine).\n\n🚀 **Type 3:** Special Combo Offers (Local AI & GMB Growth / Full Digital Scale Launch - Monthly Retainer ya 🎁 Annual Pass).`;
                 return sendUnifiedMessage(from, descriptivePrompt, platform);
             } else {
                 userSessions[from].step = 'collect_consultation_identity'; 
@@ -1926,8 +1946,8 @@ async function processUnifiedMessage(from, rawText, platform) {
             if (hasValidIdentity) {
                 userSessions[from].step = 'collect_custom_query_and_time'; 
                 let descriptivePrompt = (userLang === 'EN')
-                    ? `Thank you *${session.clientName}*! 🙏\n\nTo lock a high-converting strategy blueprint, please share your goals in the next reply:\n\n🌐 **1. Website Development:**\nWhich plan fits your vision? (Starter Plan, Basic Plan, Starter Business Site, or E-Commerce Hub?)\n\n🤖 **2. AI-Powered Growth Retainers:**\nWhat precise processes do you want to automate?\n\n🚀 **3. Special Combo Offers:**\nSelect Plan 1 or Plan 2 for all-in-one local or digital scaling!`
-                    : `Thank you *${session.clientName}*! 🙏\n\nStrategy call ko 100% efficient banane ke liye, kripya agle message mein niche di gayi details batayein:\n\n🌐 **Type 1:** Agar aapko Website chahiye toh specific type likhein (e.g., Landing Page, Corporate Showcase, ya Online Store).\n\n🤖 **Type 2:** Agar AI Architecture/Bot chahiye toh details likhein (e.g., AI SEO, WhatsApp Lead Bot, Sales Engine).\n\n🚀 **Type 3:** Special Combo Offers (Local AI & GMB Growth / Full Digital Scale Launch).`;
+                    ? `Thank you *${session.clientName}*! 🙏\n\nTo lock a high-converting strategy blueprint, please share your goals in the next reply:\n\n🌐 **1. Website Development:**\nWhich plan fits your vision? (Starter Plan, Basic Plan, Starter Business Site, or E-Commerce Hub?)\n\n🤖 **2. AI-Powered Growth Retainers:**\nWhat precise processes do you want to automate?\n\n🚀 **3. Special Combo Offers:**\nSelect Plan 1 or Plan 2 (Monthly Retainer or 🎁 Annual Pass with ~30% Savings) for all-in-one local or digital scaling!`
+                    : `Thank you *${session.clientName}*! 🙏\n\nStrategy call ko 100% efficient banane ke liye, kripya agle message mein niche di gayi details batayein:\n\n🌐 **Type 1:** Agar aapko Website chahiye toh specific type likhein (e.g., Landing Page, Corporate Showcase, ya Online Store).\n\n🤖 **Type 2:** Agar AI Architecture/Bot chahiye toh details likhein (e.g., AI SEO, WhatsApp Lead Bot, Sales Engine).\n\n🚀 **Type 3:** Special Combo Offers (Local AI & GMB Growth / Full Digital Scale Launch - Monthly Retainer ya 🎁 Annual Pass).`;
                 return sendUnifiedMessage(from, descriptivePrompt, platform);
             } else {
                 userSessions[from].step = 'collect_consultation_identity'; 
@@ -1976,8 +1996,8 @@ async function processUnifiedMessage(from, rawText, platform) {
         } else if (targetMenuRoute === '3') {
             userSessions[from].step = 'process_combo_menu';
             return sendUnifiedMessage(from, (userLang === 'EN')
-                ? "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\nPlease select your preferred Special Combo Package by replying with 1 or 2:\n\n1️⃣ **PLAN 1: Local AI & GMB Growth (Bina Website Ke)**\n• Best For: Google Maps Top 3 Ranking & Auto Leads\n• INR: ₹4,999 Setup + ₹2,499/mo | USD: $69 Setup + $39/mo\n• Verification Assist, Map Pack SEO, VPS AI Review Bot\n\n2️⃣ **PLAN 2: Full Digital & AI Scale Launch (With High-Speed Website)**\n• Best For: Agencies & Businesses needing Custom Website + AI\n• INR: ₹12,999 Setup + ₹4,999/mo | USD: $169 Setup + $79/mo\n• Custom Next.js Site, Rich Schema, VPS Multi-Client AI Agent\n\n⚠️ *Package Note:* Domain & Hosting Fees are NOT included in the package. Clients can purchase their own, OR Shahid Creatives can assist at actual cost."
-                : "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\nKripya apna preferred Special Combo Package chunne ke liye 1 ya 2 reply karein:\n\n1️⃣ **PLAN 1: Local AI & GMB Growth (Bina Website Ke)**\n• Best For: Google Maps Top 3 Ranking & Automated Leads\n• INR Pricing: Setup ₹4,999 (Regular ₹9,999) + Monthly ₹2,499/mo\n• USD Pricing: Setup $69 + Monthly $39/mo\n• GMB Profile Verification Assist, Local Map Pack SEO, VPS AI Review Bot\n\n2️⃣ **PLAN 2: Full Digital & AI Scale Launch (With New High-Speed Website)**\n• Best For: Custom High-Speed Website + Ongoing Automated SEO & AI\n• INR Pricing: Setup ₹12,999 (Regular ₹19,999) + Monthly ₹4,999/mo\n• USD Pricing: Setup $169 + Monthly $79/mo\n• Next.js Custom Website, Rich Schema, VPS Multi-Client AI Agent, Chatbot Maintenance\n\n⚠️ *Package Note:* Domain Name & Hosting Fees package me included nahi hai. Client khud le sakte hain ya Shahid Creatives actual cost par purchase karwa degi.", platform);
+                ? "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\nPlease select your preferred Special Combo Package & Billing Cycle by replying with 1, 2, 3, or 4:\n\n1️⃣ **PLAN 1: Local AI & GMB Growth [MONTHLY]**\n• INR: Setup ₹4,999 + ₹2,499/mo | USD: Setup $69 + $39/mo\n\n2️⃣ **PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - SAVE ~25%]**\n• INR: ₹24,999/Year (Save ₹10,000) | USD: $399/Year (Save $138)\n• Bonus: Free Domain + Citation Blast + VIP Support\n\n3️⃣ **PLAN 2: Full Digital & AI Scale Launch [MONTHLY]**\n• INR: Setup ₹12,999 + ₹4,999/mo | USD: Setup $169 + $79/mo\n\n4️⃣ **PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - SAVE ~32%]**\n• INR: ₹49,999/Year (Save ₹23,000) | USD: $799/Year (Save $318)\n• Bonus: Free Premium Hosting + Domain + 12 SEO Blogs + AI CRM Sync\n\n⚠️ *Package Note:* Domain & Hosting Fees are NOT included in Monthly setups. Annual Passes include Free Hosting & Domain Perks!"
+                : "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\nKripya apna preferred Special Combo Package aur Billing Cycle chunne ke liye 1, 2, 3 ya 4 reply karein:\n\n1️⃣ **PLAN 1: Local AI & GMB Growth [MONTHLY RETAINER]**\n• INR: Setup ₹4,999 + Monthly ₹2,499/mo | USD: Setup $69 + Monthly $39/mo\n\n2️⃣ **PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - SAVE ~30%]**\n• INR: ₹24,999/Year (Bachat ₹10,000) | USD: $399/Year (Bachat $138)\n• Bonus Perks: Free 1-Yr Domain + Citation Blast + VIP Support\n\n3️⃣ **PLAN 2: Full Digital & AI Scale Launch [MONTHLY RETAINER]**\n• INR: Setup ₹12,999 + Monthly ₹4,999/mo | USD: Setup $169 + Monthly $79/mo\n\n4️⃣ **PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - SAVE ~32%]**\n• INR: ₹49,999/Year (Bachat ₹23,000) | USD: $799/Year (Bachat $318)\n• Bonus Perks: Free Premium Hosting + Domain + 12 SEO Blogs + AI WhatsApp CRM Sync\n\n⚠️ *Package Note:* Monthly packages me Domain & Hosting Fees included nahi hai. Annual Pass me Free Hosting aur Domain Perks shamil hain!", platform);
         } else if (targetMenuRoute === '4') {
             userSessions[from].step = 'process_requirement_menu';
             return sendUnifiedMessage(from, (userLang === 'EN')

@@ -510,11 +510,11 @@ zamZamBot.on('callback_query', async (query) => {
             const clientChatId = parts[3]; 
 
             if (action === 'confirm') {
-                await zamZamBot.editMessageText(query.message.text + "\n\n✅ *STATUS: BOOKING CONFIRMED BY YOU*", { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
+                await zamZamBot.editMessageText(query.message.text + "\n\n✅ *STATUS: BOOKING CONFIRMED BY YOU*", { chat_id: chatId, messageId: messageId, parse_mode: "Markdown" });
                 await zamZamBot.sendMessage(clientChatId, "🎉 *Great News!*\n\nAapki appointment Clinic dwara *CONFIRM* kar di gayi hai. Kripya samay par pahuchein! 🩺\n\n🌐 _Powered by Shahid Creatives_", { parse_mode: "Markdown" });
             } else if (action === 'resched') {
                 zamzamAdminState = clientChatId; 
-                await zamZamBot.editMessageText(query.message.text + "\n\n🔄 *STATUS: PENDING TIME UPDATE*", { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
+                await zamZamBot.editMessageText(query.message.text + "\n\n🔄 *STATUS: PENDING TIME UPDATE*", { chat_id: chatId, messageId: messageId, parse_mode: "Markdown" });
                 await zamZamBot.sendMessage(chatId, `⚠️ Aapne Patient (${clientChatId}) ke liye *Reschedule/Update Time* chuna hai.\n\n👉 *Kripya naya Time ya Message type karke bhejein:*\n_(Yeh message seedha patient ko bhej diya jayega)_`, { parse_mode: "Markdown" });
             }
             return zamZamBot.answerCallbackQuery(query.id);
@@ -1270,6 +1270,47 @@ async function processUnifiedMessage(from, rawText, platform) {
     const currentStep = userSessions[from].step;
     const session = userSessions[from]; // local reference
 
+    // 🎯 STATE: 3-DAY FREE DEMO ACTIVATION SUBMIT HANDLER
+    if (currentStep === 'demo_activation_submit') {
+        userSessions[from].step = 'completed';
+        
+        let clientName = "Demo Client";
+        let clientEmail = "Not Provided";
+        let displayPhone = platform === 'whatsapp' ? from : "Not Provided";
+
+        // Attempt smart extraction for admin log
+        try {
+            const nameMatch = rawText.match(/Contact Person Name:\s*([^\n\r]+)/i);
+            const emailMatch = rawText.match(/Email Address \(Optional\):\s*([^\n\r]+)/i);
+            const phoneMatch = rawText.match(/WhatsApp \/ Phone Number:\s*([^\n\r]+)/i);
+            
+            if (nameMatch) clientName = nameMatch[1].replace(/[*_]/g, '').trim();
+            if (emailMatch) clientEmail = emailMatch[1].replace(/[*_]/g, '').trim();
+            if (phoneMatch) displayPhone = phoneMatch[1].replace(/[*_]/g, '').trim();
+        } catch (e) {}
+
+        const adminAlert = `🚨 *NEW 3-DAY DEMO ACTIVATION!* 🚨\n\n📱 *Contact:* ${displayPhone} (${platform})\n💬 *Chat ID:* ${from}\n👤 *Extracted Name:* ${clientName}\n\n*📋 Submitted Form Data:*\n${rawText}`;
+        sendAdminAlert(adminAlert);
+
+        // Push lead to dashboard webhook
+        try {
+            await axios.post('https://shahidcreatives.com/api/whatsapp-leads', { 
+                client_name: clientName, 
+                whatsapp_number: displayPhone, 
+                telegram_chat_id: platform === 'telegram' ? from : undefined,
+                project_scope: "3-Day Free VIP Demo Request", 
+                calculated_price: 0, 
+                email: clientEmail,
+                discussion_notes: adminAlert 
+            });
+        } catch (e) { }
+
+        const successMsg = (userLang === 'EN')
+            ? "✅ *Demo Activation Received!* \n\nThank you! We are processing your details. We will configure your dedicated Telegram bot node and Google review sync immediately. Our team will contact you shortly with your demo access! 🚀\n\n🌐 _Powered by Shahid Creatives_"
+            : "✅ *Demo Activation Received!* \n\nShukriya! Hum aapki details process kar rahe hain. Hum aapka dedicated bot node aur Google review sync turant configure kar denge. Humari team jald hi aapko demo access ke sath sampark karegi! 🚀\n\n🌐 _Powered by Shahid Creatives_";
+        return sendUnifiedMessage(from, successMsg, platform);
+    }
+
     // 🎯 STATE: PAYMENT FAILED RESOLUTION - Check Debit Status
     if (currentStep === 'payment_failed_resolution') {
         const isINRLead = userLang !== 'EN';
@@ -1496,8 +1537,8 @@ async function processUnifiedMessage(from, rawText, platform) {
 
         if (processedRoute) {
             let replyText = (userLang === 'EN')
-                ? "Hello! Welcome to *Shahid Creatives*. 🚀\nSelect a professional stack tier via option number:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI-Powered Growth Retainers**\n3️⃣ **🚀 Special Combo Offers (🔥 HOT)**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid Creatives' Team (Direct Consultation)**"
-                : "Hello! Welcome to *Shahid Creatives*. 🚀\nKoshish ko aage badhane ke liye ek option number reply kijiye:\n\n1️⃣ *Web Development Tiers*\n2️⃣ *AI-Powered Growth Retainers*\n3️⃣ *🚀 Special Combo Offers (🔥 HOT)*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives ki Team* (Direct Consultation)";
+                ? "Hello! Welcome to *Shahid Creatives*. 🚀\nSelect a professional stack tier via option number:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI-Powered Growth Retainers**\n3️⃣ **🚀 Special Combo Offers (🔥 HOT)**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid Creatives' Team (Direct Consultation)**\n6️⃣ **🎁 3-Day Free VIP Demo (Zero Risk)**"
+                : "Hello! Welcome to *Shahid Creatives*. 🚀\nKoshish ko aage badhane ke liye ek option number reply kijiye:\n\n1️⃣ *Web Development Tiers*\n2️⃣ *AI-Powered Growth Retainers*\n3️⃣ *🚀 Special Combo Offers (🔥 HOT)*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives ki Team* (Direct Consultation)\n6️⃣ **🎁 3-Day Free VIP Demo (Zero Risk)**";
             return sendUnifiedMessage(from, replyText, platform);
         } else {
             return sendUnifiedMessage(from, "Welcome to *Shahid Creatives*! 🚀 Please select your location layout to proceed:\n\n1️⃣ **India (Tax/Billing: ₹ INR)**\n2️⃣ **Outside India (Global Billing: $ USD)**", platform);
@@ -1975,11 +2016,13 @@ async function processUnifiedMessage(from, rawText, platform) {
         else if (userText === '3' || userText.includes("combo") || userText.includes("offer") || userText.includes("special")) { targetMenuRoute = '3'; isCoreMatch = true; }
         else if (userText === '4' || userText.includes("book") || userText.includes("token")) { targetMenuRoute = '4'; isCoreMatch = true; }
         else if (userText === '5' || userText.includes("shahid") || userText.includes("talk")) { targetMenuRoute = '5'; isCoreMatch = true; }
+        // 🚀 NEW: DEMO ROUTE PARSER
+        else if (userText === '6' || userText.includes("demo") || userText.includes("free")) { targetMenuRoute = '6'; isCoreMatch = true; }
 
         if (!isCoreMatch) {
             let replyText = (userLang === 'EN')
-                ? "Hello! Welcome to *Shahid Creatives*. 🚀 Select a stack tier layout:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI-Powered Growth Retainers**\n3️⃣ **🚀 Special Combo Offers (🔥 HOT)**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid Creatives' Team (Direct Consultation)**"
-                : "Hello! Welcome to *Shahid Creatives*. 🚀 Select layout choice number:\n\n1️⃣ *Web Development Tiers*\n2️⃣ *AI-Powered Growth Retainers*\n3️⃣ *🚀 Special Combo Offers (🔥 HOT)*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives ki Team* (Direct Consultation)";
+                ? "Hello! Welcome to *Shahid Creatives*. 🚀 Select a stack tier layout:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI-Powered Growth Retainers**\n3️⃣ **🚀 Special Combo Offers (🔥 HOT)**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid Creatives' Team (Direct Consultation)**\n6️⃣ **🎁 3-Day Free VIP Demo (Zero Risk)**"
+                : "Hello! Welcome to *Shahid Creatives*. 🚀 Select layout choice number:\n\n1️⃣ *Web Development Tiers*\n2️⃣ *AI-Powered Growth Retainers*\n3️⃣ *🚀 Special Combo Offers (🔥 HOT)*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives ki Team* (Direct Consultation)\n6️⃣ **🎁 3-Day Free VIP Demo (Zero Risk)**";
             return sendUnifiedMessage(from, replyText, platform);
         }
 
@@ -2015,6 +2058,15 @@ async function processUnifiedMessage(from, rawText, platform) {
             return sendUnifiedMessage(from, (userLang === 'EN') 
                 ? `👤 *Direct Consultation with Shahid Creatives' Team:*\n\n${optionA_EN}\n${optionB_EN}\n🅲️ *Custom Time (Type preferred time below)*\n\n👉 Reply with A, B, or C!` 
                 : `👤 *Direct Consultation with Shahid Creatives ki Team:*\n\n${optionA}\n${optionB}\n🅲️ *Custom Time (Apna secure timing niche type karein)*\n\n👉 Kripya **A, B, ya C** likh kar reply kijiye!`, platform);
+        } else if (targetMenuRoute === '6') {
+            // 🚀 NEW: DEMO ACTIVATION DISPATCHER
+            userSessions[from].step = 'demo_activation_submit';
+            userSessions[from].projectScope = "3-Day Free VIP Demo";
+            
+            const demoMsg = (userLang === 'EN')
+                ? "🎁 *3-Day Free VIP Demo Plan: Growth Triad (100% Free - Zero Risk)*\n\nExperience our entire automated revenue engine for 72 hours with no upfront cost!\n\n1️⃣ *GMB AI Engine*\n2️⃣ *Hyper-Local SEO Audit*\n3️⃣ *24/7 AI Lead Bot*\n\n👇 *ACTIVATE YOUR DEMO NOW*\nPlease copy the form below, fill in your details, and reply. We will configure your dedicated bot node immediately:\n\n*Business or Brand Name:*\n*Contact Person Name:*\n*WhatsApp / Phone Number:*\n*Email Address (Optional):*\n*Target City / Location:*\n*Business Category:* (e.g., Local Services, Real Estate, Healthcare, etc.)\n*Website URL or Maps Link:*\n*Special Requirements:* "
+                : "🎁 *3-Day Free VIP Demo Plan: Growth Triad (100% Free - Zero Risk)*\n\nBina kisi upfront cost ke 72 hours tak hamara revenue engine test karein!\n\n1️⃣ *GMB AI Engine*\n2️⃣ *Hyper-Local SEO Audit*\n3️⃣ *24/7 AI Lead Bot*\n\n👇 *ACTIVATE YOUR DEMO NOW*\nKripya niche diye gaye form ko copy karein, apni details bharein aur humein bhejein. Hum turant aapka dedicated bot node configure kar denge:\n\n*Business or Brand Name:*\n*Contact Person Name:*\n*WhatsApp / Phone Number:*\n*Email Address (Optional):*\n*Target City / Location:*\n*Business Category:* (e.g., Local Services, Real Estate, Healthcare, etc.)\n*Website URL or Maps Link:*\n*Special Requirements:* ";
+            return sendUnifiedMessage(from, demoMsg, platform);
         }
     }
 }

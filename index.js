@@ -28,6 +28,9 @@ const bookedSlots = { salon: {}, clinic: {}, consultation_hourly: {} };
 const activeAppointments = []; // Stores appointments for auto-reminders
 let mainAdminState = null; // To track admin reschedule targets for consultation
 
+// 🟢 NEW: CONCURRENCY LOCK (Fixes Telegram/WhatsApp Double Messages)
+const processingLocks = {};
+
 // Helper: Filter times based on IST, Past time hiding, & 4-client limit
 function getAvailableTimes(botType, selectedDateStr) {
     const isToday = selectedDateStr === 'Today';
@@ -158,8 +161,16 @@ bot.on('message', async (msg) => {
         return;
     }
 
-    // Pass the message to the Unified Master Engine
-    await processUnifiedMessage(chatId, text, 'telegram');
+    // 🟢 FIX: Prevent Double Messages in Telegram by caching processing status
+    if (processingLocks[chatId]) return;
+    processingLocks[chatId] = true;
+
+    try {
+        // Pass the message to the Unified Master Engine
+        await processUnifiedMessage(chatId, text, 'telegram');
+    } finally {
+        delete processingLocks[chatId];
+    }
 });
 
 
@@ -1105,8 +1116,14 @@ app.post('/webhook', async (req, res) => {
                     const rawText = message.text.body;
                     console.log(`Received message from ${from}: ${rawText}`);
                     
-                    // Route directly to Unified Engine
-                    await processUnifiedMessage(from, rawText, 'whatsapp');
+                    // 🟢 FIX: Prevent Double Messages in WhatsApp Webhook
+                    if (processingLocks[from]) return;
+                    processingLocks[from] = true;
+                    try {
+                        await processUnifiedMessage(from, rawText, 'whatsapp');
+                    } finally {
+                        delete processingLocks[from];
+                    }
                 }                   
             }
         } catch (error) { 
@@ -1200,7 +1217,7 @@ async function processUnifiedMessage(from, rawText, platform) {
     }
 
     // 🎯 NEW INTERCEPTOR: WHATSAPP PRE-FILLED LEAD FORM (Skips Profile Collection but keeps consultation flow)
-    if (rawText.includes("Name:") && rawText.includes("Phone:") && rawText.includes("Email:")) {
+    if (rawText.includes("Name:") && rawText.includes("Phone:") && rawText.includes("Email:") && !rawText.includes("Target City")) {
         let clientName = "Valued Client";
         let clientEmail = "Not Provided";
         let clientPhone = platform === 'whatsapp' ? from : "";
@@ -1272,6 +1289,14 @@ async function processUnifiedMessage(from, rawText, platform) {
 
     // 🎯 STATE: 3-DAY FREE DEMO ACTIVATION SUBMIT HANDLER
     if (currentStep === 'demo_activation_submit') {
+        // 🚨 STRICT VALIDATION: Prevent blank, numbers or single-character form submissions
+        if (rawText.length < 25 || (!rawText.toLowerCase().includes('name') && !rawText.toLowerCase().includes('business'))) {
+            let errMsg = (userLang === 'EN')
+                ? "⚠️ *Incomplete Details!*\nPlease copy the full form template provided above, fill in your business details, and reply to activate your demo."
+                : "⚠️ *Incomplete Details!*\nKripya upar diye gaye form template ko pura copy karein, apni business details bharein, aur fir reply karke apna demo activate karein.";
+            return sendUnifiedMessage(from, errMsg, platform);
+        }
+
         userSessions[from].step = 'completed';
         
         let clientName = "Demo Client";

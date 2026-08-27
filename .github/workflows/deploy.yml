@@ -14,9 +14,19 @@ jobs:
           SSH_KEY_B64: ${{ secrets.VPS_SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
-          echo "$SSH_KEY_B64" | base64 --decode > ~/.ssh/id_rsa
+          
+          # Base64 decode to private key
+          echo "$SSH_KEY_B64" | tr -d ' \n\r' | base64 --decode > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+          
+          # Safe Header/Footer verification (without exposing private body)
+          head -n 1 ~/.ssh/id_rsa
+          tail -n 1 ~/.ssh/id_rsa
+          
+          # Scan VPS Host Key
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+          
+          # Connect and Deploy
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} << 'EOF'
             cd /home/contact/Shahid-Creatives-Bot
             git stash

@@ -4,6 +4,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const axios = require('axios');
 const TelegramBot = require('node-telegram-bot-api'); // 🟢 TELEGRAM LIBRARY ADDED
+const nodemailer = require('nodemailer'); // 🟢 EMAIL LIBRARY ADDED FOR GBP ONBOARDING
 
 // ==========================================
 // 🛡️ GLOBAL ANTI-CRASH SYSTEM (KEEPS SERVER ALIVE 24/7)
@@ -20,6 +21,20 @@ process.on('uncaughtExceptionMonitor', (err, origin) => {
 
 const app = express();
 app.use(bodyParser.json());
+
+// ==========================================
+// 📧 GOOGLE WORKSPACE SMTP TRANSPORTER (DEMO ONBOARDING)
+// ==========================================
+// Note: Replace user & pass with your official Shahid Creatives credentials
+const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: {
+        user: 'your-email@shahidcreatives.com', // ⚠️ UPDATE THIS
+        pass: 'your-app-password'               // ⚠️ UPDATE THIS
+    }
+});
 
 // ==========================================
 // 🚀 GLOBAL SCHEDULING & REMINDER ENGINE (NEW)
@@ -1330,10 +1345,59 @@ async function processUnifiedMessage(from, rawText, platform) {
             });
         } catch (e) { }
 
-        const successMsg = (userLang === 'EN')
-            ? "✅ *Demo Activation Received!* \n\nThank you! We are processing your details. We will configure your dedicated Telegram bot node and Google review sync immediately. Our team will contact you shortly with your demo access! 🚀\n\n🌐 _Powered by Shahid Creatives_"
-            : "✅ *Demo Activation Received!* \n\nShukriya! Hum aapki details process kar rahe hain. Hum aapka dedicated bot node aur Google review sync turant configure kar denge. Humari team jald hi aapko demo access ke sath sampark karegi! 🚀\n\n🌐 _Powered by Shahid Creatives_";
-        return sendUnifiedMessage(from, successMsg, platform);
+        // 🟢 EMAIL ONBOARDING FLOW & GBP CONNECT
+        const demoId = `SC-DEMO-${Math.floor(10000 + Math.random() * 90000)}`;
+        const encodedClientName = encodeURIComponent(clientName);
+        const onboardingLink = `https://api.shahidcreatives.com/connect-gmb?clientId=${demoId}&name=${encodedClientName}`;
+        
+        const waText = encodeURIComponent(`Hi Shahid, I just activated my 3-Day Free Demo!\n\nID: ${demoId}\nName: ${clientName}\n\nI need help with GBP Onboarding!`);
+        const waKickoffLink = `https://wa.me/917529839762?text=${waText}`;
+
+        // Send Email if valid email was provided
+        if (clientEmail && clientEmail !== "Not Provided" && clientEmail.includes("@")) {
+            const mailOptions = {
+                from: '"Shahid Creatives AI" <your-email@shahidcreatives.com>', // ⚠️ UPDATE THIS to official sender
+                to: clientEmail,
+                subject: `🎉 Action Required: Your 3-Day Free VIP Demo & GBP Onboarding [${demoId}]`,
+                html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                        <h2 style="color: #0056b3;">Welcome to Shahid Creatives, ${clientName}! 🚀</h2>
+                        <p>Your 3-Day Free VIP Demo has been successfully activated.</p>
+                        <p><strong>Your Unique Demo ID:</strong> <span style="background: #eee; padding: 5px 10px; border-radius: 5px; font-weight: bold;">${demoId}</span></p>
+                        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                        <h3 style="color: #d9534f;">⚠️ Crucial Action Required: GBP Connection</h3>
+                        <p>To enable the AI review responder and Maps ranking sync, you must connect your Google Business Profile.</p>
+                        <p><strong>Note:</strong> Please ensure you login/authorize <strong>ONLY</strong> with the Gmail/Google Account that is officially registered to your Google Business Profile.</p>
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="${onboardingLink}" style="background-color: #28a745; color: white; padding: 15px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">🔗 Connect Google Business Profile (GBP)</a>
+                        </div>
+                        <p>Or copy this link manually: <br><a href="${onboardingLink}">${onboardingLink}</a></p>
+                        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                        <p>If you have any issues, click the button below to reach us on WhatsApp instantly.</p>
+                        <p><a href="${waKickoffLink}">🚀 Connect with Shahid on WhatsApp (Instant Kickoff)</a></p>
+                        <p><br>Best Regards,<br><strong>Shahid Creatives AI Team</strong></p>
+                    </div>
+                `
+            };
+            transporter.sendMail(mailOptions).catch(err => console.log("Demo Mail Error:", err));
+        }
+
+        const successMsgEN = `✅ *Demo Activation Received!* \n\nThank you! We are processing your details. Your unique Demo ID is *${demoId}*. We will configure your dedicated Telegram bot node immediately.\n\n📧 *Email Dispatched:* An automated email containing your unique Google Business Profile (GBP) AI Onboarding Link has been dispatched to your email address (if provided).\n\n⚠️ *Action Required (Crucial Note):*\nWhen clicking the GBP Onboarding link, please ensure you login/authorize *ONLY* with the Gmail/Google Account that is officially registered to your Google Business Profile. This ensures the AI review responder and Maps rating sync securely connect.\n\n🔗 *Connect GBP Directly:* ${onboardingLink}\n\n🚀 *Instant Kickoff:* Tap here to connect with Shahid directly on WhatsApp: ${waKickoffLink}\n\n🌐 _Powered by Shahid Creatives_`;
+
+        const successMsgHIN = `✅ *Demo Activation Received!* \n\nShukriya! Hum aapki details process kar rahe hain. Aapka unique Demo ID *${demoId}* hai. Hum aapka dedicated bot node turant configure kar denge.\n\n📧 *Email Dispatched:* Aapke email par ek automated message bhej diya gaya hai jisme aapka personalized Google Business Profile (GBP) AI Onboarding Link shamil hai.\n\n⚠️ *Zaroori Note (Action Required):*\nKripya GBP Onboarding link par click karte samay apne Google Business Profile (GBP) registered Gmail/Google Account se hi login/authorize karein taaki AI review responder aur Maps rating sync securely connect ho sake.\n\n🔗 *Connect GBP Directly:* ${onboardingLink}\n\n🚀 *Instant Kickoff:* Shahid ki team se WhatsApp par turant jurne ke liye yahan click karein: ${waKickoffLink}\n\n🌐 _Powered by Shahid Creatives_`;
+
+        const finalSuccessMsg = (userLang === 'EN') ? successMsgEN : successMsgHIN;
+
+        const tgOptions = {
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: "🔗 Connect Google Business Profile (GBP)", url: onboardingLink }],
+                    [{ text: "🚀 Connect with Shahid (Instant Kickoff)", url: waKickoffLink }]
+                ]
+            }
+        };
+
+        return sendUnifiedMessage(from, finalSuccessMsg, platform, tgOptions);
     }
 
     // 🎯 STATE: PAYMENT FAILED RESOLUTION - Check Debit Status
@@ -1522,8 +1586,8 @@ async function processUnifiedMessage(from, rawText, platform) {
         const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmount}&currency=${tokenCurrency}&totalPrice=${calculatedPrice}&name=${encodeURIComponent(clientName)}&email=${encodeURIComponent(clientEmail)}&phone=${from}&plan=${encodeURIComponent(projectScope)}&coupon=MILAD30`;
 
         let clientReply = isINRLead
-            ? `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved to our dashboard.\n\n🔥 *URGENT:* Aapka **Flat 30% OFF (MILAD30)** coupon apply ho chuka hai! Aapne is deal par sidha **₹${savedAmountWeb > 0 ? savedAmountWeb : '30%'}** save kar liya hai. Ye limited-time Eid Milad-un-Nabi offer 31 August ko expire hone se pehle apna slot lock karein. (*T&C Apply*)\n\n🔗 *Pay Securely Here (${guaranteeText}):* ${selfPayLink}\n\n_Note: Payment verify hote hi Shahid Creatives ki Team seedha aapse sampark karegi!_`
-            : `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved to our dashboard.\n\n🔥 *URGENT:* Your **Flat 30% OFF (MILAD30)** coupon is currently applied! You just saved **$${savedAmountWeb > 0 ? savedAmountWeb : '30%'}** on this deal. Lock your slot before this limited-time Eid Milad-un-Nabi offer expires on 31 August. (*T&C Apply*)\n\n🔗 *Pay Securely Here (${guaranteeText}):* ${selfPayLink}\n\n_Note: Shahid Creatives' Team will reach out immediately upon confirmation!_`;
+            ? `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved to our dashboard.\n\n🔥 *URGENT:* Aapka **Flat 30% OFF (MILAD30)** coupon apply ho chuka hai! Aapne is deal par sidha **₹${savedAmountWeb > 0 ? savedAmountWeb : '30%'}** save kar liya hai. Ye limited-time Eid Milad-un-Nabi offer 10-09-2026 ko expire hone se pehle apna slot lock karein. (*T&C Apply*)\n\n🔗 *Pay Securely Here (${guaranteeText}):* ${selfPayLink}\n\n_Note: Payment verify hote hi Shahid Creatives ki Team seedha aapse sampark karegi!_`
+            : `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved to our dashboard.\n\n🔥 *URGENT:* Your **Flat 30% OFF (MILAD30)** coupon is currently applied! You just saved **$${savedAmountWeb > 0 ? savedAmountWeb : '30%'}** on this deal. Lock your slot before this limited-time Eid Milad-un-Nabi offer expires on 10-09-2026. (*T&C Apply*)\n\n🔗 *Pay Securely Here (${guaranteeText}):* ${selfPayLink}\n\n_Note: Shahid Creatives' Team will reach out immediately upon confirmation!_`;
         
         return sendUnifiedMessage(from, clientReply, platform);
     }
@@ -1857,8 +1921,8 @@ async function processUnifiedMessage(from, rawText, platform) {
         const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${isUSDTrack ? 49 : 999}&currency=${isUSDTrack ? 'USD' : 'INR'}&totalPrice=${finalPayable}&name=${encodedName}&email=${encodedEmail}&phone=${displayPhone}&plan=${encodedPlan}&coupon=MILAD30`;
 
         let replyText = isUSDTrack 
-            ? `🎉 *Success!* Your requirement for *${userSessions[from].projectScope}* is formally registered.\n\n🔥 *URGENT:* A special **Flat 30% OFF (MILAD30)** coupon has been automatically applied to your base price! You are saving **$${savingAmount}** today. Lock your price now before the Eid Milad-un-Nabi offer expires on 31 August. (*T&C Apply*)\n\n*Next Steps:*\nTo initiate your project development slot, please process the standard booking token ($49 USD) via our secure gateway below:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Shahid Creatives' Team will reach out immediately upon confirmation!_\n\n🌐 _Powered by Shahid Creatives_`
-            : `🎉 *Mubarak ho!* Aapki requirement (*${userSessions[from].projectScope}*) successfully hamare dashboard mein register ho gayi hai.\n\n🔥 *URGENT:* Aapke base price par **Flat 30% OFF (MILAD30)** coupon automatically apply kar diya gaya hai! Aaj is deal par aap **₹${savingAmount}** bacha rahe hain. Ye Eid Milad-un-Nabi offer 31 August ko expire hone se pehle apna price lock karein. (*T&C Apply*)\n\n*Next Steps:*\nApna slot pakka karne aur project shuru karne ke liye kripya apna Token Amount (₹999 INR) niche diye gaye secure payment link par clear karein:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Payment verify hote hi Shahid Creatives ki Team seedha aapse sampark karegi!_\n\n🌐 _Powered by Shahid Creatives_`;
+            ? `🎉 *Success!* Your requirement for *${userSessions[from].projectScope}* is formally registered.\n\n🔥 *URGENT:* A special **Flat 30% OFF (MILAD30)** coupon has been automatically applied to your base price! You are saving **$${savingAmount}** today. Lock your price now before the Eid Milad-un-Nabi offer expires on 10-09-2026. (*T&C Apply*)\n\n*Next Steps:*\nTo initiate your project development slot, please process the standard booking token ($49 USD) via our secure gateway below:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Shahid Creatives' Team will reach out immediately upon confirmation!_\n\n🌐 _Powered by Shahid Creatives_`
+            : `🎉 *Mubarak ho!* Aapki requirement (*${userSessions[from].projectScope}*) successfully hamare dashboard mein register ho gayi hai.\n\n🔥 *URGENT:* Aapke base price par **Flat 30% OFF (MILAD30)** coupon automatically apply kar diya gaya hai! Aaj is deal par aap **₹${savingAmount}** bacha rahe hain. Ye Eid Milad-un-Nabi offer 10-09-2026 ko expire hone se pehle apna price lock karein. (*T&C Apply*)\n\n*Next Steps:*\nApna slot pakka karne aur project shuru karne ke liye kripya apna Token Amount (₹999 INR) niche diye gaye secure payment link par clear karein:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Payment verify hote hi Shahid Creatives ki Team seedha aapse sampark karegi!_\n\n🌐 _Powered by Shahid Creatives_`;
         
         return sendUnifiedMessage(from, replyText, platform);
     }

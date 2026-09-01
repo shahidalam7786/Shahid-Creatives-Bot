@@ -1100,7 +1100,7 @@ app.post('/send-payment-reminder', async (req, res) => {
 // Meta Webhook Verification (Backup for '/webhook' path)
 app.get('/webhook', (req, res) => {
     const VERIFY_TOKEN = "mysecrettoken";
-    if (req.query['hub.mode'] && req.query['hub.verify_token'] === VERIFY_TOKEN) {
+    if (req.query['hub.mode'] === 'subscribe' && req.query['hub.verify_token'] === VERIFY_TOKEN) {
         return res.status(200).send(req.query['hub.challenge']);
     }
     res.sendStatus(403);
@@ -1153,17 +1153,15 @@ async function processUnifiedMessage(from, rawText, platform) {
     const isInternationalNumber = platform === 'whatsapp' ? !from.startsWith("91") : false;
     const isGlobalWebsiteTemplate = rawText.includes("Global USD") || rawText.includes("Worldwide") || rawText.includes("$") || rawText.includes("lock in my custom website estimate");
 
-    // 🚨 1. PRIORITY ZERO INTERCEPTOR: GBP AUTHORIZATION & DEMO CONFIRMATION
-    // (Prevents Region Selection prompt from overwriting the client's confirmation)
+    // 🚨 1. PRIORITY ZERO INTERCEPTOR A: GBP AUTHORIZATION & DEMO CONFIRMATION
     if (
         userText.includes("successfully authorized and connected") || 
         userText.includes("i have successfully authorized") ||
         userText.includes("authorized and connected google business profile") || 
-        userText.includes("confirm our 24/7 ai review bot status") ||
-        (userText.includes("demo") && userText.includes("authorized"))
+        userText.includes("confirm our 24/7 ai review bot status")
     ) {
-        let demoIdMatch = rawText.match(/(DEMO-?\s*\d+)/i);
-        let extDemoId = demoIdMatch ? demoIdMatch[1].replace(/\s+/g, '') : "your Demo";
+        let demoIdMatch = rawText.match(/(?:DEMO|SC-EID)-?\s*([A-Za-z0-9]+)/i);
+        let extDemoId = demoIdMatch ? demoIdMatch[0].replace(/\s+/g, '') : "your Demo";
 
         const isEnglishUser = isInternationalNumber || isGlobalWebsiteTemplate;
 
@@ -1178,10 +1176,10 @@ async function processUnifiedMessage(from, rawText, platform) {
         };
 
         const authReply = isEnglishUser
-            ? `🙏 *Thank you for connecting with Shahid Creatives!* ✨\n\nWe have successfully received your Google Business Profile authorization request for *${extDemoId}*.\n\n⚙️ *Activation Status:* In Progress\n⏱️ *Estimated Activation Timeline:* Minimum *4 hours* to Maximum *1 working day*.\n\nOur engineering team is currently configuring your dedicated 24/7 AI review responder and hyper-local SEO systems. We will notify you here as soon as your setup goes live!\n\n🌐 _Powered by Shahid Creatives (https://shahidcreatives.com)_`
-            : `🙏 *Shahid Creatives me sampark karne ke liye dhanyawad!* ✨\n\n*${extDemoId}* ke liye aapka Google Business Profile authorization request humein successfully receive ho gaya hai.\n\n⚙️ *Activation Status:* In Progress\n⏱️ *Estimated Activation Time:* Minimum *4 hours* se lekar Maximum *1 working day*.\n\nHumari technical team aapke 24/7 AI Review Bot aur Hyper-Local SEO system ko configure kar rahi hai. Setup live hote hi hum aapko is number par turant update de denge!\n\n🌐 _Powered by Shahid Creatives (https://shahidcreatives.com)_`;
+            ? `🙏 *Thank you for connecting with Shahid Creatives!* ✨\n\nWe have successfully received your Google Business Profile authorization request for *${extDemoId}*.\n\n⚙️ *Activation Status:* In Progress\n⏱️ *Estimated Activation Timeline:* Minimum *5 hours* to Maximum *1 working day*.\n\nOur engineering team is currently configuring your dedicated 24/7 AI review responder, Meta-Verified WhatsApp integration, and hyper-local SEO systems. We will notify you here as soon as your setup goes live!\n\n🌐 _Powered by Shahid Creatives (https://shahidcreatives.com)_`
+            : `🙏 *Shahid Creatives me sampark karne ke liye dhanyawad!* ✨\n\n*${extDemoId}* ke liye aapka Google Business Profile authorization request humein successfully receive ho gaya hai.\n\n⚙️ *Activation Status:* In Progress\n⏱️ *Estimated Activation Time:* Minimum *5 hours* se lekar Maximum *1 working day*.\n\nHumari technical team aapke 24/7 AI Review Bot, Meta-Verified WhatsApp setup, aur Hyper-Local SEO system ko configure kar rahi hai. Setup live hote hi hum aapko is number par turant update de denge!\n\n🌐 _Powered by Shahid Creatives (https://shahidcreatives.com)_`;
 
-        const adminAlertMsg = `🌟 *GBP AUTHORIZATION RECEIVED!* 🌟\n\n📱 *Client Contact:* ${platform === 'telegram' ? 'TG-' : '+'}${from}\n💬 *Platform:* ${platform}\n🆔 *Demo ID:* ${extDemoId}\n\nClient has verified the profile authorization. Activation timeline (min 4 hrs to max 1 working day) conveyed.`;
+        const adminAlertMsg = `🌟 *GBP AUTHORIZATION RECEIVED!* 🌟\n\n📱 *Client Contact:* ${platform === 'telegram' ? 'TG-' : '+'}${from}\n💬 *Platform:* ${platform}\n🆔 *Demo ID:* ${extDemoId}\n\nClient has verified the profile authorization. Activation timeline (Minimum 5 hours to Maximum 1 working day) conveyed.`;
         sendAdminAlert(adminAlertMsg);
 
         try {
@@ -1197,6 +1195,116 @@ async function processUnifiedMessage(from, rawText, platform) {
         } catch (e) {}
 
         return sendUnifiedMessage(from, authReply, platform);
+    }
+
+    // 🚨 1. PRIORITY ZERO INTERCEPTOR B: EID SPECIAL & 3-DAY DEMO INBOUND FORMS SYNC (Exact Flow Match)
+    if (
+        rawText.includes("EID MILAD-UN-NABI SPECIAL: 3-DAY FREE DEMO ACTIVATION") ||
+        rawText.includes("3-DAY FREE DEMO ACTIVATION") ||
+        rawText.includes("Please initiate setup handshake") ||
+        (rawText.includes("Activation ID:") && rawText.includes("Eid Special Bundle"))
+    ) {
+        let clientName = "Valued Business";
+        let bizName = "Valued Business";
+        let clientPhone = platform === 'whatsapp' ? from : "";
+        let clientEmail = "Not Provided";
+        let city = "LUDHIANA";
+        let category = "General";
+        let activationId = `DEMO-${Math.floor(10000 + Math.random() * 90000)}`;
+
+        try {
+            const idMatch = rawText.match(/Activation ID:\s*([^\n\r]+)/i);
+            const bizMatch = rawText.match(/Business:\s*([^\n\r]+)/i);
+            const contactMatch = rawText.match(/Contact:\s*([^\n\r]+)/i);
+            const phoneMatch = rawText.match(/Phone:\s*([^\n\r]+)/i);
+            const emailMatch = rawText.match(/Email:\s*([^\n\r]+)/i);
+            const cityMatch = rawText.match(/City:\s*([^\n\r]+)/i);
+            const catMatch = rawText.match(/Category:\s*([^\n\r]+)/i);
+
+            if (idMatch) activationId = idMatch[1].replace(/[*_]/g, '').trim();
+            if (bizMatch) bizName = bizMatch[1].replace(/[*_]/g, '').trim();
+            if (contactMatch) clientName = contactMatch[1].replace(/[*_]/g, '').trim();
+            else clientName = bizName;
+            if (phoneMatch) clientPhone = phoneMatch[1].replace(/[*_]/g, '').trim();
+            if (emailMatch) clientEmail = emailMatch[1].replace(/[*_]/g, '').trim();
+            if (cityMatch) city = cityMatch[1].replace(/[*_]/g, '').trim();
+            if (catMatch) category = catMatch[1].replace(/[*_]/g, '').trim();
+        } catch (e) {}
+
+        const isEnglishUser = isInternationalNumber || isGlobalWebsiteTemplate;
+
+        userSessions[from] = {
+            step: 'completed',
+            lang: isEnglishUser ? 'EN' : 'HINGLISH',
+            platform: platform,
+            clientName: clientName,
+            clientEmail: clientEmail,
+            clientPhone: clientPhone,
+            projectScope: `3-Day Free VIP Demo (${bizName})`,
+            lastInteractionTime: Date.now(),
+            nudgeSent: true
+        };
+
+        const onboardingLink = `https://api.shahidcreatives.com/connect-gmb?clientId=${encodeURIComponent(activationId)}`;
+        const waText = encodeURIComponent(`Hello Shahid! I have successfully authorized and connected Google Business Profile for: ${activationId} (ID: ${activationId}). Please confirm our 24/7 AI review bot status!`);
+        const waKickoffLink = `https://wa.me/917529839762?text=${waText}`;
+
+        // Send confirmation email if email is valid
+        if (clientEmail && clientEmail !== "Not Provided" && clientEmail.includes("@")) {
+            const mailOptions = {
+                from: '"Shahid Creatives AI" <your-email@shahidcreatives.com>',
+                to: clientEmail,
+                subject: `🎉 Action Required: Your 3-Day Free VIP Demo & GBP Onboarding [${activationId}]`,
+                html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                        <h2 style="color: #0056b3;">Thank you & Congratulations, ${bizName}! 🚀</h2>
+                        <p>Your <strong>3-Day Free VIP Demo</strong> for <strong>${bizName}</strong> has been successfully registered and queued for activation!</p>
+                        <p><strong>Activation ID:</strong> <span style="background: #eee; padding: 5px 10px; border-radius: 5px; font-weight: bold;">${activationId}</span></p>
+                        <p>⏱️ <strong>Activation Timeline:</strong> Minimum 5 Hours to Maximum 1 Working Day.</p>
+                        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                        <h3 style="color: #d9534f;">⚠️ Important Instruction: GBP Connection</h3>
+                        <p>To enable the AI review responder and Maps ranking sync, please connect your Google Business Profile below:</p>
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="${onboardingLink}" style="background-color: #28a745; color: white; padding: 15px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">🔗 Connect Google Business Profile (GBP)</a>
+                        </div>
+                        <p>Please ensure you authorize ONLY with the Google account registered to your GBP.</p>
+                        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                        <p><a href="${waKickoffLink}">🚀 Connect with Shahid on WhatsApp (Instant Kickoff)</a></p>
+                        <p><br>Best Regards,<br><strong>Shahid Creatives AI Team</strong></p>
+                    </div>
+                `
+            };
+            transporter.sendMail(mailOptions).catch(err => console.log("Demo Mail Error:", err));
+        }
+
+        // Exact Professional Polite Client Confirmation Message
+        const replyConfirmation = `🎉 *Thank you & Congratulations ${bizName}!* 🚀\n\nYour *3-Day Free VIP Demo* for *${bizName}* has been successfully registered and queued for activation!\n\n🆔 *Demo ID:* \`${activationId}\`\n👤 *Client / Contact:* ${clientName}\n📱 *Phone / WhatsApp:* ${clientPhone.startsWith('+') ? clientPhone : '+' + clientPhone}\n✉️ *Email:* ${clientEmail}\n📍 *Location:* ${city}\n🏷️ *Category:* ${category}\n\n⚡ *Included in Growth Triad:*\n1️⃣ Google Business Profile (GMB) AI Engine (Auto 5-star review replies)\n2️⃣ Hyper-Local SEO Audit Simulator (Competitor keyword ranking gaps)\n3️⃣ 24/7 Telegram & Meta-Verified WhatsApp Business API Bot (Official verified integration)\n\n✅ *Official Meta Business Verified | Zero Risk Guarantee*\n⏱️ *Activation Timeline:* *Minimum 5 Hours to Maximum 1 Working Day*\n_(Our technical team is configuring your dedicated node, knowledgebase, and verified GBP sync.)_\n\n🔗 *GBP AI Onboarding Link:*\n${onboardingLink}\n\n⚠️ *Zaroori Instruction:* Kripya GBP onboarding link ko apne *Google Business Profile (GBP) registered Google/Gmail account* se hi open/authorize karein.\n\n👉 *Direct Demo Portal:* https://shahidcreatives.com/#combo-demo\n\n- Shahid Creatives (https://shahidcreatives.com)`;
+
+        const adminAlertMsg = `🚨 *EID SPECIAL / 3-DAY DEMO INBOUND LEAD!* 🚨\n\n📱 *Contact:* ${clientPhone} (${platform})\n💬 *Chat ID:* ${from}\n👤 *Contact:* ${clientName}\n🏢 *Business:* ${bizName}\n🆔 *Demo ID:* ${activationId}\n📍 *Location:* ${city}\n🏷️ *Category:* ${category}\n\n*Action:* Demo queued with 5hr-1day activation window.`;
+        sendAdminAlert(adminAlertMsg);
+
+        try {
+            await axios.post('https://shahidcreatives.com/api/whatsapp-leads', { 
+                client_name: clientName, 
+                whatsapp_number: clientPhone || from, 
+                telegram_chat_id: platform === 'telegram' ? from : undefined, 
+                project_scope: `3-Day Free VIP Demo (${bizName})`, 
+                calculated_price: 0, 
+                email: clientEmail, 
+                discussion_notes: adminAlertMsg 
+            });
+        } catch (e) {}
+
+        const tgOptions = {
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: "🔗 Connect Google Business Profile (GBP)", url: onboardingLink }],
+                    [{ text: "🚀 Notify Authorization (Send to Team)", url: waKickoffLink }]
+                ]
+            }
+        };
+
+        return sendUnifiedMessage(from, replyConfirmation, platform, tgOptions);
     }
 
     const resetTriggers = ['hi', 'hello', 'menu', 'start', '/start', 'hey'];
@@ -1344,7 +1452,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         return sendUnifiedMessage(from, replyMsg, platform);
     }
 
-    // 🎯 STATE: 3-DAY FREE DEMO ACTIVATION SUBMIT HANDLER
+    // 🎯 STATE: 3-DAY FREE DEMO ACTIVATION SUBMIT HANDLER (From Menu Option 6 Form)
     if (currentStep === 'demo_activation_submit') {
         // 🚨 STRICT VALIDATION: Prevent blank, numbers or single-character form submissions
         if (rawText.length < 25 || (!rawText.toLowerCase().includes('name') && !rawText.toLowerCase().includes('business'))) {
@@ -1360,7 +1468,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         let clientEmail = "Not Provided";
         let displayPhone = platform === 'whatsapp' ? from : "Not Provided";
         let bizName = "Valued Business";
-        let city = "Not Provided";
+        let city = "Ludhiana";
         let category = "General";
 
         // Attempt smart extraction for admin log and dynamic receipt
@@ -1382,7 +1490,12 @@ async function processUnifiedMessage(from, rawText, platform) {
             if (catMatch) category = catMatch[1].replace(/[*_]/g, '').trim();
         } catch (e) {}
 
-        const adminAlert = `🚨 *NEW 3-DAY DEMO ACTIVATION!* 🚨\n\n📱 *Contact:* ${displayPhone} (${platform})\n💬 *Chat ID:* ${from}\n👤 *Extracted Name:* ${clientName}\n🏢 *Business:* ${bizName}\n\n*📋 Submitted Form Data:*\n${rawText}`;
+        const demoId = `DEMO-${Math.floor(10000 + Math.random() * 90000)}`;
+        const onboardingLink = `https://api.shahidcreatives.com/connect-gmb?clientId=${demoId}`;
+        const waText = encodeURIComponent(`Hello Shahid! I have successfully authorized and connected Google Business Profile for: ${demoId} (ID: ${demoId}). Please confirm our 24/7 AI review bot status!`);
+        const waKickoffLink = `https://wa.me/917529839762?text=${waText}`;
+
+        const adminAlert = `🚨 *NEW 3-DAY DEMO ACTIVATION!* 🚨\n\n📱 *Contact:* ${displayPhone} (${platform})\n💬 *Chat ID:* ${from}\n👤 *Extracted Name:* ${clientName}\n🏢 *Business:* ${bizName}\n🆔 *Demo ID:* ${demoId}\n📍 *City:* ${city}\n🏷️ *Category:* ${category}\n\n*📋 Submitted Form Data:*\n${rawText}`;
         sendAdminAlert(adminAlert);
 
         // Push lead to dashboard webhook
@@ -1398,35 +1511,26 @@ async function processUnifiedMessage(from, rawText, platform) {
             });
         } catch (e) { }
 
-        // 🟢 EMAIL ONBOARDING FLOW & GBP CONNECT
-        const demoId = `DEMO-${Math.floor(10000 + Math.random() * 90000)}`;
-        const onboardingLink = `https://api.shahidcreatives.com/connect-gmb?clientId=${demoId}`;
-        
-        const waText = encodeURIComponent(`Hello Shahid! I have successfully authorized and connected Google Business Profile for: ${demoId} (ID: ${demoId}). Please confirm our 24/7 AI review bot status!`);
-        const waKickoffLink = `https://wa.me/917529839762?text=${waText}`;
-
         // Send Email if valid email was provided
         if (clientEmail && clientEmail !== "Not Provided" && clientEmail.includes("@")) {
             const mailOptions = {
-                from: '"Shahid Creatives AI" <your-email@shahidcreatives.com>', // ⚠️ UPDATE THIS to official sender
+                from: '"Shahid Creatives AI" <your-email@shahidcreatives.com>',
                 to: clientEmail,
                 subject: `🎉 Action Required: Your 3-Day Free VIP Demo & GBP Onboarding [${demoId}]`,
                 html: `
                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-                        <h2 style="color: #0056b3;">Welcome to Shahid Creatives, ${clientName}! 🚀</h2>
-                        <p>Your 3-Day Free VIP Demo has been successfully activated for <strong>${bizName}</strong>.</p>
+                        <h2 style="color: #0056b3;">Thank you & Congratulations, ${bizName}! 🚀</h2>
+                        <p>Your <strong>3-Day Free VIP Demo</strong> for <strong>${bizName}</strong> has been successfully registered and queued for activation!</p>
                         <p><strong>Your Unique Demo ID:</strong> <span style="background: #eee; padding: 5px 10px; border-radius: 5px; font-weight: bold;">${demoId}</span></p>
-                        <p>⏱️ <strong>Activation Timeline:</strong> Minimum 4 hours to maximum 1 working day.</p>
+                        <p>⏱️ <strong>Activation Timeline:</strong> Minimum 5 Hours to Maximum 1 Working Day.</p>
                         <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-                        <h3 style="color: #d9534f;">⚠️ Crucial Action Required: GBP Connection</h3>
-                        <p>To enable the AI review responder and Maps ranking sync, you must connect your Google Business Profile.</p>
-                        <p><strong>Note:</strong> Please ensure you login/authorize <strong>ONLY</strong> with the Gmail/Google Account that is officially registered to your Google Business Profile.</p>
+                        <h3 style="color: #d9534f;">⚠️ Important Instruction: GBP Connection</h3>
+                        <p>To enable the AI review responder and Maps ranking sync, please connect your Google Business Profile below:</p>
                         <div style="text-align: center; margin: 30px 0;">
                             <a href="${onboardingLink}" style="background-color: #28a745; color: white; padding: 15px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">🔗 Connect Google Business Profile (GBP)</a>
                         </div>
-                        <p>Or copy this link manually: <br><a href="${onboardingLink}">${onboardingLink}</a></p>
+                        <p>Please ensure you login/authorize <strong>ONLY</strong> with the Gmail/Google Account that is officially registered to your Google Business Profile.</p>
                         <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-                        <p>If you have any issues, click the button below to reach us on WhatsApp instantly.</p>
                         <p><a href="${waKickoffLink}">🚀 Connect with Shahid on WhatsApp (Instant Kickoff)</a></p>
                         <p><br>Best Regards,<br><strong>Shahid Creatives AI Team</strong></p>
                     </div>
@@ -1435,9 +1539,9 @@ async function processUnifiedMessage(from, rawText, platform) {
             transporter.sendMail(mailOptions).catch(err => console.log("Demo Mail Error:", err));
         }
 
-        const successMsgEN = `🎉 *Congratulations ${bizName.toUpperCase()}!* 🚀\n\nYour *3-Day Free VIP Demo* for *${bizName}* has been successfully queued!\n\n🆔 *Demo ID:* \`${demoId}\`\n👤 *Client / Contact:* ${clientName}\n📱 *Phone / WhatsApp:* ${displayPhone}\n✉️ *Email:* ${clientEmail}\n📍 *Location:* ${city}\n🏷️ *Category:* ${category}\n\n⚡ *Included in Growth Triad:*\n• Google Business Profile Review AI Auto-Responder\n• Hyper-Local SEO Competitor Gap Audit\n• 24/7 Telegram & WhatsApp AI Lead Capture Bot\n\n🔗 *GBP AI Onboarding Link:*\n${onboardingLink}\n\n⚠️ *Note:* Please ensure you login/authorize ONLY with the Google/Gmail Account that is officially registered to your Google Business Profile.\n\n🕒 *Activation Timeline:* Shahid Creatives Team is configuring your dedicated node. Your services will be fully activated within *minimum 4 hours to maximum 1 working day*. Zero upfront cost or credit card needed!\n\n👉 *Direct Demo Portal:* https://shahidcreatives.com/#combo-demo\n\n- Shahid Creatives (https://shahidcreatives.com)`;
+        const successMsgEN = `🎉 *Thank you & Congratulations ${bizName}!* 🚀\n\nYour *3-Day Free VIP Demo* for *${bizName}* has been successfully registered and queued for activation!\n\n🆔 *Demo ID:* \`${demoId}\`\n👤 *Client / Contact:* ${clientName}\n📱 *Phone / WhatsApp:* ${displayPhone.startsWith('+') ? displayPhone : '+' + displayPhone}\n✉️ *Email:* ${clientEmail}\n📍 *Location:* ${city}\n🏷️ *Category:* ${category}\n\n⚡ *Included in Growth Triad:*\n1️⃣ Google Business Profile (GMB) AI Engine (Auto 5-star review replies)\n2️⃣ Hyper-Local SEO Audit Simulator (Competitor keyword ranking gaps)\n3️⃣ 24/7 Telegram & Meta-Verified WhatsApp Business API Bot (Official verified integration)\n\n✅ *Official Meta Business Verified | Zero Risk Guarantee*\n⏱️ *Activation Timeline:* *Minimum 5 Hours to Maximum 1 Working Day*\n_(Our technical team is configuring your dedicated node, knowledgebase, and verified GBP sync.)_\n\n🔗 *GBP AI Onboarding Link:*\n${onboardingLink}\n\n⚠️ *Zaroori Instruction:* Kripya GBP onboarding link ko apne *Google Business Profile (GBP) registered Google/Gmail account* se hi open/authorize karein.\n\n👉 *Direct Demo Portal:* https://shahidcreatives.com/#combo-demo\n\n- Shahid Creatives (https://shahidcreatives.com)`;
 
-        const successMsgHIN = `🎉 *Congratulations ${bizName.toUpperCase()}!* 🚀\n\nAapka *3-Day Free VIP Demo* (*${bizName}* ke liye) successfully queue ho gaya hai!\n\n🆔 *Demo ID:* \`${demoId}\`\n👤 *Client / Contact:* ${clientName}\n📱 *Phone / WhatsApp:* ${displayPhone}\n✉️ *Email:* ${clientEmail}\n📍 *Location:* ${city}\n🏷️ *Category:* ${category}\n\n⚡ *Included in Growth Triad:*\n• Google Business Profile Review AI Auto-Responder\n• Hyper-Local SEO Competitor Gap Audit\n• 24/7 Telegram & WhatsApp AI Lead Capture Bot\n\n🔗 *GBP AI Onboarding Link:*\n${onboardingLink}\n\n⚠️ *Note:* Kripya GBP onboarding link par click karte waqt apne *Google Business Profile registered Google/Gmail account* se hi authorize karein.\n\n🕒 *Activation Timeline:* Shahid Creatives ki team aapka dedicated node configure kar rahi hai. Aapki services *minimum 4 ghante se lekar maximum 1 working day* ke andar fully active ho jayengi! Zero upfront cost!\n\n👉 *Direct Demo Portal:* https://shahidcreatives.com/#combo-demo\n\n- Shahid Creatives (https://shahidcreatives.com)`;
+        const successMsgHIN = `🎉 *Thank you & Congratulations ${bizName}!* 🚀\n\nAapka *3-Day Free VIP Demo* (*${bizName}* ke liye) successfully registered aur activation queue me save ho gaya hai!\n\n🆔 *Demo ID:* \`${demoId}\`\n👤 *Client / Contact:* ${clientName}\n📱 *Phone / WhatsApp:* ${displayPhone.startsWith('+') ? displayPhone : '+' + displayPhone}\n✉️ *Email:* ${clientEmail}\n📍 *Location:* ${city}\n🏷️ *Category:* ${category}\n\n⚡ *Included in Growth Triad:*\n1️⃣ Google Business Profile (GMB) AI Engine (Auto 5-star review replies)\n2️⃣ Hyper-Local SEO Audit Simulator (Competitor keyword ranking gaps)\n3️⃣ 24/7 Telegram & Meta-Verified WhatsApp Business API Bot (Official verified integration)\n\n✅ *Official Meta Business Verified | Zero Risk Guarantee*\n⏱️ *Activation Timeline:* *Minimum 5 Hours se lekar Maximum 1 Working Day*\n_(Humari technical team aapka dedicated node, knowledgebase aur verified GBP sync configure kar rahi hai.)_\n\n🔗 *GBP AI Onboarding Link:*\n${onboardingLink}\n\n⚠️ *Zaroori Instruction:* Kripya GBP onboarding link ko apne *Google Business Profile (GBP) registered Google/Gmail account* se hi open/authorize karein.\n\n👉 *Direct Demo Portal:* https://shahidcreatives.com/#combo-demo\n\n- Shahid Creatives (https://shahidcreatives.com)`;
 
         const finalSuccessMsg = (userLang === 'EN') ? successMsgEN : successMsgHIN;
 
@@ -1679,8 +1783,8 @@ async function processUnifiedMessage(from, rawText, platform) {
 
         if (processedRoute) {
             let replyText = (userLang === 'EN')
-                ? "Hello! Welcome to *Shahid Creatives*. 🚀\nSelect a professional stack tier via option number:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI-Powered Growth Retainers**\n3️⃣ **🚀 Special Combo Offers (🔥 HOT)**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid Creatives' Team (Direct Consultation)**\n6️⃣ **🎁 3-Day Free VIP Demo (Zero Risk)**"
-                : "Hello! Welcome to *Shahid Creatives*. 🚀\nKoshish ko aage badhane ke liye ek option number reply kijiye:\n\n1️⃣ *Web Development Tiers*\n2️⃣ *AI-Powered Growth Retainers*\n3️⃣ *🚀 Special Combo Offers (🔥 HOT)*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives ki Team* (Direct Consultation)\n6️⃣ **🎁 3-Day Free VIP Demo (Zero Risk)**";
+                ? "Hello! Welcome to *Shahid Creatives*. 🚀\nSelect a professional stack tier via option number:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI-Powered Growth Retainers**\n3️⃣ **🚀 Special Combo Offers (🔥 HOT)**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid Creatives' Team (Direct Consultation)**\n6️⃣ **🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)**"
+                : "Hello! Welcome to *Shahid Creatives*. 🚀\nKoshish ko aage badhane ke liye ek option number reply kijiye:\n\n1️⃣ *Web Development Tiers*\n2️⃣ *AI-Powered Growth Retainers*\n3️⃣ *🚀 Special Combo Offers (🔥 HOT)*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives ki Team* (Direct Consultation)\n6️⃣ **🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)**";
             return sendUnifiedMessage(from, replyText, platform);
         } else {
             return sendUnifiedMessage(from, "Welcome to *Shahid Creatives*! 🚀 Please select your location layout to proceed:\n\n1️⃣ **India (Tax/Billing: ₹ INR)**\n2️⃣ **Outside India (Global Billing: $ USD)**", platform);
@@ -2153,13 +2257,13 @@ async function processUnifiedMessage(from, rawText, platform) {
         else if (userText === '3' || userText.includes("combo") || userText.includes("offer") || userText.includes("special")) { targetMenuRoute = '3'; isCoreMatch = true; }
         else if (userText === '4' || userText.includes("book") || userText.includes("token")) { targetMenuRoute = '4'; isCoreMatch = true; }
         else if (userText === '5' || userText.includes("shahid") || userText.includes("talk")) { targetMenuRoute = '5'; isCoreMatch = true; }
-        // 🚀 DEMO ROUTE PARSER
+        // 🚀 DEMO ROUTE PARSER (Updated Offer Text & Structure)
         else if (userText === '6' || userText.includes("demo") || userText.includes("free")) { targetMenuRoute = '6'; isCoreMatch = true; }
 
         if (!isCoreMatch) {
             let replyText = (userLang === 'EN')
-                ? "Hello! Welcome to *Shahid Creatives*. 🚀 Select a stack tier layout:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI-Powered Growth Retainers**\n3️⃣ **🚀 Special Combo Offers (🔥 HOT)**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid Creatives' Team (Direct Consultation)**\n6️⃣ **🎁 3-Day Free VIP Demo (Zero Risk)**"
-                : "Hello! Welcome to *Shahid Creatives*. 🚀 Select layout choice number:\n\n1️⃣ *Web Development Tiers*\n2️⃣ *AI-Powered Growth Retainers*\n3️⃣ *🚀 Special Combo Offers (🔥 HOT)*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives ki Team* (Direct Consultation)\n6️⃣ **🎁 3-Day Free VIP Demo (Zero Risk)**";
+                ? "Hello! Welcome to *Shahid Creatives*. 🚀 Select a stack tier layout:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI-Powered Growth Retainers**\n3️⃣ **🚀 Special Combo Offers (🔥 HOT)**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid Creatives' Team (Direct Consultation)**\n6️⃣ **🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)**"
+                : "Hello! Welcome to *Shahid Creatives*. 🚀 Select layout choice number:\n\n1️⃣ *Web Development Tiers*\n2️⃣ *AI-Powered Growth Retainers*\n3️⃣ *🚀 Special Combo Offers (🔥 HOT)*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives ki Team* (Direct Consultation)\n6️⃣ **🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)**";
             return sendUnifiedMessage(from, replyText, platform);
         }
 
@@ -2196,12 +2300,13 @@ async function processUnifiedMessage(from, rawText, platform) {
                 ? `👤 *Direct Consultation with Shahid Creatives' Team:*\n\n${optionA_EN}\n${optionB_EN}\n🅲️ *Custom Time (Type preferred time below)*\n\n👉 Reply with A, B, or C!` 
                 : `👤 *Direct Consultation with Shahid Creatives ki Team:*\n\n${optionA}\n${optionB}\n🅲️ *Custom Time (Apna secure timing niche type karein)*\n\n👉 Kripya **A, B, ya C** likh kar reply kijiye!`, platform);
         } else if (targetMenuRoute === '6') {
+            // 🚀 NEW UPDATED OFFER TEXT (Item 1 requested)
             userSessions[from].step = 'demo_activation_submit';
             userSessions[from].projectScope = "3-Day Free VIP Demo";
             
             const demoMsg = (userLang === 'EN')
-                ? "🎁 *3-Day Free VIP Demo Plan: Growth Triad (100% Free - Zero Risk)*\n\nExperience our entire automated revenue engine for 72 hours with no upfront cost!\n\n1️⃣ *GMB AI Engine*\n2️⃣ *Hyper-Local SEO Audit*\n3️⃣ *24/7 AI Lead Bot*\n\n👇 *ACTIVATE YOUR DEMO NOW*\nPlease copy the form below, fill in your details, and reply. We will configure your dedicated bot node immediately:\n\n*Business or Brand Name:*\n*Contact Person Name:*\n*WhatsApp / Phone Number:*\n*Email Address (Optional):*\n*Target City / Location:*\n*Business Category:* (e.g., Local Services, Real Estate, Healthcare, etc.)\n*Website URL or Maps Link:*\n*Special Requirements:* "
-                : "🎁 *3-Day Free VIP Demo Plan: Growth Triad (100% Free - Zero Risk)*\n\nBina kisi upfront cost ke 72 hours tak hamara revenue engine test karein!\n\n1️⃣ *GMB AI Engine*\n2️⃣ *Hyper-Local SEO Audit*\n3️⃣ *24/7 AI Lead Bot*\n\n👇 *ACTIVATE YOUR DEMO NOW*\nKripya niche diye gaye form ko copy karein, apni details bharein aur humein bhejein. Hum turant aapka dedicated bot node configure kar denge:\n\n*Business or Brand Name:*\n*Contact Person Name:*\n*WhatsApp / Phone Number:*\n*Email Address (Optional):*\n*Target City / Location:*\n*Business Category:* (e.g., Local Services, Real Estate, Healthcare, etc.)\n*Website URL or Maps Link:*\n*Special Requirements:* ";
+                ? "🎁 *3-Day Free VIP Demo: Growth Triad (100% Free - Zero Risk)*\n\nExperience our entire automated revenue engine for 72 hours with no upfront cost or credit card:\n\n1️⃣ *Google Business Profile (GMB) AI Engine* (Auto 5-star review replies & Maps rank booster)\n2️⃣ *Hyper-Local SEO Audit Simulator* (Competitor keyword ranking gaps & citation score)\n3️⃣ *24/7 Telegram & Meta-Verified WhatsApp Business API Bot* (Official verified integration — Instant 3-sec reply & qualification)\n\n⚡ *Setup ready in 2-4 hours | Zero Risk Guarantee | ✅ Official Meta Business Verified*\n\n👇 *ACTIVATE YOUR DEMO NOW*\nPlease copy the form below, fill in your details, and reply. We will configure your dedicated node immediately:\n\n*Business or Brand Name:*\n*Contact Person Name:*\n*WhatsApp / Phone Number:*\n*Email Address (Optional):*\n*Target City / Location:*\n*Business Category:* (e.g., Local Services, Real Estate, Healthcare, etc.)\n*Website URL or Maps Link:*\n*Special Requirements:* "
+                : "🎁 *3-Day Free VIP Demo: Growth Triad (100% Free - Zero Risk)*\n\nBina kisi upfront cost ya credit card ke 72 hours tak hamara complete automated revenue engine test karein:\n\n1️⃣ *Google Business Profile (GMB) AI Engine* (Auto 5-star review replies & Maps rank booster)\n2️⃣ *Hyper-Local SEO Audit Simulator* (Competitor keyword ranking gaps & citation score)\n3️⃣ *24/7 Telegram & Meta-Verified WhatsApp Business API Bot* (Official verified integration — Instant 3-sec reply & qualification)\n\n⚡ *Setup ready in 2-4 hours | Zero Risk Guarantee | ✅ Official Meta Business Verified*\n\n👇 *ACTIVATE YOUR DEMO NOW*\nKripya niche diye gaye form ko copy karein, apni details bharein aur humein bhejein. Hum turant aapka dedicated node configure kar denge:\n\n*Business or Brand Name:*\n*Contact Person Name:*\n*WhatsApp / Phone Number:*\n*Email Address (Optional):*\n*Target City / Location:*\n*Business Category:* (e.g., Local Services, Real Estate, Healthcare, etc.)\n*Website URL or Maps Link:*\n*Special Requirements:* ";
             return sendUnifiedMessage(from, demoMsg, platform);
         }
     }

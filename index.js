@@ -608,7 +608,7 @@ zamZamBot.on('callback_query', async (query) => {
                 ? `📅 *Appointment Booking:*\n\nPlease select your preferred *Date* first: 👇`
                 : `📅 *Appointment Booking:*\n\nKripya pehle preferred *Date* select karein: 👇`;
             zamZamBot.sendMessage(chatId, dateMsg, { parse_mode: 'Markdown', reply_markup: dateOptions });
-        }
+        } 
         
         // 🟢 TIME SELECTION FOR CLINIC
         else if (data.startsWith('zz_date_')) {
@@ -1172,6 +1172,7 @@ async function processUnifiedMessage(from, rawText, platform) {
             clientName: "Valued Client",
             projectScope: `GBP Verification & Setup (${extDemoId})`,
             lastInteractionTime: Date.now(),
+            lastSubmitedTime: Date.now(),
             nudgeSent: true
         };
 
@@ -1197,42 +1198,45 @@ async function processUnifiedMessage(from, rawText, platform) {
         return sendUnifiedMessage(from, authReply, platform);
     }
 
-    // 🚨 1. PRIORITY ZERO INTERCEPTOR B: EID SPECIAL & 3-DAY DEMO INBOUND FORMS SYNC (Exact Flow Match)
+    // 🚨 1. PRIORITY ZERO INTERCEPTOR B: EID SPECIAL & 3-DAY DEMO INBOUND FORMS SYNC (Zero extra questions asked)
     if (
-        rawText.includes("EID MILAD-UN-NABI SPECIAL: 3-DAY FREE DEMO ACTIVATION") ||
         rawText.includes("3-DAY FREE DEMO ACTIVATION") ||
+        rawText.includes("EID MILAD-UN-NABI SPECIAL") ||
+        rawText.includes("3-Day Free VIP Demo") ||
         rawText.includes("Please initiate setup handshake") ||
-        (rawText.includes("Activation ID:") && rawText.includes("Eid Special Bundle"))
+        (rawText.includes("Activation ID:") && rawText.includes("Phone:")) ||
+        (rawText.includes("Contact Person Name:") && rawText.includes("Business or Brand Name:"))
     ) {
         let clientName = "Valued Business";
         let bizName = "Valued Business";
         let clientPhone = platform === 'whatsapp' ? from : "";
         let clientEmail = "Not Provided";
-        let city = "LUDHIANA";
+        let city = "Ludhiana";
         let category = "General";
         let activationId = `DEMO-${Math.floor(10000 + Math.random() * 90000)}`;
 
         try {
-            const idMatch = rawText.match(/Activation ID:\s*([^\n\r]+)/i);
-            const bizMatch = rawText.match(/Business:\s*([^\n\r]+)/i);
-            const contactMatch = rawText.match(/Contact:\s*([^\n\r]+)/i);
-            const phoneMatch = rawText.match(/Phone:\s*([^\n\r]+)/i);
-            const emailMatch = rawText.match(/Email:\s*([^\n\r]+)/i);
-            const cityMatch = rawText.match(/City:\s*([^\n\r]+)/i);
-            const catMatch = rawText.match(/Category:\s*([^\n\r]+)/i);
+            const idMatch = rawText.match(/(?:Activation ID|Demo ID|ID)[^:]*:\s*([^\n\r]+)/i);
+            const bizMatch = rawText.match(/(?:Business|Business or Brand Name|Brand)[^:]*:\s*([^\n\r]+)/i);
+            const contactMatch = rawText.match(/(?:Contact|Contact Person Name|Name)[^:]*:\s*([^\n\r]+)/i);
+            const phoneMatch = rawText.match(/(?:Phone|WhatsApp \/ Phone Number|Mobile)[^:]*:\s*([^\n\r]+)/i);
+            const emailMatch = rawText.match(/(?:Email|Email Address)[^:]*:\s*([^\n\r]+)/i);
+            const cityMatch = rawText.match(/(?:City|Target City \/ Location|Location)[^:]*:\s*([^\n\r]+)/i);
+            const catMatch = rawText.match(/(?:Category|Business Category)[^:]*:\s*([^\n\r]+)/i);
 
             if (idMatch) activationId = idMatch[1].replace(/[*_]/g, '').trim();
             if (bizMatch) bizName = bizMatch[1].replace(/[*_]/g, '').trim();
             if (contactMatch) clientName = contactMatch[1].replace(/[*_]/g, '').trim();
             else clientName = bizName;
-            if (phoneMatch) clientPhone = phoneMatch[1].replace(/[*_]/g, '').trim();
-            if (emailMatch) clientEmail = emailMatch[1].replace(/[*_]/g, '').trim();
-            if (cityMatch) city = cityMatch[1].replace(/[*_]/g, '').trim();
-            if (catMatch) category = catMatch[1].replace(/[*_]/g, '').trim();
+            if (phoneMatch) clientPhone = phoneMatch[1].replace(/[*_📞]/g, '').trim();
+            if (emailMatch) clientEmail = emailMatch[1].replace(/[*_✉️]/g, '').trim();
+            if (cityMatch) city = cityMatch[1].replace(/[*_📍]/g, '').trim();
+            if (catMatch) category = catMatch[1].replace(/[*_🏷️]/g, '').trim();
         } catch (e) {}
 
         const isEnglishUser = isInternationalNumber || isGlobalWebsiteTemplate;
 
+        // 🔒 Lock session permanently so no additional details or location layout prompt is asked
         userSessions[from] = {
             step: 'completed',
             lang: isEnglishUser ? 'EN' : 'HINGLISH',
@@ -1242,6 +1246,7 @@ async function processUnifiedMessage(from, rawText, platform) {
             clientPhone: clientPhone,
             projectScope: `3-Day Free VIP Demo (${bizName})`,
             lastInteractionTime: Date.now(),
+            lastSubmitedTime: Date.now(),
             nudgeSent: true
         };
 
@@ -1304,6 +1309,7 @@ async function processUnifiedMessage(from, rawText, platform) {
             }
         };
 
+        // 🛑 DIRECT RETURN: Stops further execution completely
         return sendUnifiedMessage(from, replyConfirmation, platform, tgOptions);
     }
 
@@ -2257,7 +2263,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         else if (userText === '3' || userText.includes("combo") || userText.includes("offer") || userText.includes("special")) { targetMenuRoute = '3'; isCoreMatch = true; }
         else if (userText === '4' || userText.includes("book") || userText.includes("token")) { targetMenuRoute = '4'; isCoreMatch = true; }
         else if (userText === '5' || userText.includes("shahid") || userText.includes("talk")) { targetMenuRoute = '5'; isCoreMatch = true; }
-        // 🚀 DEMO ROUTE PARSER (Updated Offer Text & Structure)
         else if (userText === '6' || userText.includes("demo") || userText.includes("free")) { targetMenuRoute = '6'; isCoreMatch = true; }
 
         if (!isCoreMatch) {
@@ -2300,7 +2305,6 @@ async function processUnifiedMessage(from, rawText, platform) {
                 ? `👤 *Direct Consultation with Shahid Creatives' Team:*\n\n${optionA_EN}\n${optionB_EN}\n🅲️ *Custom Time (Type preferred time below)*\n\n👉 Reply with A, B, or C!` 
                 : `👤 *Direct Consultation with Shahid Creatives ki Team:*\n\n${optionA}\n${optionB}\n🅲️ *Custom Time (Apna secure timing niche type karein)*\n\n👉 Kripya **A, B, ya C** likh kar reply kijiye!`, platform);
         } else if (targetMenuRoute === '6') {
-            // 🚀 NEW UPDATED OFFER TEXT (Item 1 requested)
             userSessions[from].step = 'demo_activation_submit';
             userSessions[from].projectScope = "3-Day Free VIP Demo";
             

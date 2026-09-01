@@ -145,7 +145,7 @@ bot.on('callback_query', async (query) => {
         await processUnifiedMessage(chatId, `Custom Time: ${selectedTime}`, 'telegram');
         bot.answerCallbackQuery(query.id).catch(()=>{});
     }
-    // 🟢 NEW: Route UI button selections seamlessly to the text mapping engine
+    // 🟢 Route UI button selections seamlessly to the text mapping engine
     else if (data.startsWith('sel_web_') || data.startsWith('sel_ai_') || data.startsWith('sel_combo_')) {
         const number = data.split('_')[2];
         await processUnifiedMessage(chatId, number, 'telegram');
@@ -176,7 +176,7 @@ bot.on('message', async (msg) => {
         return;
     }
 
-    // 🟢 FIX: Prevent Double Messages in Telegram by caching processing status
+    // 🟢 Prevent Double Messages in Telegram by caching processing status
     if (processingLocks[chatId]) return;
     processingLocks[chatId] = true;
 
@@ -188,9 +188,8 @@ bot.on('message', async (msg) => {
     }
 });
 
-
 // ==========================================
-// ✨ NEW: SALON AI VIRTUAL RECEPTIONIST BOT (PREMIUM UPGRADE)
+// ✨ SALON AI VIRTUAL RECEPTIONIST BOT
 // ==========================================
 const SALON_TELEGRAM_TOKEN = '8602924285:AAGRgdN8F6pr5BhzCysFaM8uXoXNo93gyeY';
 const salonBot = new TelegramBot(SALON_TELEGRAM_TOKEN, { polling: true });
@@ -503,9 +502,8 @@ salonBot.on('message', async (msg) => {
     } catch(err) { console.log(err.message); }
 });
 
-
 // ==========================================
-// ✨ NEW: ZAM ZAM CLINIC VIRTUAL RECEPTIONIST BOT (PREMIUM)
+// ✨ ZAM ZAM CLINIC VIRTUAL RECEPTIONIST BOT
 // ==========================================
 const ZAMZAM_TELEGRAM_TOKEN = '8707737273:AAEIKAFSF4pxb3gKnbQTNZVxhwEKaYE_mE0';
 const zamZamBot = new TelegramBot(ZAMZAM_TELEGRAM_TOKEN, { polling: true });
@@ -857,7 +855,7 @@ setInterval(() => {
                     : `⏰ *Reminder:* Namaste ${appt.clientName}, aapki appointment theek *${timeLabel}* mein shuru hone wali hai! Kripya samay par pahuchein. ✨`;
                 zamZamBot.sendMessage(appt.chatId, reminderMsg, { parse_mode: "Markdown" }).catch(()=>{});
             } else if (appt.bot === 'consultation') {
-                // 🟢 NEW: Consultation Custom Time Reminders
+                // 🟢 Consultation Custom Time Reminders
                 const consReminder = isEn 
                     ? `⏰ *Consultation Reminder:* Hello ${appt.clientName}, your strategy consultation call with Shahid Creatives is starting in exactly *${timeLabel}*! Please be ready. 🚀\n\n🌐 _Powered by Shahid Creatives_`
                     : `⏰ *Consultation Reminder:* Namaste ${appt.clientName}, Shahid Creatives ke sath aapki strategy call theek *${timeLabel}* mein shuru hone wali hai! Kripya taiyar rahein. 🚀\n\n🌐 _Powered by Shahid Creatives_`;
@@ -866,7 +864,6 @@ setInterval(() => {
         }
     });
 }, 60000); // Check every 1 minute
-
 
 // ==========================================
 // 🟢 2. WHATSAPP ENGINE & SERVER LOGIC (ORIGINAL CODE UNTOUCHED)
@@ -1078,7 +1075,6 @@ app.post('/send-client-credentials', async (req, res) => {
     }
 });
 
-
 // 🟢 ROUTE HANDLER: Payment Reminders Dispatch Engine (UPDATED)
 app.post('/send-payment-reminder', async (req, res) => {
     try {
@@ -1104,7 +1100,7 @@ app.post('/send-payment-reminder', async (req, res) => {
 // Meta Webhook Verification (Backup for '/webhook' path)
 app.get('/webhook', (req, res) => {
     const VERIFY_TOKEN = "mysecrettoken";
-    if (req.query['hub.mode'] === 'subscribe' && req.query['hub.verify_token'] === VERIFY_TOKEN) {
+    if (req.query['hub.mode'] && req.query['hub.verify_token'] === VERIFY_TOKEN) {
         return res.status(200).send(req.query['hub.challenge']);
     }
     res.sendStatus(403);
@@ -1157,6 +1153,52 @@ async function processUnifiedMessage(from, rawText, platform) {
     const isInternationalNumber = platform === 'whatsapp' ? !from.startsWith("91") : false;
     const isGlobalWebsiteTemplate = rawText.includes("Global USD") || rawText.includes("Worldwide") || rawText.includes("$") || rawText.includes("lock in my custom website estimate");
 
+    // 🚨 1. PRIORITY ZERO INTERCEPTOR: GBP AUTHORIZATION & DEMO CONFIRMATION
+    // (Prevents Region Selection prompt from overwriting the client's confirmation)
+    if (
+        userText.includes("successfully authorized and connected") || 
+        userText.includes("i have successfully authorized") ||
+        userText.includes("authorized and connected google business profile") || 
+        userText.includes("confirm our 24/7 ai review bot status") ||
+        (userText.includes("demo") && userText.includes("authorized"))
+    ) {
+        let demoIdMatch = rawText.match(/(DEMO-?\s*\d+)/i);
+        let extDemoId = demoIdMatch ? demoIdMatch[1].replace(/\s+/g, '') : "your Demo";
+
+        const isEnglishUser = isInternationalNumber || isGlobalWebsiteTemplate;
+
+        userSessions[from] = {
+            step: 'completed',
+            lang: isEnglishUser ? 'EN' : 'HINGLISH',
+            platform: platform,
+            clientName: "Valued Client",
+            projectScope: `GBP Verification & Setup (${extDemoId})`,
+            lastInteractionTime: Date.now(),
+            nudgeSent: true
+        };
+
+        const authReply = isEnglishUser
+            ? `🙏 *Thank you for connecting with Shahid Creatives!* ✨\n\nWe have successfully received your Google Business Profile authorization request for *${extDemoId}*.\n\n⚙️ *Activation Status:* In Progress\n⏱️ *Estimated Activation Timeline:* Minimum *4 hours* to Maximum *1 working day*.\n\nOur engineering team is currently configuring your dedicated 24/7 AI review responder and hyper-local SEO systems. We will notify you here as soon as your setup goes live!\n\n🌐 _Powered by Shahid Creatives (https://shahidcreatives.com)_`
+            : `🙏 *Shahid Creatives me sampark karne ke liye dhanyawad!* ✨\n\n*${extDemoId}* ke liye aapka Google Business Profile authorization request humein successfully receive ho gaya hai.\n\n⚙️ *Activation Status:* In Progress\n⏱️ *Estimated Activation Time:* Minimum *4 hours* se lekar Maximum *1 working day*.\n\nHumari technical team aapke 24/7 AI Review Bot aur Hyper-Local SEO system ko configure kar rahi hai. Setup live hote hi hum aapko is number par turant update de denge!\n\n🌐 _Powered by Shahid Creatives (https://shahidcreatives.com)_`;
+
+        const adminAlertMsg = `🌟 *GBP AUTHORIZATION RECEIVED!* 🌟\n\n📱 *Client Contact:* ${platform === 'telegram' ? 'TG-' : '+'}${from}\n💬 *Platform:* ${platform}\n🆔 *Demo ID:* ${extDemoId}\n\nClient has verified the profile authorization. Activation timeline (min 4 hrs to max 1 working day) conveyed.`;
+        sendAdminAlert(adminAlertMsg);
+
+        try {
+            await axios.post('https://shahidcreatives.com/api/whatsapp-leads', {
+                client_name: `GBP Demo Client (${extDemoId})`,
+                whatsapp_number: from,
+                telegram_chat_id: platform === 'telegram' ? from : undefined,
+                project_scope: `GBP Connection Authorized (${extDemoId})`,
+                calculated_price: 0,
+                email: "Not Provided",
+                discussion_notes: adminAlertMsg
+            });
+        } catch (e) {}
+
+        return sendUnifiedMessage(from, authReply, platform);
+    }
+
     const resetTriggers = ['hi', 'hello', 'menu', 'start', '/start', 'hey'];
     if (resetTriggers.includes(userText)) { 
         userSessions[from] = null; 
@@ -1181,22 +1223,6 @@ async function processUnifiedMessage(from, rawText, platform) {
     const userLang = userSessions[from].lang;
     const currentStep = userSessions[from].step;
     const session = userSessions[from]; 
-
-    // 🚨 NEW INTERCEPTOR: GBP AUTHORIZATION SUCCESS
-    if (userText.includes("successfully authorized and connected") || userText.includes("i have successfully authorized")) {
-        userSessions[from].step = 'completed';
-        
-        let demoIdMatch = rawText.match(/(DEMO-\d+)/i);
-        let extDemoId = demoIdMatch ? demoIdMatch[1] : "your Demo";
-
-        let authReply = (userLang === 'EN')
-            ? `✅ *Authorization Confirmed!* \n\nThank you for connecting your Google Business Profile for ${extDemoId}. The Shahid Creatives Team has received your secure token. \n\n🚀 *Next Steps:* We are finalizing your 24/7 AI review bot and local SEO audit. Your services will be fully active within *4 hours to 1 working day*. We will notify you once everything is live!\n\n🌐 _Powered by Shahid Creatives_`
-            : `✅ *Authorization Confirmed!* \n\n${extDemoId} ke liye apna Google Business Profile connect karne ka shukriya. Shahid Creatives Team ko aapka secure token mil gaya hai. \n\n🚀 *Next Steps:* Hum aapka 24/7 AI review bot aur local SEO audit finalize kar rahe hain. Aapki services *4 ghante se 1 working day* ke andar fully active ho jayengi. Live hote hi hum aapko turant notify karenge!\n\n🌐 _Powered by Shahid Creatives_`;
-        
-        sendAdminAlert(`🌟 *GBP AUTHORIZATION SUCCESS!* 🌟\n📱 *Client:* ${from}\n🆔 *Demo ID:* ${extDemoId}\n\nClient has successfully authorized the GBP connection! Action needed: Finalize bot deployment.`);
-
-        return sendUnifiedMessage(from, authReply, platform);
-    }
 
     // 🚨 NEW INTERCEPTOR: PAYMENT FAILED SUPPORT (Catching website payment drop-offs)
     if (rawText.includes("payment transaction failed") || rawText.includes("Failed/Incomplete Booking") || rawText.includes("cancelled or was incomplete")) {
@@ -1364,17 +1390,16 @@ async function processUnifiedMessage(from, rawText, platform) {
             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', { 
                 client_name: clientName, 
                 whatsapp_number: displayPhone, 
-                telegram_chat_id: platform === 'telegram' ? from : undefined,
+                telegram_chat_id: platform === 'telegram' ? from : undefined, 
                 project_scope: `3-Day Free VIP Demo Request (${bizName})`, 
                 calculated_price: 0, 
-                email: clientEmail,
+                email: clientEmail, 
                 discussion_notes: adminAlert 
             });
         } catch (e) { }
 
         // 🟢 EMAIL ONBOARDING FLOW & GBP CONNECT
         const demoId = `DEMO-${Math.floor(10000 + Math.random() * 90000)}`;
-        const encodedClientName = encodeURIComponent(clientName);
         const onboardingLink = `https://api.shahidcreatives.com/connect-gmb?clientId=${demoId}`;
         
         const waText = encodeURIComponent(`Hello Shahid! I have successfully authorized and connected Google Business Profile for: ${demoId} (ID: ${demoId}). Please confirm our 24/7 AI review bot status!`);
@@ -1391,6 +1416,7 @@ async function processUnifiedMessage(from, rawText, platform) {
                         <h2 style="color: #0056b3;">Welcome to Shahid Creatives, ${clientName}! 🚀</h2>
                         <p>Your 3-Day Free VIP Demo has been successfully activated for <strong>${bizName}</strong>.</p>
                         <p><strong>Your Unique Demo ID:</strong> <span style="background: #eee; padding: 5px 10px; border-radius: 5px; font-weight: bold;">${demoId}</span></p>
+                        <p>⏱️ <strong>Activation Timeline:</strong> Minimum 4 hours to maximum 1 working day.</p>
                         <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
                         <h3 style="color: #d9534f;">⚠️ Crucial Action Required: GBP Connection</h3>
                         <p>To enable the AI review responder and Maps ranking sync, you must connect your Google Business Profile.</p>
@@ -1409,9 +1435,9 @@ async function processUnifiedMessage(from, rawText, platform) {
             transporter.sendMail(mailOptions).catch(err => console.log("Demo Mail Error:", err));
         }
 
-        const successMsgEN = `🎉 *Congratulations ${bizName.toUpperCase()}!* 🚀\n\nYour *3-Day Free VIP Demo* for *${bizName}* has been successfully queued!\n\n🆔 *Demo ID:* \`${demoId}\`\n👤 *Client / Contact:* ${clientName}\n📱 *Phone / WhatsApp:* ${displayPhone}\n✉️ *Email:* ${clientEmail}\n📍 *Location:* ${city}\n🏷️ *Category:* ${category}\n\n⚡ *Included in Growth Triad:*\n• Google Business Profile Review AI Auto-Responder\n• Hyper-Local SEO Competitor Gap Audit\n• 24/7 Telegram & WhatsApp AI Lead Capture Bot\n\n🔗 *GBP AI Onboarding Link:*\n${onboardingLink}\n\n⚠️ *Note:* Please ensure you login/authorize ONLY with the Google/Gmail Account that is officially registered to your Google Business Profile.\n\n🕒 *Status:* Shahid Creatives Team is configuring your dedicated node. Your services will be activated within *4 hours to 1 working day*. Zero upfront cost or credit card needed!\n\n👉 *Direct Demo Portal:* https://shahidcreatives.com/#combo-demo\n\n- Shahid Creatives (https://shahidcreatives.com)`;
+        const successMsgEN = `🎉 *Congratulations ${bizName.toUpperCase()}!* 🚀\n\nYour *3-Day Free VIP Demo* for *${bizName}* has been successfully queued!\n\n🆔 *Demo ID:* \`${demoId}\`\n👤 *Client / Contact:* ${clientName}\n📱 *Phone / WhatsApp:* ${displayPhone}\n✉️ *Email:* ${clientEmail}\n📍 *Location:* ${city}\n🏷️ *Category:* ${category}\n\n⚡ *Included in Growth Triad:*\n• Google Business Profile Review AI Auto-Responder\n• Hyper-Local SEO Competitor Gap Audit\n• 24/7 Telegram & WhatsApp AI Lead Capture Bot\n\n🔗 *GBP AI Onboarding Link:*\n${onboardingLink}\n\n⚠️ *Note:* Please ensure you login/authorize ONLY with the Google/Gmail Account that is officially registered to your Google Business Profile.\n\n🕒 *Activation Timeline:* Shahid Creatives Team is configuring your dedicated node. Your services will be fully activated within *minimum 4 hours to maximum 1 working day*. Zero upfront cost or credit card needed!\n\n👉 *Direct Demo Portal:* https://shahidcreatives.com/#combo-demo\n\n- Shahid Creatives (https://shahidcreatives.com)`;
 
-        const successMsgHIN = `🎉 *Congratulations ${bizName.toUpperCase()}!* 🚀\n\nAapka *3-Day Free VIP Demo* (*${bizName}* ke liye) successfully queue ho gaya hai!\n\n🆔 *Demo ID:* \`${demoId}\`\n👤 *Client / Contact:* ${clientName}\n📱 *Phone / WhatsApp:* ${displayPhone}\n✉️ *Email:* ${clientEmail}\n📍 *Location:* ${city}\n🏷️ *Category:* ${category}\n\n⚡ *Included in Growth Triad:*\n• Google Business Profile Review AI Auto-Responder\n• Hyper-Local SEO Competitor Gap Audit\n• 24/7 Telegram & WhatsApp AI Lead Capture Bot\n\n🔗 *GBP AI Onboarding Link:*\n${onboardingLink}\n\n⚠️ *Note:* Kripya GBP onboarding link par click karte waqt apne *Google Business Profile registered Google/Gmail account* se hi authorize karein.\n\n🕒 *Status:* Shahid Creatives ki team aapka dedicated node configure kar rahi hai. Aapki services *4 ghante ya 1 working day* ke andar active kar di jayengi! Zero upfront cost!\n\n👉 *Direct Demo Portal:* https://shahidcreatives.com/#combo-demo\n\n- Shahid Creatives (https://shahidcreatives.com)`;
+        const successMsgHIN = `🎉 *Congratulations ${bizName.toUpperCase()}!* 🚀\n\nAapka *3-Day Free VIP Demo* (*${bizName}* ke liye) successfully queue ho gaya hai!\n\n🆔 *Demo ID:* \`${demoId}\`\n👤 *Client / Contact:* ${clientName}\n📱 *Phone / WhatsApp:* ${displayPhone}\n✉️ *Email:* ${clientEmail}\n📍 *Location:* ${city}\n🏷️ *Category:* ${category}\n\n⚡ *Included in Growth Triad:*\n• Google Business Profile Review AI Auto-Responder\n• Hyper-Local SEO Competitor Gap Audit\n• 24/7 Telegram & WhatsApp AI Lead Capture Bot\n\n🔗 *GBP AI Onboarding Link:*\n${onboardingLink}\n\n⚠️ *Note:* Kripya GBP onboarding link par click karte waqt apne *Google Business Profile registered Google/Gmail account* se hi authorize karein.\n\n🕒 *Activation Timeline:* Shahid Creatives ki team aapka dedicated node configure kar rahi hai. Aapki services *minimum 4 ghante se lekar maximum 1 working day* ke andar fully active ho jayengi! Zero upfront cost!\n\n👉 *Direct Demo Portal:* https://shahidcreatives.com/#combo-demo\n\n- Shahid Creatives (https://shahidcreatives.com)`;
 
         const finalSuccessMsg = (userLang === 'EN') ? successMsgEN : successMsgHIN;
 
@@ -1558,7 +1584,7 @@ async function processUnifiedMessage(from, rawText, platform) {
                     telegram_chat_id: platform === 'telegram' ? from : undefined, 
                     project_scope: `${projectScope} (Status: Fully Paid Portal Form)`, 
                     calculated_price: parsedBasePrice, 
-                    email: clientEmail,
+                    email: clientEmail, 
                     discussion_notes: paidAdminAlert // ✅ SYNCED WITH NEW PARSER LOGIC
                 });
             } catch (err) { 
@@ -1598,7 +1624,7 @@ async function processUnifiedMessage(from, rawText, platform) {
                 telegram_chat_id: platform === 'telegram' ? from : undefined, 
                 project_scope: projectScope, 
                 calculated_price: calculatedPrice, 
-                email: clientEmail,
+                email: clientEmail, 
                 discussion_notes: adminNotification // ✅ SYNCED WITH NEW PARSER LOGIC
             });
         } catch (err) { 
@@ -1795,12 +1821,7 @@ async function processUnifiedMessage(from, rawText, platform) {
                 } else {
                      options = {
                         reply_markup: {
-                            inline_keyboard: isUSDTrack ? [
-                                [{ text: "1️⃣ Starter Digital", callback_data: "sel_ai_1" }, { text: "2️⃣ Web Conv.", callback_data: "sel_ai_2" }],
-                                [{ text: "3️⃣ Omnichannel", callback_data: "sel_ai_3" }, { text: "4️⃣ Ecosystem", callback_data: "sel_ai_4" }],
-                                [{ text: "5️⃣ Elite Intel", callback_data: "sel_ai_5" }, { text: "6️⃣ TG Starter", callback_data: "sel_ai_6" }],
-                                [{ text: "7️⃣ TG Growth", callback_data: "sel_ai_7" }, { text: "8️⃣ TG Elite", callback_data: "sel_ai_8" }]
-                            ] : [
+                            inline_keyboard: [
                                 [{ text: "1️⃣ Starter Digital", callback_data: "sel_ai_1" }, { text: "2️⃣ Web Conv.", callback_data: "sel_ai_2" }],
                                 [{ text: "3️⃣ Omnichannel", callback_data: "sel_ai_3" }, { text: "4️⃣ Ecosystem", callback_data: "sel_ai_4" }],
                                 [{ text: "5️⃣ Elite Intel", callback_data: "sel_ai_5" }, { text: "6️⃣ TG Starter", callback_data: "sel_ai_6" }],
@@ -1930,10 +1951,10 @@ async function processUnifiedMessage(from, rawText, platform) {
             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', { 
                 client_name: cleanName, 
                 whatsapp_number: displayPhone, 
-                telegram_chat_id: platform === 'telegram' ? from : undefined,
+                telegram_chat_id: platform === 'telegram' ? from : undefined, 
                 project_scope: userSessions[from].projectScope, 
                 calculated_price: finalPayable, 
-                email: cleanEmail,
+                email: cleanEmail, 
                 discussion_notes: chatAdminNotification // ✅ SYNCED WITH NEW PARSER LOGIC
             });
         } catch (dashboardError) { 
@@ -2132,7 +2153,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         else if (userText === '3' || userText.includes("combo") || userText.includes("offer") || userText.includes("special")) { targetMenuRoute = '3'; isCoreMatch = true; }
         else if (userText === '4' || userText.includes("book") || userText.includes("token")) { targetMenuRoute = '4'; isCoreMatch = true; }
         else if (userText === '5' || userText.includes("shahid") || userText.includes("talk")) { targetMenuRoute = '5'; isCoreMatch = true; }
-        // 🚀 NEW: DEMO ROUTE PARSER
+        // 🚀 DEMO ROUTE PARSER
         else if (userText === '6' || userText.includes("demo") || userText.includes("free")) { targetMenuRoute = '6'; isCoreMatch = true; }
 
         if (!isCoreMatch) {
@@ -2175,7 +2196,6 @@ async function processUnifiedMessage(from, rawText, platform) {
                 ? `👤 *Direct Consultation with Shahid Creatives' Team:*\n\n${optionA_EN}\n${optionB_EN}\n🅲️ *Custom Time (Type preferred time below)*\n\n👉 Reply with A, B, or C!` 
                 : `👤 *Direct Consultation with Shahid Creatives ki Team:*\n\n${optionA}\n${optionB}\n🅲️ *Custom Time (Apna secure timing niche type karein)*\n\n👉 Kripya **A, B, ya C** likh kar reply kijiye!`, platform);
         } else if (targetMenuRoute === '6') {
-            // 🚀 NEW: DEMO ACTIVATION DISPATCHER
             userSessions[from].step = 'demo_activation_submit';
             userSessions[from].projectScope = "3-Day Free VIP Demo";
             

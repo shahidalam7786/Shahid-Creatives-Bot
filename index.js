@@ -1202,10 +1202,13 @@ async function processUnifiedMessage(from, rawText, platform) {
     if (
         rawText.includes("3-DAY FREE DEMO ACTIVATION") ||
         rawText.includes("EID MILAD-UN-NABI SPECIAL") ||
-        rawText.includes("3-Day Free VIP Demo") ||
-        rawText.includes("Please initiate setup handshake") ||
-        (rawText.includes("Activation ID:") && rawText.includes("Phone:")) ||
-        (rawText.includes("Contact Person Name:") && rawText.includes("Business or Brand Name:"))
+        userText.includes("free vip demo") ||
+        userText.includes("queued for activation") ||
+        userText.includes("included in growth triad") ||
+        userText.includes("please initiate setup handshake") ||
+        (userText.includes("demo id:") && userText.includes("client / contact:")) ||
+        (userText.includes("activation id:") && userText.includes("phone:")) ||
+        (userText.includes("contact person name:") && userText.includes("business or brand name:"))
     ) {
         let clientName = "Valued Business";
         let bizName = "Valued Business";
@@ -1217,18 +1220,18 @@ async function processUnifiedMessage(from, rawText, platform) {
 
         try {
             const idMatch = rawText.match(/(?:Activation ID|Demo ID|ID)[^:]*:\s*([^\n\r]+)/i);
-            const bizMatch = rawText.match(/(?:Business|Business or Brand Name|Brand)[^:]*:\s*([^\n\r]+)/i);
-            const contactMatch = rawText.match(/(?:Contact|Contact Person Name|Name)[^:]*:\s*([^\n\r]+)/i);
-            const phoneMatch = rawText.match(/(?:Phone|WhatsApp \/ Phone Number|Mobile)[^:]*:\s*([^\n\r]+)/i);
+            const bizMatch = rawText.match(/(?:Business or Brand Name|Business|Brand|Client \/ Contact)[^:]*:\s*([^\n\r]+)/i);
+            const contactMatch = rawText.match(/(?:Contact Person Name|Name)[^:]*:\s*([^\n\r]+)/i);
+            const phoneMatch = rawText.match(/(?:Phone \/ WhatsApp|WhatsApp \/ Phone Number|Phone|Mobile)[^:]*:\s*([^\n\r]+)/i);
             const emailMatch = rawText.match(/(?:Email|Email Address)[^:]*:\s*([^\n\r]+)/i);
-            const cityMatch = rawText.match(/(?:City|Target City \/ Location|Location)[^:]*:\s*([^\n\r]+)/i);
-            const catMatch = rawText.match(/(?:Category|Business Category)[^:]*:\s*([^\n\r]+)/i);
+            const cityMatch = rawText.match(/(?:Target City \/ Location|Location|City)[^:]*:\s*([^\n\r]+)/i);
+            const catMatch = rawText.match(/(?:Business Category|Category)[^:]*:\s*([^\n\r]+)/i);
 
-            if (idMatch) activationId = idMatch[1].replace(/[*_]/g, '').trim();
+            if (idMatch) activationId = idMatch[1].replace(/[*_`]/g, '').trim();
             if (bizMatch) bizName = bizMatch[1].replace(/[*_]/g, '').trim();
             if (contactMatch) clientName = contactMatch[1].replace(/[*_]/g, '').trim();
             else clientName = bizName;
-            if (phoneMatch) clientPhone = phoneMatch[1].replace(/[*_📞]/g, '').trim();
+            if (phoneMatch) clientPhone = phoneMatch[1].replace(/[*_📞+]/g, '').trim();
             if (emailMatch) clientEmail = emailMatch[1].replace(/[*_✉️]/g, '').trim();
             if (cityMatch) city = cityMatch[1].replace(/[*_📍]/g, '').trim();
             if (catMatch) category = catMatch[1].replace(/[*_🏷️]/g, '').trim();
@@ -1282,8 +1285,12 @@ async function processUnifiedMessage(from, rawText, platform) {
             transporter.sendMail(mailOptions).catch(err => console.log("Demo Mail Error:", err));
         }
 
-        // Exact Professional Polite Client Confirmation Message
-        const replyConfirmation = `🎉 *Thank you & Congratulations ${bizName}!* 🚀\n\nYour *3-Day Free VIP Demo* for *${bizName}* has been successfully registered and queued for activation!\n\n🆔 *Demo ID:* \`${activationId}\`\n👤 *Client / Contact:* ${clientName}\n📱 *Phone / WhatsApp:* ${clientPhone.startsWith('+') ? clientPhone : '+' + clientPhone}\n✉️ *Email:* ${clientEmail}\n📍 *Location:* ${city}\n🏷️ *Category:* ${category}\n\n⚡ *Included in Growth Triad:*\n1️⃣ Google Business Profile (GMB) AI Engine (Auto 5-star review replies)\n2️⃣ Hyper-Local SEO Audit Simulator (Competitor keyword ranking gaps)\n3️⃣ 24/7 Telegram & Meta-Verified WhatsApp Business API Bot (Official verified integration)\n\n✅ *Official Meta Business Verified | Zero Risk Guarantee*\n⏱️ *Activation Timeline:* *Minimum 5 Hours to Maximum 1 Working Day*\n_(Our technical team is configuring your dedicated node, knowledgebase, and verified GBP sync.)_\n\n🔗 *GBP AI Onboarding Link:*\n${onboardingLink}\n\n⚠️ *Zaroori Instruction:* Kripya GBP onboarding link ko apne *Google Business Profile (GBP) registered Google/Gmail account* se hi open/authorize karein.\n\n👉 *Direct Demo Portal:* https://shahidcreatives.com/#combo-demo\n\n- Shahid Creatives (https://shahidcreatives.com)`;
+        // Exact Professional Polite Client Confirmation Message (Refined for Website Inbound)
+        const replyConfirmationEN = `👋 Hello *${clientName}*, welcome to *Shahid Creatives*! 🚀\n\nWe have successfully received all your details from the website for the 3-Day Free VIP Demo (ID: *${activationId}*).\n\n⏱️ *Activation Timeline:* Please wait *Minimum 5 Hours to Maximum 1 Working Day*. Our technical team is currently configuring your dedicated systems and no further details are required right now.\n\n🔗 *Action Required (If not done yet):*\nPlease authorize your Google Business Profile here:\n${onboardingLink}\n\n_We will notify you right here as soon as your setup goes live!_ ✨`;
+
+        const replyConfirmationHIN = `👋 Hello *${clientName}*, *Shahid Creatives* mein aapka swagat hai! 🚀\n\nAapki website se bheji gayi 3-Day Free VIP Demo ki saari details (ID: *${activationId}*) humein mil gayi hai.\n\n⏱️ *Activation Timeline:* Kripya *5 Hours se lekar 1 Working Day* tak ka intezaar karein. Humari technical team aapka system aur node configure kar rahi hai. Abhi kisi aur detail ki zaroorat nahi hai.\n\n🔗 *Action Required (Agar abhi tak nahi kiya):*\nApne Google Business Profile ko yahan authorize karein:\n${onboardingLink}\n\n_Setup live hote hi hum aapko yahan message karke update denge!_ ✨`;
+
+        const replyConfirmation = isEnglishUser ? replyConfirmationEN : replyConfirmationHIN;
 
         const adminAlertMsg = `🚨 *EID SPECIAL / 3-DAY DEMO INBOUND LEAD!* 🚨\n\n📱 *Contact:* ${clientPhone} (${platform})\n💬 *Chat ID:* ${from}\n👤 *Contact:* ${clientName}\n🏢 *Business:* ${bizName}\n🆔 *Demo ID:* ${activationId}\n📍 *Location:* ${city}\n🏷️ *Category:* ${category}\n\n*Action:* Demo queued with 5hr-1day activation window.`;
         sendAdminAlert(adminAlertMsg);

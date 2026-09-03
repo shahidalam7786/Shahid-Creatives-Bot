@@ -137,7 +137,7 @@ bot.on('callback_query', async (query) => {
 
     if (data.startsWith('cons_time_')) {
         const selectedTime = data.replace('cons_time_', '');
-        await processUnifiedMessage(chatId, `Custom Time: ${selectedTime}`, 'telegram');
+        await processUnifiedMessage(chatId, `Custom Time: selectedTime`, 'telegram');
         bot.answerCallbackQuery(query.id).catch(()=>{});
     }
     else if (data.startsWith('sel_web_') || data.startsWith('sel_ai_') || data.startsWith('sel_combo_')) {
@@ -986,7 +986,9 @@ app.post('/webhook', async (req, res) => {
 // ==========================================
 async function processUnifiedMessage(from, rawText, platform) {
     const userText = rawText.trim().toLowerCase();
-    const cleanUserText = userText.replace(/[^a-z0-9]/g, ''); // 🟢 STRIPS EMOJIS, STARS, SPACES
+    
+    // 🟢 STRIPS EMOJIS, STARS, AND SPECIAL CHARACTERS FOR BULLETPROOF MATCHING
+    const cleanUserText = userText.replace(/[^a-z0-9]/g, ''); 
     
     const isInternationalNumber = platform === 'whatsapp' ? !from.startsWith("91") : false;
     const isGlobalWebsiteTemplate = rawText.includes("Global USD") || rawText.includes("Worldwide") || rawText.includes("$") || rawText.includes("lock in my custom website estimate");
@@ -1219,9 +1221,25 @@ async function processUnifiedMessage(from, rawText, platform) {
         return sendUnifiedMessage(from, replyConfirmation, platform, tgOptions);
     }
 
+    // 🟢 ==============================================================
+    // 💡 BUG FIX APPLIED HERE: 10-Min Guard Window for Greetings
+    // ==============================================================
     const resetTriggers = ['hi', 'hello', 'menu', 'start', '/start', 'hey'];
-    if (resetTriggers.includes(userText)) { 
-        userSessions[from] = null; 
+    if (resetTriggers.includes(userText)) {
+        const existingSession = userSessions[from];
+        const recentlyCompleted = existingSession &&
+            existingSession.step === 'completed' &&
+            existingSession.lastSubmitedTime &&
+            (Date.now() - existingSession.lastSubmitedTime < 10 * 60 * 1000); // 10-min guard window
+
+        if (recentlyCompleted) {
+            let alreadyMsg = (existingSession.lang === 'EN')
+                ? `Hi *${existingSession.clientName}*! Your request (*${existingSession.projectScope}*) is already registered and our team is working on it. We'll update you here as soon as it's ready! 🚀\n\n🌐 _Powered by Shahid Creatives_`
+                : `Hi *${existingSession.clientName}*! Aapki request (*${existingSession.projectScope}*) already register ho chuki hai aur humari team kaam kar rahi hai. Ready hote hi hum yahan update denge! 🚀\n\n🌐 _Powered by Shahid Creatives_`;
+            return sendUnifiedMessage(from, alreadyMsg, platform);
+        }
+
+        userSessions[from] = null;
     }
 
     if (!userSessions[from]) {

@@ -1153,6 +1153,89 @@ async function processUnifiedMessage(from, rawText, platform) {
     const isInternationalNumber = platform === 'whatsapp' ? !from.startsWith("91") : false;
     const isGlobalWebsiteTemplate = rawText.includes("Global USD") || rawText.includes("Worldwide") || rawText.includes("$") || rawText.includes("lock in my custom website estimate");
 
+    // 🎯 ==============================================================
+    // 🚨 PRIORITY -1: BULLETPROOF PRE-FILLED WEBSITE LEAD INTERCEPTOR
+    // Catches ALL incoming demo submissions directly from website button clicks
+    // ==============================================================
+    const isWebsiteDemoInbound = 
+        userText.includes("3-day free vip demo") ||
+        userText.includes("queued for activation") ||
+        userText.includes("included in growth triad") ||
+        (userText.includes("demo id:") && userText.includes("client / contact:")) ||
+        (userText.includes("activation id:") && userText.includes("phone:")) ||
+        (userText.includes("congratulations") && userText.includes("vip demo")) ||
+        (userText.includes("contact person name:") && userText.includes("business or brand name:"));
+
+    if (isWebsiteDemoInbound) {
+        let clientName = "Valued Client";
+        let demoId = `DEMO-${Math.floor(10000 + Math.random() * 90000)}`;
+        let clientPhone = platform === 'whatsapp' ? from : "";
+        let clientEmail = "Not Provided";
+        let bizName = "Valued Business";
+
+        try {
+            const idMatch = rawText.match(/(?:Demo ID|Activation ID|ID)[^:]*:\s*`?([^\n\r`]+)`?/i);
+            if (idMatch) demoId = idMatch[1].replace(/[*_`]/g, '').trim();
+
+            const nameMatch = rawText.match(/(?:Client \/ Contact|Contact Person Name|Name)[^:]*:\s*([^\n\r]+)/i);
+            if (nameMatch) {
+                clientName = nameMatch[1].replace(/[*_`]/g, '').trim();
+            } else {
+                const altNameMatch = rawText.match(/Congratulations\s+([A-Za-z\s]+)!/i);
+                if (altNameMatch) clientName = altNameMatch[1].replace(/[*_`]/g, '').trim();
+            }
+
+            const bizMatch = rawText.match(/(?:Business or Brand Name|Business|Brand)[^:]*:\s*([^\n\r]+)/i);
+            if (bizMatch) bizName = bizMatch[1].replace(/[*_`]/g, '').trim();
+
+            const phoneMatch = rawText.match(/(?:Phone \/ WhatsApp|WhatsApp \/ Phone Number|Phone|Mobile)[^:]*:\s*([^\n\r]+)/i);
+            if (phoneMatch) clientPhone = phoneMatch[1].replace(/[*_`📞+]/g, '').trim();
+
+            const emailMatch = rawText.match(/(?:Email|Email Address)[^:]*:\s*([^\n\r]+)/i);
+            if (emailMatch) clientEmail = emailMatch[1].replace(/[*_`✉️]/g, '').trim();
+        } catch (e) {}
+
+        const isEnglishUser = isInternationalNumber || isGlobalWebsiteTemplate;
+
+        // 🔒 LOCK SESSION PERMANENTLY: Stops bot from asking for details or dropping to Stage 1
+        userSessions[from] = {
+            step: 'completed',
+            lang: isEnglishUser ? 'EN' : 'HINGLISH',
+            platform: platform,
+            clientName: clientName,
+            clientEmail: clientEmail,
+            clientPhone: clientPhone,
+            projectScope: `VIP Demo Activation (${demoId})`,
+            lastInteractionTime: Date.now(),
+            lastSubmitedTime: Date.now(),
+            nudgeSent: true,
+            skipIdentityCapture: true
+        };
+
+        // 🟢 PROFESSIONAL, POLITE TIMELINE CONFIRMATION MESSAGE
+        const replyMsgEN = `👋 Hello *${clientName}*, thank you for choosing *Shahid Creatives*! 🚀\n\nWe have successfully received your website submission for the *3-Day Free VIP Demo* (ID: \`${demoId}\`).\n\n⏱️ *Activation Timeline:* *Minimum 5 Hours to Maximum 1 Working Day*\nOur engineering team is actively configuring your dedicated AI node, Google review sync, and Meta-verified bots. No further details are required right now.\n\n_We will notify you directly here as soon as your setup goes live!_ ✨\n\n🌐 _Powered by Shahid Creatives (https://shahidcreatives.com)_`;
+
+        const replyMsgHIN = `👋 Namaste *${clientName}*, *Shahid Creatives* mein aapka swagat hai! 🚀\n\nWebsite se aapka *3-Day Free VIP Demo* submission (ID: \`${demoId}\`) humein successfully receive ho gaya hai.\n\n⏱️ *Activation Timeline:* *Minimum 5 Hours se lekar Maximum 1 Working Day*\nHumari technical team aapka dedicated node, Google review sync aur verified bot setup configure kar rahi hai. Abhi aapse kisi aur detail ki zaroorat nahi hai.\n\n_Setup live hote hi hum aapko isi chat par turant update denge!_ ✨\n\n🌐 _Powered by Shahid Creatives (https://shahidcreatives.com)_`;
+
+        const finalMsg = isEnglishUser ? replyMsgEN : replyMsgHIN;
+
+        const adminAlertMsg = `🚨 *NEW WEBSITE DEMO INBOUND LEAD!* 🚨\n\n👤 *Client:* ${clientName}\n🏢 *Brand:* ${bizName}\n🆔 *Demo ID:* ${demoId}\n📱 *Phone:* ${clientPhone}\n✉️ *Email:* ${clientEmail}\n💬 *Platform:* ${platform}\n\n*Action:* System queued with 5hr-1day window. Bot parked safely to completed state.`;
+        sendAdminAlert(adminAlertMsg);
+
+        axios.post('https://shahidcreatives.com/api/whatsapp-leads', { 
+            client_name: clientName, 
+            whatsapp_number: clientPhone || from, 
+            telegram_chat_id: platform === 'telegram' ? from : undefined, 
+            project_scope: `3-Day Free VIP Demo (${demoId})`, 
+            calculated_price: 0, 
+            email: clientEmail, 
+            discussion_notes: adminAlertMsg 
+        }).catch(()=>{});
+
+        // 🛑 DIRECT RETURN: Halts execution completely, prevents Stage 1 reset message
+        return sendUnifiedMessage(from, finalMsg, platform);
+    }
+
     // 🚨 1. PRIORITY ZERO INTERCEPTOR A: GBP AUTHORIZATION & DEMO CONFIRMATION
     if (
         userText.includes("successfully authorized and connected") || 
@@ -1203,12 +1286,9 @@ async function processUnifiedMessage(from, rawText, platform) {
         rawText.includes("3-DAY FREE DEMO ACTIVATION") ||
         rawText.includes("EID MILAD-UN-NABI SPECIAL") ||
         rawText.includes("3-Day Free VIP Demo") ||
-        userText.includes("queued for activation") ||
-        userText.includes("included in growth triad") ||
         rawText.includes("Please initiate setup handshake") ||
         (rawText.includes("Activation ID:") && rawText.includes("Phone:")) ||
-        (rawText.includes("Contact Person Name:") && rawText.includes("Business or Brand Name:")) ||
-        (userText.includes("demo id:") && userText.includes("client / contact:"))
+        (rawText.includes("Contact Person Name:") && rawText.includes("Business or Brand Name:"))
     ) {
         let clientName = "Valued Business";
         let bizName = "Valued Business";
@@ -1219,19 +1299,19 @@ async function processUnifiedMessage(from, rawText, platform) {
         let activationId = `DEMO-${Math.floor(10000 + Math.random() * 90000)}`;
 
         try {
-            const idMatch = rawText.match(/(?:Activation ID|Demo ID|ID)[^:]*:\s*`?([^\n\r`]+)`?/i);
+            const idMatch = rawText.match(/(?:Activation ID|Demo ID|ID)[^:]*:\s*([^\n\r]+)/i);
             const bizMatch = rawText.match(/(?:Business|Business or Brand Name|Brand)[^:]*:\s*([^\n\r]+)/i);
-            const contactMatch = rawText.match(/(?:Contact|Contact Person Name|Client \/ Contact|Name)[^:]*:\s*([^\n\r]+)/i);
-            const phoneMatch = rawText.match(/(?:Phone|WhatsApp \/ Phone Number|Phone \/ WhatsApp|Mobile)[^:]*:\s*([^\n\r]+)/i);
+            const contactMatch = rawText.match(/(?:Contact|Contact Person Name|Name)[^:]*:\s*([^\n\r]+)/i);
+            const phoneMatch = rawText.match(/(?:Phone|WhatsApp \/ Phone Number|Mobile)[^:]*:\s*([^\n\r]+)/i);
             const emailMatch = rawText.match(/(?:Email|Email Address)[^:]*:\s*([^\n\r]+)/i);
             const cityMatch = rawText.match(/(?:City|Target City \/ Location|Location)[^:]*:\s*([^\n\r]+)/i);
             const catMatch = rawText.match(/(?:Category|Business Category)[^:]*:\s*([^\n\r]+)/i);
 
-            if (idMatch) activationId = idMatch[1].replace(/[*_`]/g, '').trim();
+            if (idMatch) activationId = idMatch[1].replace(/[*_]/g, '').trim();
             if (bizMatch) bizName = bizMatch[1].replace(/[*_]/g, '').trim();
             if (contactMatch) clientName = contactMatch[1].replace(/[*_]/g, '').trim();
             else clientName = bizName;
-            if (phoneMatch) clientPhone = phoneMatch[1].replace(/[*_📞+]/g, '').trim();
+            if (phoneMatch) clientPhone = phoneMatch[1].replace(/[*_📞]/g, '').trim();
             if (emailMatch) clientEmail = emailMatch[1].replace(/[*_✉️]/g, '').trim();
             if (cityMatch) city = cityMatch[1].replace(/[*_📍]/g, '').trim();
             if (catMatch) category = catMatch[1].replace(/[*_🏷️]/g, '').trim();
@@ -1250,8 +1330,7 @@ async function processUnifiedMessage(from, rawText, platform) {
             projectScope: `3-Day Free VIP Demo (${bizName})`,
             lastInteractionTime: Date.now(),
             lastSubmitedTime: Date.now(),
-            nudgeSent: true,
-            skipIdentityCapture: true
+            nudgeSent: true
         };
 
         const onboardingLink = `https://api.shahidcreatives.com/connect-gmb?clientId=${encodeURIComponent(activationId)}`;
@@ -1286,8 +1365,8 @@ async function processUnifiedMessage(from, rawText, platform) {
             transporter.sendMail(mailOptions).catch(err => console.log("Demo Mail Error:", err));
         }
 
-        // Exact Professional Polite Client Confirmation Message with Activation Timeline
-        const replyConfirmation = `🎉 *Thank you & Congratulations ${clientName}!* 🚀\n\nYour *3-Day Free VIP Demo* for *${bizName}* has been successfully registered and queued for activation!\n\n🆔 *Demo ID:* \`${activationId}\`\n👤 *Client / Contact:* ${clientName}\n📱 *Phone / WhatsApp:* ${clientPhone.startsWith('+') ? clientPhone : '+' + clientPhone}\n✉️ *Email:* ${clientEmail}\n📍 *Location:* ${city}\n🏷️ *Category:* ${category}\n\n⚡ *Included in Growth Triad:*\n1️⃣ Google Business Profile (GMB) AI Engine (Auto 5-star review replies)\n2️⃣ Hyper-Local SEO Audit Simulator (Competitor keyword ranking gaps)\n3️⃣ 24/7 Telegram & Meta-Verified WhatsApp Business API Bot (Official verified integration)\n\n✅ *Official Meta Business Verified | Zero Risk Guarantee*\n⏱️ *Activation Timeline:* *Minimum 5 Hours to Maximum 1 Working Day*\n_(Our technical team is configuring your dedicated node, knowledgebase, and verified GBP sync.)_\n\n🔗 *GBP AI Onboarding Link:*\n${onboardingLink}\n\n⚠️ *Zaroori Instruction:* Kripya GBP onboarding link ko apne *Google Business Profile (GBP) registered Google/Gmail account* se hi open/authorize karein.\n\n👉 *Direct Demo Portal:* https://shahidcreatives.com/#combo-demo\n\n- Shahid Creatives (https://shahidcreatives.com)`;
+        // Exact Professional Polite Client Confirmation Message
+        const replyConfirmation = `🎉 *Thank you & Congratulations ${bizName}!* 🚀\n\nYour *3-Day Free VIP Demo* for *${bizName}* has been successfully registered and queued for activation!\n\n🆔 *Demo ID:* \`${activationId}\`\n👤 *Client / Contact:* ${clientName}\n📱 *Phone / WhatsApp:* ${clientPhone.startsWith('+') ? clientPhone : '+' + clientPhone}\n✉️ *Email:* ${clientEmail}\n📍 *Location:* ${city}\n🏷️ *Category:* ${category}\n\n⚡ *Included in Growth Triad:*\n1️⃣ Google Business Profile (GMB) AI Engine (Auto 5-star review replies)\n2️⃣ Hyper-Local SEO Audit Simulator (Competitor keyword ranking gaps)\n3️⃣ 24/7 Telegram & Meta-Verified WhatsApp Business API Bot (Official verified integration)\n\n✅ *Official Meta Business Verified | Zero Risk Guarantee*\n⏱️ *Activation Timeline:* *Minimum 5 Hours to Maximum 1 Working Day*\n_(Our technical team is configuring your dedicated node, knowledgebase, and verified GBP sync.)_\n\n🔗 *GBP AI Onboarding Link:*\n${onboardingLink}\n\n⚠️ *Zaroori Instruction:* Kripya GBP onboarding link ko apne *Google Business Profile (GBP) registered Google/Gmail account* se hi open/authorize karein.\n\n👉 *Direct Demo Portal:* https://shahidcreatives.com/#combo-demo\n\n- Shahid Creatives (https://shahidcreatives.com)`;
 
         const adminAlertMsg = `🚨 *EID SPECIAL / 3-DAY DEMO INBOUND LEAD!* 🚨\n\n📱 *Contact:* ${clientPhone} (${platform})\n💬 *Chat ID:* ${from}\n👤 *Contact:* ${clientName}\n🏢 *Business:* ${bizName}\n🆔 *Demo ID:* ${activationId}\n📍 *Location:* ${city}\n🏷️ *Category:* ${category}\n\n*Action:* Demo queued with 5hr-1day activation window.`;
         sendAdminAlert(adminAlertMsg);
@@ -1318,7 +1397,7 @@ async function processUnifiedMessage(from, rawText, platform) {
     }
 
     // 🟢 ==============================================================
-    // 💡 10-MIN GUARD WINDOW FIX FOR RESET TRIGGERS
+    // 💡 RESET TRIGGERS & 10-MIN GUARD WINDOW (KEEPS STATE STABLE)
     // ==============================================================
     const resetTriggers = ['hi', 'hello', 'menu', 'start', '/start', 'hey'];
     if (resetTriggers.includes(userText)) {
@@ -2305,7 +2384,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         } else if (targetMenuRoute === '3') {
             userSessions[from].step = 'process_combo_menu';
             return sendUnifiedMessage(from, (userLang === 'EN')
-                ? "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\nPlease select your preferred Special Combo Package & Billing Cycle by replying with 1, 2, 3, or 4:\n\n1️⃣ **PLAN 1: Local AI & GMB Growth [MONTHLY]**\n• Price: Setup $69 + $39/mo\n\n2️⃣ **PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - SAVE ~25%]**\n• Price: $399/Year (Save $138)\n• Bonus: Free Domain + Citation Blast + VIP Support\n\n3️⃣ **PLAN 2: Full Digital & AI Scale Launch [MONTHLY]**\n• Price: Setup $169 + $79/mo\n\n4️⃣ **PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - SAVE ~32%]**\n• Price: $799/Year (Save $318)\n• Bonus: Free Premium Hosting + Domain + 12 SEO Blogs + AI CRM Sync\n\n⚠️ *Package Note:* Domain & Hosting Fees are NOT included in Monthly setups. Annual Passes include Free Hosting & Domain Perks!"
+                ? "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\nPlease select your preferred Special Combo Package & Billing Cycle by replying with 1, 2, 3, or 4:\n\n1️⃣ **PLAN 1: Local AI & GMB Growth [MONTHLY]**\n• Price: Setup $69 + $39/mo\n\n2️⃣ **PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - SAVE ~25%]**\n• Price: $399/Year (Save $138)\n• Bonus: Free Domain + Citation Blast + VIP Support\n\n3️⃣ **PLAN 2: Full Digital & AI Scale Launch [MONTHLY]*\n• Price: Setup $169 + $79/mo\n\n4️⃣ **PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - SAVE ~32%]**\n• Price: $799/Year (Save $318)\n• Bonus: Free Premium Hosting + Domain + 12 SEO Blogs + AI CRM Sync\n\n⚠️ *Package Note:* Domain & Hosting Fees are NOT included in Monthly setups. Annual Passes include Free Hosting & Domain Perks!"
                 : "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\nKripya apna preferred Special Combo Package aur Billing Cycle chunne ke liye 1, 2, 3 ya 4 reply karein:\n\n1️⃣ **PLAN 1: Local AI & GMB Growth [MONTHLY RETAINER]**\n• Price: Setup ₹4,999 + Monthly ₹2,499/mo\n\n2️⃣ **PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - SAVE ~30%]**\n• Price: ₹24,999/Year (Bachat ₹10,000)\n• Bonus Perks: Free 1-Yr Domain + Citation Blast + VIP Support\n\n3️⃣ **PLAN 2: Full Digital & AI Scale Launch [MONTHLY RETAINER]**\n• Price: Setup ₹12,999 + Monthly ₹4,999/mo\n\n4️⃣ **PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - SAVE ~32%]**\n• Price: ₹49,999/Year (Bachat ₹23,000)\n• Bonus Perks: Free Premium Hosting + Domain + 12 SEO Blogs + AI WhatsApp CRM Sync\n\n⚠️ *Package Note:* Monthly packages me Domain & Hosting Fees included nahi hai. Annual Pass me Free Hosting aur Domain Perks shamil hain!", platform);
         } else if (targetMenuRoute === '4') {
             userSessions[from].step = 'process_requirement_menu';

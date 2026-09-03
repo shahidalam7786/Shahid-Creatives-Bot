@@ -1155,16 +1155,16 @@ async function processUnifiedMessage(from, rawText, platform) {
 
     // 🎯 ==============================================================
     // 🚨 PRIORITY -1: BULLETPROOF PRE-FILLED WEBSITE LEAD INTERCEPTOR
-    // Catches ALL incoming demo submissions directly from website button clicks
+    // Exact match for the website demo submission (Stops any appointment booking or stage 1 drop)
     // ==============================================================
     const isWebsiteDemoInbound = 
         userText.includes("3-day free vip demo") ||
         userText.includes("queued for activation") ||
-        userText.includes("included in growth triad") ||
-        (userText.includes("demo id:") && userText.includes("client / contact:")) ||
-        (userText.includes("activation id:") && userText.includes("phone:")) ||
-        (userText.includes("congratulations") && userText.includes("vip demo")) ||
-        (userText.includes("contact person name:") && userText.includes("business or brand name:"));
+        userText.includes("growth triad") ||
+        userText.includes("demo id:") ||
+        userText.includes("registration details") ||
+        (userText.includes("congratulations") && (userText.includes("demo") || userText.includes("vip"))) ||
+        (userText.includes("client / contact:") && userText.includes("demo-"));
 
     if (isWebsiteDemoInbound) {
         let clientName = "Valued Client";
@@ -1174,10 +1174,10 @@ async function processUnifiedMessage(from, rawText, platform) {
         let bizName = "Valued Business";
 
         try {
-            const idMatch = rawText.match(/(?:Demo ID|Activation ID|ID)[^:]*:\s*`?([^\n\r`]+)`?/i);
+            const idMatch = rawText.match(/(?:Demo ID|Activation ID|ID)[^:\n]*:\s*`?([A-Za-z0-9-]+)`?/i);
             if (idMatch) demoId = idMatch[1].replace(/[*_`]/g, '').trim();
 
-            const nameMatch = rawText.match(/(?:Client \/ Contact|Contact Person Name|Name)[^:]*:\s*([^\n\r]+)/i);
+            const nameMatch = rawText.match(/(?:Client\s*\/\s*Contact|Contact Person Name|Name)[^:\n]*:\s*([^\n\r]+)/i);
             if (nameMatch) {
                 clientName = nameMatch[1].replace(/[*_`]/g, '').trim();
             } else {
@@ -1185,19 +1185,19 @@ async function processUnifiedMessage(from, rawText, platform) {
                 if (altNameMatch) clientName = altNameMatch[1].replace(/[*_`]/g, '').trim();
             }
 
-            const bizMatch = rawText.match(/(?:Business or Brand Name|Business|Brand)[^:]*:\s*([^\n\r]+)/i);
+            const bizMatch = rawText.match(/(?:VIP Demo for|Business or Brand Name|Business|Brand)[^:\n]*[:\s]+([^\n\r.]+)/i);
             if (bizMatch) bizName = bizMatch[1].replace(/[*_`]/g, '').trim();
 
-            const phoneMatch = rawText.match(/(?:Phone \/ WhatsApp|WhatsApp \/ Phone Number|Phone|Mobile)[^:]*:\s*([^\n\r]+)/i);
+            const phoneMatch = rawText.match(/(?:Phone\s*\/\s*WhatsApp|WhatsApp\s*\/\s*Phone Number|Phone|Mobile)[^:\n]*:\s*([^\n\r]+)/i);
             if (phoneMatch) clientPhone = phoneMatch[1].replace(/[*_`📞+]/g, '').trim();
 
-            const emailMatch = rawText.match(/(?:Email|Email Address)[^:]*:\s*([^\n\r]+)/i);
+            const emailMatch = rawText.match(/(?:Email|Email Address)[^:\n]*:\s*([^\n\r]+)/i);
             if (emailMatch) clientEmail = emailMatch[1].replace(/[*_`✉️]/g, '').trim();
         } catch (e) {}
 
         const isEnglishUser = isInternationalNumber || isGlobalWebsiteTemplate;
 
-        // 🔒 LOCK SESSION PERMANENTLY: Stops bot from asking for details or dropping to Stage 1
+        // 🔒 LOCK SESSION PERMANENTLY: Stops bot from asking for slots, details, or hitting Stage 1
         userSessions[from] = {
             step: 'completed',
             lang: isEnglishUser ? 'EN' : 'HINGLISH',
@@ -1208,14 +1208,14 @@ async function processUnifiedMessage(from, rawText, platform) {
             projectScope: `VIP Demo Activation (${demoId})`,
             lastInteractionTime: Date.now(),
             lastSubmitedTime: Date.now(),
-            nudgeSent: true,
+            nudgeSent: true, // Prevents automated 10-minute follow up
             skipIdentityCapture: true
         };
 
-        // 🟢 PROFESSIONAL, POLITE TIMELINE CONFIRMATION MESSAGE
-        const replyMsgEN = `👋 Hello *${clientName}*, thank you for choosing *Shahid Creatives*! 🚀\n\nWe have successfully received your website submission for the *3-Day Free VIP Demo* (ID: \`${demoId}\`).\n\n⏱️ *Activation Timeline:* *Minimum 5 Hours to Maximum 1 Working Day*\nOur engineering team is actively configuring your dedicated AI node, Google review sync, and Meta-verified bots. No further details are required right now.\n\n_We will notify you directly here as soon as your setup goes live!_ ✨\n\n🌐 _Powered by Shahid Creatives (https://shahidcreatives.com)_`;
+        // 🟢 PROFESSIONAL, POLITE TIMELINE & CONNECT CONFIRMATION (NO APPOINTMENT BOOKING)
+        const replyMsgEN = `👋 Hello *${clientName}*, thank you for choosing *Shahid Creatives*! 🚀\n\nWe have successfully received all your details for the *3-Day Free VIP Demo* (ID: \`${demoId}\`).\n\n⏱️ *Activation Timeline:* *Minimum 5 Hours to Maximum 1 Working Day*\nOur engineering team is already configuring your dedicated AI node, Google Business sync, and verified bot setup. Your service will be activated shortly within this timeframe.\n\n📞 *Next Step:* Our team from *Shahid Creatives* will connect with you directly here for confirmation and activation as soon as it goes live! You don't need to take any further action. ✨\n\n🌐 _Powered by Shahid Creatives (https://shahidcreatives.com)_`;
 
-        const replyMsgHIN = `👋 Namaste *${clientName}*, *Shahid Creatives* mein aapka swagat hai! 🚀\n\nWebsite se aapka *3-Day Free VIP Demo* submission (ID: \`${demoId}\`) humein successfully receive ho gaya hai.\n\n⏱️ *Activation Timeline:* *Minimum 5 Hours se lekar Maximum 1 Working Day*\nHumari technical team aapka dedicated node, Google review sync aur verified bot setup configure kar rahi hai. Abhi aapse kisi aur detail ki zaroorat nahi hai.\n\n_Setup live hote hi hum aapko isi chat par turant update denge!_ ✨\n\n🌐 _Powered by Shahid Creatives (https://shahidcreatives.com)_`;
+        const replyMsgHIN = `👋 Namaste *${clientName}*, *Shahid Creatives* mein aapka swagat hai! 🚀\n\nWebsite se aapka *3-Day Free VIP Demo* submission (ID: \`${demoId}\`) humein successfully receive ho gaya hai.\n\n⏱️ *Activation Timeline:* *Minimum 5 Hours se lekar Maximum 1 Working Day*\nAapki service diye gaye samay ke andar activate kar di jayegi. Humari technical team aapka dedicated node, Google Business sync aur verified bot setup configure kar rahi hai.\n\n📞 *Next Step:* *Shahid Creatives* ki team confirmation aur activation ke liye aapse bohot jald isi chat par connect karegi! Aapko abhi koi appointment book karne ya detail bhejne ki zaroorat nahi hai. ✨\n\n🌐 _Powered by Shahid Creatives (https://shahidcreatives.com)_`;
 
         const finalMsg = isEnglishUser ? replyMsgEN : replyMsgHIN;
 
@@ -1232,7 +1232,7 @@ async function processUnifiedMessage(from, rawText, platform) {
             discussion_notes: adminAlertMsg 
         }).catch(()=>{});
 
-        // 🛑 DIRECT RETURN: Halts execution completely, prevents Stage 1 reset message
+        // 🛑 DIRECT RETURN: Halts execution completely, stops appointment booking & Stage 1 prompt
         return sendUnifiedMessage(from, finalMsg, platform);
     }
 
@@ -1285,7 +1285,6 @@ async function processUnifiedMessage(from, rawText, platform) {
     if (
         rawText.includes("3-DAY FREE DEMO ACTIVATION") ||
         rawText.includes("EID MILAD-UN-NABI SPECIAL") ||
-        rawText.includes("3-Day Free VIP Demo") ||
         rawText.includes("Please initiate setup handshake") ||
         (rawText.includes("Activation ID:") && rawText.includes("Phone:")) ||
         (rawText.includes("Contact Person Name:") && rawText.includes("Business or Brand Name:"))
@@ -1330,7 +1329,8 @@ async function processUnifiedMessage(from, rawText, platform) {
             projectScope: `3-Day Free VIP Demo (${bizName})`,
             lastInteractionTime: Date.now(),
             lastSubmitedTime: Date.now(),
-            nudgeSent: true
+            nudgeSent: true,
+            skipIdentityCapture: true
         };
 
         const onboardingLink = `https://api.shahidcreatives.com/connect-gmb?clientId=${encodeURIComponent(activationId)}`;
@@ -1365,8 +1365,7 @@ async function processUnifiedMessage(from, rawText, platform) {
             transporter.sendMail(mailOptions).catch(err => console.log("Demo Mail Error:", err));
         }
 
-        // Exact Professional Polite Client Confirmation Message
-        const replyConfirmation = `🎉 *Thank you & Congratulations ${bizName}!* 🚀\n\nYour *3-Day Free VIP Demo* for *${bizName}* has been successfully registered and queued for activation!\n\n🆔 *Demo ID:* \`${activationId}\`\n👤 *Client / Contact:* ${clientName}\n📱 *Phone / WhatsApp:* ${clientPhone.startsWith('+') ? clientPhone : '+' + clientPhone}\n✉️ *Email:* ${clientEmail}\n📍 *Location:* ${city}\n🏷️ *Category:* ${category}\n\n⚡ *Included in Growth Triad:*\n1️⃣ Google Business Profile (GMB) AI Engine (Auto 5-star review replies)\n2️⃣ Hyper-Local SEO Audit Simulator (Competitor keyword ranking gaps)\n3️⃣ 24/7 Telegram & Meta-Verified WhatsApp Business API Bot (Official verified integration)\n\n✅ *Official Meta Business Verified | Zero Risk Guarantee*\n⏱️ *Activation Timeline:* *Minimum 5 Hours to Maximum 1 Working Day*\n_(Our technical team is configuring your dedicated node, knowledgebase, and verified GBP sync.)_\n\n🔗 *GBP AI Onboarding Link:*\n${onboardingLink}\n\n⚠️ *Zaroori Instruction:* Kripya GBP onboarding link ko apne *Google Business Profile (GBP) registered Google/Gmail account* se hi open/authorize karein.\n\n👉 *Direct Demo Portal:* https://shahidcreatives.com/#combo-demo\n\n- Shahid Creatives (https://shahidcreatives.com)`;
+        const replyConfirmation = `🎉 *Thank you & Congratulations ${clientName}!* 🚀\n\nYour *3-Day Free VIP Demo* for *${bizName}* has been successfully registered and queued for activation!\n\n🆔 *Demo ID:* \`${activationId}\`\n👤 *Client / Contact:* ${clientName}\n📱 *Phone / WhatsApp:* ${clientPhone.startsWith('+') ? clientPhone : '+' + clientPhone}\n✉️ *Email:* ${clientEmail}\n📍 *Location:* ${city}\n🏷️ *Category:* ${category}\n\n⚡ *Included in Growth Triad:*\n1️⃣ Google Business Profile (GMB) AI Engine (Auto 5-star review replies)\n2️⃣ Hyper-Local SEO Audit Simulator (Competitor keyword ranking gaps)\n3️⃣ 24/7 Telegram & Meta-Verified WhatsApp Business API Bot (Official verified integration)\n\n✅ *Official Meta Business Verified | Zero Risk Guarantee*\n⏱️ *Activation Timeline:* *Minimum 5 Hours to Maximum 1 Working Day*\n_(Our technical team is configuring your dedicated node, knowledgebase, and verified GBP sync.)_\n\n🔗 *GBP AI Onboarding Link:*\n${onboardingLink}\n\n⚠️ *Zaroori Instruction:* Kripya GBP onboarding link ko apne *Google Business Profile (GBP) registered Google/Gmail account* se hi open/authorize karein.\n\n👉 *Direct Demo Portal:* https://shahidcreatives.com/#combo-demo\n\n- Shahid Creatives (https://shahidcreatives.com)`;
 
         const adminAlertMsg = `🚨 *EID SPECIAL / 3-DAY DEMO INBOUND LEAD!* 🚨\n\n📱 *Contact:* ${clientPhone} (${platform})\n💬 *Chat ID:* ${from}\n👤 *Contact:* ${clientName}\n🏢 *Business:* ${bizName}\n🆔 *Demo ID:* ${activationId}\n📍 *Location:* ${city}\n🏷️ *Category:* ${category}\n\n*Action:* Demo queued with 5hr-1day activation window.`;
         sendAdminAlert(adminAlertMsg);
@@ -1397,7 +1396,7 @@ async function processUnifiedMessage(from, rawText, platform) {
     }
 
     // 🟢 ==============================================================
-    // 💡 RESET TRIGGERS & 10-MIN GUARD WINDOW (KEEPS STATE STABLE)
+    // 💡 10-MIN GUARD WINDOW FIX FOR RESET TRIGGERS
     // ==============================================================
     const resetTriggers = ['hi', 'hello', 'menu', 'start', '/start', 'hey'];
     if (resetTriggers.includes(userText)) {
@@ -1409,8 +1408,8 @@ async function processUnifiedMessage(from, rawText, platform) {
 
         if (recentlyCompleted) {
             let alreadyMsg = (existingSession.lang === 'EN')
-                ? `Hi *${existingSession.clientName}*! Your request (*${existingSession.projectScope}*) is already registered and our team is actively working on it. Timeline is *Minimum 5 Hours to Maximum 1 Working Day*. We'll update you here as soon as it's ready! 🚀\n\n🌐 _Powered by Shahid Creatives_`
-                : `Hi *${existingSession.clientName}*! Aapki request (*${existingSession.projectScope}*) already register ho chuki hai aur humari team is par kaam kar rahi hai (Timeline: *Minimum 5 Hours se Maximum 1 Working Day*). Ready hote hi hum yahan update denge! 🚀\n\n🌐 _Powered by Shahid Creatives_`;
+                ? `Hi *${existingSession.clientName}*! Your request (*${existingSession.projectScope}*) is already registered. Our team will connect with you shortly for confirmation and activation! (Timeline: *Minimum 5 Hours to Maximum 1 Working Day*). 🚀\n\n🌐 _Powered by Shahid Creatives_`
+                : `Hi *${existingSession.clientName}*! Aapki request (*${existingSession.projectScope}*) already register ho chuki hai. Humari team confirmation aur activation ke liye aapse bohot jald connect karegi! (Timeline: *Minimum 5 Hours se Maximum 1 Working Day*). 🚀\n\n🌐 _Powered by Shahid Creatives_`;
             return sendUnifiedMessage(from, alreadyMsg, platform);
         }
 
@@ -1463,7 +1462,6 @@ async function processUnifiedMessage(from, rawText, platform) {
             }
         } catch (e) { }
 
-        // ✅ EXPLICIT LANGUAGE/CURRENCY DETECTION FIX
         const isExplicitUSD = rawText.includes('USD') || rawText.includes('$');
         const isExplicitINR = rawText.includes('INR') || rawText.includes('₹');
         const isUSDTrack = isExplicitUSD ? true : (isExplicitINR ? false : isInternationalNumber);
@@ -1493,12 +1491,10 @@ async function processUnifiedMessage(from, rawText, platform) {
             nudgeSent: true 
         };
 
-        // Admin Alert for Emergency Assistance (With Full Base Price Details & Telegram Chat ID)
         const currencyAdmin = isUSDTrack ? '$' : '₹';
         const alertMsg = `🚨 *URGENT: PAYMENT DROP-OFF REPORTED!* 🚨\n\n📱 *Client:* ${platform === 'telegram' ? 'TG-' : '+'}${from}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n👤 *Name:* ${clientName}\n📝 *Plan Scope:* ${projectScope}\n🆔 *Client ID:* ${projectID}\n💵 *Base Price:* ${currencyAdmin}${matchedBasePrice}\n🔥 *Discount Applied:* ${currencyAdmin}${savingAmount} (MILAD30)\n💰 *Calculated Price:* ${currencyAdmin}${finalPayable}\n\n⚠️ *Action:* Client bot interaction active to check debit/cancel status.`;
         sendAdminAlert(alertMsg);
 
-        // Client Question Phase
         let replyMsg = isINRLead
             ? `Oh no! 😟 Maafi chahte hain *${clientName}*, lagta hai aapka *${projectScope}* ka transaction technical issue ki wajah se ruk gaya hai.\n\nKripya batayein ki aapke account ka status kya hai? Niche diye gaye options mein se ek (1 ya 2) chunein:\n\n1️⃣ **Payment account se kat gaya hai (Amount Debited)**\n2️⃣ **Payment fail ya cancel ho gaya tha (Failed/Cancelled)**`
             : `Oh no! 😟 I'm sorry to hear that your transaction for the *${projectScope}* encountered an issue, *${clientName}*.\n\nCould you please confirm your account status? Reply with 1 or 2:\n\n1️⃣ **The amount was debited from my account**\n2️⃣ **The payment failed or was cancelled**`;
@@ -1559,7 +1555,6 @@ async function processUnifiedMessage(from, rawText, platform) {
 
     // 🎯 STATE: 3-DAY FREE DEMO ACTIVATION SUBMIT HANDLER (From Menu Option 6 Form)
     if (currentStep === 'demo_activation_submit') {
-        // 🚨 STRICT VALIDATION: Prevent blank, numbers or single-character form submissions
         if (rawText.length < 25 || (!rawText.toLowerCase().includes('name') && !rawText.toLowerCase().includes('business'))) {
             let errMsg = (userLang === 'EN')
                 ? "⚠️ *Incomplete Details!*\nPlease copy the full form template provided above, fill in your business details, and reply to activate your demo."
@@ -1576,7 +1571,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         let city = "Ludhiana";
         let category = "General";
 
-        // Attempt smart extraction for admin log and dynamic receipt
         try {
             const nameMatch = rawText.match(/Contact Person Name:\s*([^\n\r]+)/i);
             const emailMatch = rawText.match(/Email Address \(Optional\):\s*([^\n\r]+)/i);
@@ -1603,7 +1597,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         const adminAlert = `🚨 *NEW 3-DAY DEMO ACTIVATION!* 🚨\n\n📱 *Contact:* ${displayPhone} (${platform})\n💬 *Chat ID:* ${from}\n👤 *Extracted Name:* ${clientName}\n🏢 *Business:* ${bizName}\n🆔 *Demo ID:* ${demoId}\n📍 *City:* ${city}\n🏷️ *Category:* ${category}\n\n*📋 Submitted Form Data:*\n${rawText}`;
         sendAdminAlert(adminAlert);
 
-        // Push lead to dashboard webhook
         try {
             await axios.post('https://shahidcreatives.com/api/whatsapp-leads', { 
                 client_name: clientName, 
@@ -1616,7 +1609,6 @@ async function processUnifiedMessage(from, rawText, platform) {
             });
         } catch (e) { }
 
-        // Send Email if valid email was provided
         if (clientEmail && clientEmail !== "Not Provided" && clientEmail.includes("@")) {
             const mailOptions = {
                 from: '"Shahid Creatives AI" <your-email@shahidcreatives.com>',
@@ -1764,7 +1756,6 @@ async function processUnifiedMessage(from, rawText, platform) {
             console.error("Parser failure exception inside landing template."); 
         }
         
-        // ✅ EXPLICIT LANGUAGE/CURRENCY DETECTION FOR FORM FIX
         const isExplicitUSDForm = rawText.includes('USD') || rawText.includes('$');
         const isExplicitINRForm = rawText.includes('INR') || rawText.includes('inr') || rawText.includes('₹');
         const formIsUSDTrack = isExplicitUSDForm ? true : (isExplicitINRForm ? false : isInternationalNumber);
@@ -1794,11 +1785,9 @@ async function processUnifiedMessage(from, rawText, platform) {
                     project_scope: `${projectScope} (Status: Fully Paid Portal Form)`, 
                     calculated_price: parsedBasePrice, 
                     email: clientEmail, 
-                    discussion_notes: paidAdminAlert // ✅ SYNCED WITH NEW PARSER LOGIC
+                    discussion_notes: paidAdminAlert
                 });
-            } catch (err) { 
-                console.error("Paid lead API sync error:", err.message); 
-            }
+            } catch (err) { }
             
             let paidSuccessReply = (userSessions[from].lang === 'EN')
                 ? `Thank you *${clientName}*! 🙏 Your paid booking has been successfully verified on our dashboard.\n\n⚡ *Status:* **Project Consultation Stage Activated!**\n\n🌐 _Powered by Shahid Creatives_`
@@ -1822,7 +1811,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         const isINRLead = !formIsUSDTrack;
         const currencyAdmin = isINRLead ? '₹' : '$';
 
-        // Admin Notification Sync with Complete Base Details Fix (Added Telegram Chat ID)
         const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* ${platform === 'telegram' ? 'TG-' : '+'}${from}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n👤 *Name:* ${clientName}\n📝 *Plan Scope:* ${projectScope}\n💵 *Base Price:* ${currencyAdmin}${calculatedPrice + savedAmountWeb}\n🔥 *Discount Applied:* ${currencyAdmin}${savedAmountWeb} (MILAD30)\n💰 *Calculated Price:* ${currencyAdmin}${calculatedPrice}`;
         sendAdminAlert(adminNotification);
 
@@ -1834,11 +1822,9 @@ async function processUnifiedMessage(from, rawText, platform) {
                 project_scope: projectScope, 
                 calculated_price: calculatedPrice, 
                 email: clientEmail, 
-                discussion_notes: adminNotification // ✅ SYNCED WITH NEW PARSER LOGIC
+                discussion_notes: adminNotification 
             });
-        } catch (err) { 
-            console.error("Meta Dashboard sync err."); 
-        }
+        } catch (err) { }
 
         const uniqueProjectId = `SC-${Math.floor(10000 + Math.random() * 90000)}`;
         const tokenAmount = isINRLead ? 999 : 49;
@@ -1857,7 +1843,7 @@ async function processUnifiedMessage(from, rawText, platform) {
     // 🎯 HIGH-PRIORITY INTERCEPTOR STATE: HANDLING USER REPLIES TO AUTOMATED FOLLOW-UP NUDGES
     if (currentStep === 'nudge_sent_waiting_reply') {
         const positiveTriggers = ['yes', 'yeah', 'yup', 'haan', 'ji', 'help', 'ok', 'okay', 'sure', 'help chahiye', 'bataiye'];
-        if (positiveTriggers.includes(userText) || userText.length >= 2) {
+        if (positiveTriggers.includes(userText)) {
             userSessions[from].step = 'awaiting_consultation_slot';
             const currentHourIST = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Kolkata"})).getHours();
             
@@ -1903,7 +1889,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         
         if (!userSessions[from].savedPlan) userSessions[from].savedPlan = userSessions[from].projectScope;
 
-        // 🟢 ROUTE FIX: We send them to Finalize Parser directly so time validation applies
         const hasValidIdentity = userSessions[from].skipIdentityCapture || (userSessions[from].clientName && userSessions[from].clientName !== "Valued Client" && userSessions[from].clientEmail && userSessions[from].clientEmail !== "Not Provided" && userSessions[from].clientEmail !== "");
 
         if (hasValidIdentity) {
@@ -1913,7 +1898,6 @@ async function processUnifiedMessage(from, rawText, platform) {
             userSessions[from].step = 'collect_consultation_identity';
             userSessions[from].projectScope = `Custom Slot Input ("${rawText}")`;
             
-            // Dynamic Prompt for Telegram Phone Capture
             let promptText = (userLang === 'EN')
                 ? (platform === 'telegram' 
                     ? `Got it! Custom slot parameters recorded: *"${rawText}"*\n\n✍ *Please complete your profile:* Kindly reply with your *Full Name, Email Address, and Mobile Number* (separated by commas, e.g. John Doe, john@example.com, +919876543210).` 
@@ -1930,7 +1914,7 @@ async function processUnifiedMessage(from, rawText, platform) {
     if (currentStep === 'collect_consultation_identity') {
         let cleanName = ""; 
         let cleanEmail = "";
-        let cleanPhone = (platform === 'whatsapp') ? from : ""; // Default WA number
+        let cleanPhone = (platform === 'whatsapp') ? from : ""; 
         
         if (rawText.includes(",")) {
             const parts = rawText.split(","); 
@@ -1965,7 +1949,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         userSessions[from].step = 'collect_custom_query_and_time'; 
         userSessions[from].clientName = cleanName; 
         userSessions[from].clientEmail = cleanEmail;
-        userSessions[from].clientPhone = cleanPhone; // Saved!
+        userSessions[from].clientPhone = cleanPhone; 
 
         let descriptivePrompt = (userLang === 'EN')
             ? `Thank you *${cleanName}*! 🙏\n\nTo lock a high-converting strategy blueprint, please share your goals in the next reply:\n\n🌐 **1. Website Development:**\nWhich plan fits your vision? (Starter Plan, Basic Plan, Starter Business Site, or E-Commerce Hub?)\n\n🤖 **2. AI-Powered Growth Retainers:**\nWhat precise processes do you want to automate?\n\n🚀 **3. Special Combo Offers:**\nSelect Plan 1 or Plan 2 (Monthly Retainer or 🎁 Annual Pass with ~30% Savings) for all-in-one local or digital scaling!`
@@ -1989,7 +1973,6 @@ async function processUnifiedMessage(from, rawText, platform) {
             let interceptorReply = "";
             let options = null;
 
-            // WhatsApp/Text Numbered Structure
             if (catType === 'web') {
                 interceptorReply = isUSDTrack 
                     ? "⚠️ Please be specific! Which Web scope do you need? \n\n👉 Reply with an option number (1-4):\n1️⃣ *Starter Plan* ($199)\n2️⃣ *Basic Plan* ($299)\n3️⃣ *Starter Business Site* ($499)\n4️⃣ *E-Commerce Hub* ($899)"
@@ -2004,7 +1987,6 @@ async function processUnifiedMessage(from, rawText, platform) {
                     : "⚠️ Kripya clear batayein! Aapko kis tarah ka automation stack design karwana hai? \n\n👉 Niche diye gaye options mein se ek number (1-8) reply karein:\n1️⃣ *Starter Digital Maintainer* (₹4,999/Mo)\n2️⃣ *Web Conversion Engine* (₹9,499/Mo)\n3️⃣ *Omnichannel Growth Partner* (₹18,999/Mo)\n4️⃣ *Full-Scale Ecosystem Operations* (₹29,999/Mo)\n5️⃣ *Elite Intelligence & Bespoke Systems* (₹49,999/Mo)\n6️⃣ *Telegram Universal Automation - Starter* (₹3,999/Mo)\n7️⃣ *Telegram Universal Automation - Growth* (₹7,599/Mo)\n8️⃣ *Telegram Universal Automation - Elite* (₹15,199/Mo)";
             }
 
-            // Interactive Inline Keyboards for Telegram
             if (platform === 'telegram') {
                 if (catType === 'web') {
                     options = {
@@ -2136,7 +2118,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         userSessions[from].step = 'completed'; 
         userSessions[from].clientName = cleanName; 
         userSessions[from].clientEmail = cleanEmail;
-        userSessions[from].clientPhone = cleanPhone; // Saved!
+        userSessions[from].clientPhone = cleanPhone; 
         
         const isUSDTrack = (userLang === 'EN');
         const matchedBasePriceStr = getBasePriceByPlan(userSessions[from].projectScope, isUSDTrack);
@@ -2152,7 +2134,6 @@ async function processUnifiedMessage(from, rawText, platform) {
 
         const displayPhone = userSessions[from].clientPhone || (platform === 'whatsapp' ? from : "Not Provided");
 
-        // 🎯 ADMIN ALERT COMPLETE PRICE DETAIL FIX (Added Telegram Chat ID)
         const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* ${displayPhone} ${platform === 'telegram' ? '(Telegram)' : '(WhatsApp)'}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${cleanEmail}\n📝 *Plan Scope:* ${userSessions[from].projectScope}\n💵 *Base Price:* ${currencySymbol}${matchedBasePrice}\n🔥 *Discount Applied:* ${currencySymbol}${savingAmount} (MILAD30)\n💰 *Calculated Price:* ${currencySymbol}${finalPayable}`;
         sendAdminAlert(chatAdminNotification);
 
@@ -2164,7 +2145,7 @@ async function processUnifiedMessage(from, rawText, platform) {
                 project_scope: userSessions[from].projectScope, 
                 calculated_price: finalPayable, 
                 email: cleanEmail, 
-                discussion_notes: chatAdminNotification // ✅ SYNCED WITH NEW PARSER LOGIC
+                discussion_notes: chatAdminNotification 
             });
         } catch (dashboardError) { 
             console.error("Admin Sync exception logic execution handler."); 
@@ -2241,7 +2222,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         else if (userText === '3' || userText.includes("omnichannel") || userText.includes("growth partner")) { dynamicCategory = "Omnichannel Growth Partner"; isAutomateMatch = true; }
         else if (userText === '4' || userText.includes("ecosystem") || userText.includes("full-scale")) { dynamicCategory = "Full-Scale Ecosystem Operations"; isAutomateMatch = true; }
         else if (userText === '5' || userText.includes("elite intelligence") || userText.includes("bespoke systems")) { dynamicCategory = "Elite Intelligence & Bespoke Systems"; isAutomateMatch = true; }
-        // 🌍 NEW: Telegram Automation Plans merged into the same list
         else if (userText === '6' || (userText.includes("telegram") && userText.includes("starter"))) { dynamicCategory = "Telegram Universal Automation - Starter Plan"; isAutomateMatch = true; }
         else if (userText === '7' || (userText.includes("telegram") && userText.includes("growth"))) { dynamicCategory = "Telegram Universal Automation - Growth Plan"; isAutomateMatch = true; }
         else if (userText === '8' || (userText.includes("telegram") && userText.includes("elite"))) { dynamicCategory = "Telegram Universal Automation - Elite Plan"; isAutomateMatch = true; }
@@ -2301,7 +2281,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         const currentHourIST = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Kolkata"})).getHours();
         let chosenOptionClean = userText.replace(/[\-\*•\(\)]/g, '').trim();
         
-        // Capture existing details if they already passed them
         if (!userSessions[from].savedPlan) userSessions[from].savedPlan = userSessions[from].projectScope;
         const hasValidIdentity = userSessions[from].skipIdentityCapture || (userSessions[from].clientName && userSessions[from].clientName !== "Valued Client" && userSessions[from].clientEmail && userSessions[from].clientEmail !== "Not Provided" && userSessions[from].clientEmail !== "");
         
@@ -2310,7 +2289,6 @@ async function processUnifiedMessage(from, rawText, platform) {
             userSessions[from].requestedSlot = dynamicSlotLabel; 
             sendAdminAlert(`🚨 *SLOT REQUEST!* 🚨\n📱 ${platform === 'telegram' ? 'TG-' : '+'}${from}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n⏰ Chosen Slot: ${dynamicSlotLabel}`);
             
-            // 🟢 ROUTE FIX: Send back to Plan Selection Menu for complete Professional Flow
             if (hasValidIdentity) {
                 userSessions[from].step = 'collect_custom_query_and_time'; 
                 let descriptivePrompt = (userLang === 'EN')
@@ -2329,7 +2307,6 @@ async function processUnifiedMessage(from, rawText, platform) {
             userSessions[from].requestedSlot = dynamicSlotLabel;
             sendAdminAlert(`🚨 *SLOT REQUEST!* 🚨\n📱 ${platform === 'telegram' ? 'TG-' : '+'}${from}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n⏰ Chosen Slot: ${dynamicSlotLabel}`);
             
-            // 🟢 ROUTE FIX: Send back to Plan Selection Menu for complete Professional Flow
             if (hasValidIdentity) {
                 userSessions[from].step = 'collect_custom_query_and_time'; 
                 let descriptivePrompt = (userLang === 'EN')
@@ -2345,7 +2322,7 @@ async function processUnifiedMessage(from, rawText, platform) {
             }
         } else if (chosenOptionClean === 'c' || chosenOptionClean.includes("custom")) {
             userSessions[from].step = 'awaiting_custom_time_input';
-            userSessions[from].skipIdentityCapture = hasValidIdentity; // Setup pass tag
+            userSessions[from].skipIdentityCapture = hasValidIdentity; 
             return sendUnifiedMessage(from, (userLang === 'EN') 
                 ? "📅 *Custom Scheduling Activated!*\n\nOur timing is *11:00 AM to 5:00 PM (Friday OFF)*.\nPlease type your preferred **Date and Time** below (e.g., *Tomorrow at 3 PM*):" 
                 : "📅 *Custom Scheduling Active!*\n\nHumari timing *11:00 AM se 5:00 PM (Friday OFF)* hai.\nKripya jis **Date aur Time** par aap call chahte hain, use niche type karke send karein (jaise: *Kal dopahar 3 baje*):", platform);

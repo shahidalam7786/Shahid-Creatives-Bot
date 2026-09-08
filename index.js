@@ -25,7 +25,6 @@ app.use(bodyParser.json());
 // ==========================================
 // 📧 GOOGLE WORKSPACE SMTP TRANSPORTER (DEMO ONBOARDING)
 // ==========================================
-// Note: Replace user & pass with your official Shahid Creatives credentials
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 465,
@@ -66,7 +65,7 @@ function getAvailableTimes(botType, selectedDateStr) {
         if (modifier === 'PM' && hours < 12) hours += 12;
         if (modifier === 'AM' && hours === 12) hours = 0;
 
-        // Slot Limit Logic (Max 4 bookings per 15-min slot block represented by the hour)
+        // Slot Limit Logic (Max 4 bookings per slot block)
         const slotKey = `${selectedDateStr}_${t}`;
         const count = bookedSlots[botType][slotKey] || 0;
         if (count >= 4) return; // Exclude full slots
@@ -181,7 +180,6 @@ bot.on('message', async (msg) => {
     processingLocks[chatId] = true;
 
     try {
-        // Pass the message to the Unified Master Engine
         await processUnifiedMessage(chatId, text, 'telegram');
     } finally {
         delete processingLocks[chatId];
@@ -204,7 +202,7 @@ salonBot.on('error', (error) => {
 
 // Lightweight memory for Salon Bot
 const salonSessions = {};
-let salonAdminState = null; // To track admin reschedule targets
+let salonAdminState = null;
 
 // 🟢 ADMIN & USER INLINE BUTTON HANDLER (SALON)
 salonBot.on('callback_query', async (query) => {
@@ -222,7 +220,7 @@ salonBot.on('callback_query', async (query) => {
                 await salonBot.editMessageText(query.message.text + "\n\n✅ *STATUS: BOOKING CONFIRMED BY YOU*", { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
                 await salonBot.sendMessage(clientChatId, "🎉 *Great News!*\n\nYour appointment has been *CONFIRMED* by the salon. Hum aapka intezaar kar rahe hain! ✨\n\n🌐 _Powered by Shahid Creatives_", { parse_mode: "Markdown" });
             } else if (action === 'resched') {
-                salonAdminState = clientChatId; // Store which client admin is replying to
+                salonAdminState = clientChatId;
                 await salonBot.editMessageText(query.message.text + "\n\n🔄 *STATUS: PENDING TIME UPDATE*", { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
                 await salonBot.sendMessage(chatId, `⚠️ Aapne Client (${clientChatId}) ke liye *Reschedule* chuna hai.\n\n👉 *Kripya naya Time ya Message type karke bhejein:*\n_(Yeh message seedha client ko bhej diya jayega)_`, { parse_mode: "Markdown" });
             }
@@ -436,8 +434,8 @@ salonBot.on('message', async (msg) => {
             });
             
             const receiptMsg = isEn 
-                ? `🎉 *Booking Request Sent!*\n\nHello *${session.name}*, your appointment request has been successfully received.\n\n🧾 *Booking Summary:*\n📅 *Date & Time:* ${session.dateTime}\n💇‍♀️ *Service:* ${session.service}\n💰 *Price:* ${session.price}\n👨‍🎨 *Specialist:* ${session.specialist}\n\n👤 *Client Details:*\n   ▫️ *Name:* ${session.name}\n   ▫️ *Contact:* ${session.phone}\n   ▫️ *Pre-details:* ${session.hairstyleDetails}\n\n📍 *Location:* Phase 11, Mohali\n🗺️ *GPS Location:* [Navigate Here](https://www.google.com/maps/dir//Ground+Floor,+Fit+hair+artist+Unisex+Family+Salon,+SCO+50,+Phase+11,+Sector+65,+Sahibzada+Ajit+Singh+Nagar,+Punjab+160062/@30.6811159,76.7420617,822m/data=!3m1!1e3!4m17!1m7!3m6!1s0x390fed26d2a12c33:0xbc77237be76b2e81!2sFit+hair+artist+Unisex+Family+Salon!8m2!3d30.6811113!4d76.744642!16s%2Fg%2F11wtm3plgb!4m8!1m0!1m5!1m1!1s0x390fed26d2a12c33:0xbc77237be76b2e81!2m2!1d76.744642!2d30.6811113!3e0?entry=ttu&g_ep=EgoyMDI2MDcxNS4wIKXMDSoASAFQAw%3D%3D)\n\n_Our team will contact you shortly for final confirmation._ ✨\n\n🌐 _Powered by Shahid Creatives_`
-                : `🎉 *Booking Request Sent!*\n\nNamaste *${session.name}*, aapki appointment request successfully receive ho gayi hai.\n\n🧾 *Booking Summary:*\n📅 *Date & Time:* ${session.dateTime}\n💇‍♀️ *Service:* ${session.service}\n💰 *Price:* ${session.price}\n👨‍🎨 *Specialist:* ${session.specialist}\n\n👤 *Client Details:*\n   ▫️ *Name:* ${session.name}\n   ▫️ *Contact:* ${session.phone}\n   ▫️ *Pre-details:* ${session.hairstyleDetails}\n\n📍 *Location:* Phase 11, Mohali\n🗺️ *GPS Location:* [Navigate Here](https://www.google.com/maps/dir//Ground+Floor,+Fit+hair+artist+Unisex+Family+Salon,+SCO+50,+Phase+11,+Sector+65,+Sahibzada+Ajit+Singh+Nagar,+Punjab+160062/@30.6811159,76.7420617,822m/data=!3m1!1e3!4m17!1m7!3m6!1s0x390fed26d2a12c33:0xbc77237be76b2e81!2sFit+hair+artist+Unisex+Family+Salon!8m2!3d30.6811113!4d76.744642!16s%2Fg%2F11wtm3plgb!4m8!1m0!1m5!1m1!1s0x390fed26d2a12c33:0xbc77237be76b2e81!2m2!1d76.744642!2d30.6811113!3e0?entry=ttu&g_ep=EgoyMDI2MDcxNS4wIKXMDSoASAFQAw%3D%3D)\n\n_Humari team jald hi aapse final confirmation ke liye sampark karegi._ ✨\n\n🌐 _Powered by Shahid Creatives_`;
+                ? `🎉 *Booking Request Sent!*\n\nHello *${session.name}*, your appointment request has been successfully received.\n\n🧾 *Booking Summary:*\n📅 *Date & Time:* ${session.dateTime}\n💇‍♀️ *Service:* ${session.service}\n💰 *Price:* ${session.price}\n👨‍🎨 *Specialist:* ${session.specialist}\n\n👤 *Client Details:*\n    ▫️ *Name:* ${session.name}\n    ▫️ *Contact:* ${session.phone}\n    ▫️ *Pre-details:* ${session.hairstyleDetails}\n\n📍 *Location:* Phase 11, Mohali\n🗺️ *GPS Location:* [Navigate Here](https://www.google.com/maps/dir//Ground+Floor,+Fit+hair+artist+Unisex+Family+Salon,+SCO+50,+Phase+11,+Sector+65,+Sahibzada+Ajit+Singh+Nagar,+Punjab+160062/@30.6811159,76.7420617,822m/data=!3m1!1e3!4m17!1m7!3m6!1s0x390fed26d2a12c33:0xbc77237be76b2e81!2sFit+hair+artist+Unisex+Family+Salon!8m2!3d30.6811113!4d76.744642!16s%2Fg%2F11wtm3plgb!4m8!1m0!1m5!1m1!1s0x390fed26d2a12c33:0xbc77237be76b2e81!2m2!1d76.744642!2d30.6811113!3e0?entry=ttu&g_ep=EgoyMDI2MDcxNS4wIKXMDSoASAFQAw%3D%3D)\n\n_Our team will contact you shortly for final confirmation._ ✨\n\n🌐 _Powered by Shahid Creatives_`
+                : `🎉 *Booking Request Sent!*\n\nNamaste *${session.name}*, aapki appointment request successfully receive ho gayi hai.\n\n🧾 *Booking Summary:*\n📅 *Date & Time:* ${session.dateTime}\n💇‍♀️ *Service:* ${session.service}\n💰 *Price:* ${session.price}\n👨‍🎨 *Specialist:* ${session.specialist}\n\n👤 *Client Details:*\n    ▫️ *Name:* ${session.name}\n    ▫️ *Contact:* ${session.phone}\n    ▫️ *Pre-details:* ${session.hairstyleDetails}\n\n📍 *Location:* Phase 11, Mohali\n🗺️ *GPS Location:* [Navigate Here](https://www.google.com/maps/dir//Ground+Floor,+Fit+hair+artist+Unisex+Family+Salon,+SCO+50,+Phase+11,+Sector+65,+Sahibzada+Ajit+Singh+Nagar,+Punjab+160062/@30.6811159,76.7420617,822m/data=!3m1!1e3!4m17!1m7!3m6!1s0x390fed26d2a12c33:0xbc77237be76b2e81!2sFit+hair+artist+Unisex+Family+Salon!8m2!3d30.6811113!4d76.744642!16s%2Fg%2F11wtm3plgb!4m8!1m0!1m5!1m1!1s0x390fed26d2a12c33:0xbc77237be76b2e81!2m2!1d76.744642!2d30.6811113!3e0?entry=ttu&g_ep=EgoyMDI2MDcxNS4wIKXMDSoASAFQAw%3D%3D)\n\n_Humari team jald hi aapse final confirmation ke liye sampark karegi._ ✨\n\n🌐 _Powered by Shahid Creatives_`;
             
             salonBot.sendMessage(chatId, receiptMsg, { parse_mode: "Markdown", disable_web_page_preview: true, reply_markup: { remove_keyboard: true } });
 
@@ -510,11 +508,11 @@ zamZamBot.on('callback_query', async (query) => {
             const clientChatId = parts[3]; 
 
             if (action === 'confirm') {
-                await zamZamBot.editMessageText(query.message.text + "\n\n✅ *STATUS: BOOKING CONFIRMED BY YOU*", { chat_id: chatId, messageId: messageId, parse_mode: "Markdown" });
+                await zamZamBot.editMessageText(query.message.text + "\n\n✅ *STATUS: BOOKING CONFIRMED BY YOU*", { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
                 await zamZamBot.sendMessage(clientChatId, "🎉 *Great News!*\n\nAapki appointment Clinic dwara *CONFIRM* kar di gayi hai. Kripya samay par pahuchein! 🩺\n\n🌐 _Powered by Shahid Creatives_", { parse_mode: "Markdown" });
             } else if (action === 'resched') {
                 zamzamAdminState = clientChatId; 
-                await zamZamBot.editMessageText(query.message.text + "\n\n🔄 *STATUS: PENDING TIME UPDATE*", { chat_id: chatId, messageId: messageId, parse_mode: "Markdown" });
+                await zamZamBot.editMessageText(query.message.text + "\n\n🔄 *STATUS: PENDING TIME UPDATE*", { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
                 await zamZamBot.sendMessage(chatId, `⚠️ Aapne Patient (${clientChatId}) ke liye *Reschedule/Update Time* chuna hai.\n\n👉 *Kripya naya Time ya Message type karke bhejein:*\n_(Yeh message seedha patient ko bhej diya jayega)_`, { parse_mode: "Markdown" });
             }
             return zamZamBot.answerCallbackQuery(query.id);
@@ -700,14 +698,14 @@ zamZamBot.on('message', async (msg) => {
             let formattedPatientDetails = "";
             
             if (detailsArr.length >= 3) {
-                formattedPatientDetails = `\n   ▫️ *Name:* ${detailsArr[0]}\n   ▫️ *Age:* ${detailsArr[1]}`;
+                formattedPatientDetails = `\n    ▫️ *Name:* ${detailsArr[0]}\n    ▫️ *Age:* ${detailsArr[1]}`;
                 if (detailsArr.length >= 4) {
-                     formattedPatientDetails += `\n   ▫️ *Gender:* ${detailsArr[2]}\n   ▫️ *Mobile:* ${detailsArr[3]}`;
+                     formattedPatientDetails += `\n    ▫️ *Gender:* ${detailsArr[2]}\n    ▫️ *Mobile:* ${detailsArr[3]}`;
                 } else {
-                     formattedPatientDetails += `\n   ▫️ *Mobile:* ${detailsArr[2]}`;
+                     formattedPatientDetails += `\n    ▫️ *Mobile:* ${detailsArr[2]}`;
                 }
             } else {
-                formattedPatientDetails = `\n   ▫️ *Info:* ${text}`;
+                formattedPatientDetails = `\n    ▫️ *Info:* ${text}`;
             }
 
             const slotKey = `${session.date}_${session.time}`;
@@ -970,8 +968,10 @@ app.post('/send-payment-reminder', async (req, res) => {
 
 app.get('/webhook', (req, res) => {
     const VERIFY_TOKEN = "mysecrettoken";
-    if (req.query['hub.mode'] === 'subscribe' && req.query['hub.verify_token'] === VERIFY_TOKEN) {
-        return res.status(200).send(req.query['hub.challenge']);
+    if (req.query['hub.mode'] && req.query['hub.verify_token']) {
+        if (req.query['hub.mode'] === 'subscribe' && req.query['hub.verify_token'] === VERIFY_TOKEN) {
+            return res.status(200).send(req.query['hub.challenge']);
+        }
     }
     res.sendStatus(403);
 });
@@ -1025,7 +1025,6 @@ async function processUnifiedMessage(from, rawText, platform) {
 
     // 🎯 ==============================================================
     // 🚨 PRIORITY -1: BULLETPROOF PRE-FILLED WEBSITE LEAD INTERCEPTOR
-    // 100% Guaranteed to catch the form even with URL previews, emojis, & bullets
     // ==============================================================
     const isWebsiteDemoInbound = 
         cleanNormalized.includes("3dayfreevipdemo") ||
@@ -1086,7 +1085,6 @@ async function processUnifiedMessage(from, rawText, platform) {
             skipIdentityCapture: true
         };
 
-        // 🟢 PROFESSIONAL, POLITE TIMELINE & CONNECT CONFIRMATION (NO APPOINTMENT BOOKING)
         const replyMsgEN = `👋 Hello *${clientName}*, thank you for choosing *Shahid Creatives*! 🚀\n\nWe have successfully received all your details for the *3-Day Free VIP Demo* (ID: \`${demoId}\`).\n\n⏱️ *Activation Timeline:* *Minimum 5 Hours to Maximum 1 Working Day*\nOur engineering team is already configuring your dedicated AI node, Google Business sync, and verified bot setup. Your service will be activated shortly within this timeframe.\n\n📞 *Next Step:* Our team from *Shahid Creatives* will connect with you directly here for confirmation and activation as soon as it goes live! You don't need to take any further action. ✨\n\n🌐 _Powered by Shahid Creatives (https://shahidcreatives.com)_`;
 
         const replyMsgHIN = `👋 Namaste *${clientName}*, *Shahid Creatives* mein aapka swagat hai! 🚀\n\nWebsite se aapka *3-Day Free VIP Demo* submission (ID: \`${demoId}\`) humein successfully receive ho gaya hai.\n\n⏱️ *Activation Timeline:* *Minimum 5 Hours se lekar Maximum 1 Working Day*\nAapki service diye gaye samay ke andar activate kar di jayegi. Humari technical team aapka dedicated node, Google Business sync aur verified bot setup configure kar rahi hai.\n\n📞 *Next Step:* *Shahid Creatives* ki team confirmation aur activation ke liye aapse bohot jald isi chat par connect karegi! Aapko abhi koi appointment book karne ya detail bhejne ki zaroorat nahi hai. ✨\n\n🌐 _Powered by Shahid Creatives (https://shahidcreatives.com)_`;
@@ -1106,7 +1104,6 @@ async function processUnifiedMessage(from, rawText, platform) {
             discussion_notes: adminAlertMsg 
         }).catch(()=>{});
 
-        // 🛑 DIRECT RETURN: Halts execution completely, stops appointment booking & Stage 1 prompt
         return sendUnifiedMessage(from, finalMsg, platform);
     }
 
@@ -1155,7 +1152,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         return sendUnifiedMessage(from, authReply, platform);
     }
 
-    // 🚨 1. PRIORITY ZERO INTERCEPTOR B: EID SPECIAL & 3-DAY DEMO INBOUND FORMS SYNC (Zero extra questions asked)
+    // 🚨 1. PRIORITY ZERO INTERCEPTOR B: EID SPECIAL & 3-DAY DEMO INBOUND FORMS SYNC
     if (
         rawText.includes("3-DAY FREE DEMO ACTIVATION") ||
         rawText.includes("EID MILAD-UN-NABI SPECIAL") ||
@@ -1192,7 +1189,6 @@ async function processUnifiedMessage(from, rawText, platform) {
 
         const isEnglishUser = isInternationalNumber || isGlobalWebsiteTemplate;
 
-        // 🔒 Lock session permanently so no additional details or location layout prompt is asked
         userSessions[from] = {
             step: 'completed',
             lang: isEnglishUser ? 'EN' : 'HINGLISH',
@@ -1264,15 +1260,25 @@ async function processUnifiedMessage(from, rawText, platform) {
             }
         };
 
-        // 🛑 DIRECT RETURN: Stops further execution completely
         return sendUnifiedMessage(from, replyConfirmation, platform, tgOptions);
     }
 
     // 🟢 ==============================================================
-    // 💡 10-MIN GUARD WINDOW FOR RESET TRIGGERS
+    // 💡 10-MIN GUARD WINDOW & SMART INQUIRY/RESET TRIGGER
+    // (Pehla Message / General inquiry par direct initial flow dega)
     // ==============================================================
-    const resetTriggers = ['hi', 'hello', 'menu', 'start', '/start', 'hey'];
-    if (resetTriggers.includes(userText)) {
+    const resetTriggers = [
+        'hi', 'hello', 'menu', 'start', '/start', 'hey',
+        'hi shahid', 'hello shahid',
+        'inquire about your services',
+        'i want to inquire about your services',
+        'want to inquire about your services',
+        'services', 'service', 'inquiry'
+    ];
+
+    const isMatchReset = resetTriggers.some(t => userText === t || (userText.startsWith('hi') && userText.includes('inquire')) || (userText.includes('inquire') && userText.includes('service')));
+
+    if (isMatchReset) {
         const existingSession = userSessions[from];
         const recentlyCompleted = existingSession &&
             existingSession.step === 'completed' &&
@@ -1286,7 +1292,7 @@ async function processUnifiedMessage(from, rawText, platform) {
             return sendUnifiedMessage(from, alreadyMsg, platform);
         }
 
-        userSessions[from] = null; 
+        userSessions[from] = null; // Session clean karke direct 1st flow trigger karega
     }
 
     if (!userSessions[from]) {
@@ -1903,7 +1909,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         return finalizeConsultationLead(from, rawText, null, platform);
     }
 
-    // 🎯 STATE 2.1: FINAL DISPATCH AFTER SUB-MENU SELECTION (Mapped from Text or Button Input)
+    // 🎯 STATE 2.1: FINAL DISPATCH AFTER SUB-MENU SELECTION
     if (currentStep === 'awaiting_specific_service_selection') {
         let selectedScope = rawText;
         const isUSDTrack = (userLang === 'EN');
@@ -2229,7 +2235,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         } else if (targetMenuRoute === '3') {
             userSessions[from].step = 'process_combo_menu';
             return sendUnifiedMessage(from, (userLang === 'EN')
-                ? "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\nPlease select your preferred Special Combo Package & Billing Cycle by replying with 1, 2, 3, or 4:\n\n1️⃣ **PLAN 1: Local AI & GMB Growth [MONTHLY]**\n• Price: Setup $69 + $39/mo\n\n2️⃣ **PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - SAVE ~25%]**\n• Price: $399/Year (Save $138)\n• Bonus: Free Domain + Citation Blast + VIP Support\n\n3️⃣ **PLAN 2: Full Digital & AI Scale Launch [MONTHLY]*\n• Price: Setup $169 + $79/mo\n\n4️⃣ **PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - SAVE ~32%]**\n• Price: $799/Year (Save $318)\n• Bonus: Free Premium Hosting + Domain + 12 SEO Blogs + AI CRM Sync\n\n⚠️ *Package Note:* Domain & Hosting Fees are NOT included in Monthly setups. Annual Passes include Free Hosting & Domain Perks!"
+                ? "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\nPlease select your preferred Special Combo Package & Billing Cycle by replying with 1, 2, 3, or 4:\n\n1️⃣ **PLAN 1: Local AI & GMB Growth [MONTHLY]**\n• Price: Setup $69 + $39/mo\n\n2️⃣ **PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - SAVE ~25%]**\n• Price: $399/Year (Save $138)\n• Bonus: Free Domain + Citation Blast + VIP Support\n\n3️⃣ **PLAN 2: Full Digital & AI Scale Launch [MONTHLY]**\n• Price: Setup $169 + $79/mo\n\n4️⃣ **PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - SAVE ~32%]**\n• Price: $799/Year (Save $318)\n• Bonus: Free Premium Hosting + Domain + 12 SEO Blogs + AI CRM Sync\n\n⚠️ *Package Note:* Domain & Hosting Fees are NOT included in Monthly setups. Annual Passes include Free Hosting & Domain Perks!"
                 : "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\nKripya apna preferred Special Combo Package aur Billing Cycle chunne ke liye 1, 2, 3 ya 4 reply karein:\n\n1️⃣ **PLAN 1: Local AI & GMB Growth [MONTHLY RETAINER]**\n• Price: Setup ₹4,999 + Monthly ₹2,499/mo\n\n2️⃣ **PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - SAVE ~30%]**\n• Price: ₹24,999/Year (Bachat ₹10,000)\n• Bonus Perks: Free 1-Yr Domain + Citation Blast + VIP Support\n\n3️⃣ **PLAN 2: Full Digital & AI Scale Launch [MONTHLY RETAINER]**\n• Price: Setup ₹12,999 + Monthly ₹4,999/mo\n\n4️⃣ **PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - SAVE ~32%]**\n• Price: ₹49,999/Year (Bachat ₹23,000)\n• Bonus Perks: Free Premium Hosting + Domain + 12 SEO Blogs + AI WhatsApp CRM Sync\n\n⚠️ *Package Note:* Monthly packages me Domain & Hosting Fees included nahi hai. Annual Pass me Free Hosting aur Domain Perks shamil hain!", platform);
         } else if (targetMenuRoute === '4') {
             userSessions[from].step = 'process_requirement_menu';
@@ -2387,7 +2393,7 @@ async function finalizeConsultationLead(from, textInput, res, platform) {
         timestamp: apptTimestamp,
         clientName: cleanName,
         reminded: { 
-            '10': diffHoursInitial <= 10,
+            '10': diffHoursInitial <= 10, 
             '3': diffHoursInitial <= 3, 
             '2': diffHoursInitial <= 2,   
             '1': diffHoursInitial <= 1    

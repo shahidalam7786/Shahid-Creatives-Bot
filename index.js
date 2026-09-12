@@ -42,7 +42,7 @@ const bookedSlots = { salon: {}, clinic: {}, consultation_hourly: {} };
 const activeAppointments = []; // Stores appointments for auto-reminders
 let mainAdminState = null; // To track admin reschedule targets for consultation
 
-// 🟢 NEW: CONCURRENCY LOCK (Fixes Telegram/WhatsApp Double Messages)
+// 🟢 CONCURRENCY LOCK (Fixes Telegram/WhatsApp Double Messages)
 const processingLocks = {};
 
 // Helper: Filter times based on IST, Past time hiding, & 4-client limit
@@ -927,6 +927,7 @@ app.post('/send-client-credentials', async (req, res) => {
             telegram_chat_id: tgChatId,
             project_scope: payload.plan || payload.project_scope || "Credentials Sync Event",
             calculated_price: payload.price || payload.calculated_price || 0,
+            coupon_code: "11VI20",
             email: payload.email || "Not Provided",
             discussion_notes: adminAlertText 
         });
@@ -1009,8 +1010,6 @@ app.post('/webhook', async (req, res) => {
 // ==========================================
 async function processUnifiedMessage(from, rawText, platform) {
     const userText = rawText.trim().toLowerCase();
-    
-    // 🟢 BULLETPROOF NORMALIZER
     const cleanNormalized = userText.replace(/[^a-z0-9]/g, '');
     
     const isInternationalNumber = platform === 'whatsapp' ? !from.startsWith("91") : false;
@@ -1091,6 +1090,7 @@ async function processUnifiedMessage(from, rawText, platform) {
             telegram_chat_id: platform === 'telegram' ? from : undefined, 
             project_scope: `3-Day Free VIP Demo (${demoId})`, 
             calculated_price: 0, 
+            coupon_code: "11VI20",
             email: clientEmail, 
             discussion_notes: adminAlertMsg 
         }).catch(()=>{});
@@ -1135,6 +1135,7 @@ async function processUnifiedMessage(from, rawText, platform) {
                 telegram_chat_id: platform === 'telegram' ? from : undefined,
                 project_scope: `GBP Connection Authorized (${extDemoId})`,
                 calculated_price: 0,
+                coupon_code: "11VI20",
                 email: "Not Provided",
                 discussion_notes: adminAlertMsg
             });
@@ -1237,6 +1238,7 @@ async function processUnifiedMessage(from, rawText, platform) {
                 telegram_chat_id: platform === 'telegram' ? from : undefined, 
                 project_scope: `3-Day Free VIP Demo (${bizName})`, 
                 calculated_price: 0, 
+                coupon_code: "11VI20",
                 email: clientEmail, 
                 discussion_notes: adminAlertMsg 
             }).catch(()=>{});
@@ -1473,6 +1475,7 @@ async function processUnifiedMessage(from, rawText, platform) {
                 telegram_chat_id: platform === 'telegram' ? from : undefined, 
                 project_scope: `3-Day Free VIP Demo Request (${bizName})`, 
                 calculated_price: 0, 
+                coupon_code: "11VI20",
                 email: clientEmail, 
                 discussion_notes: adminAlert 
             });
@@ -1652,6 +1655,7 @@ async function processUnifiedMessage(from, rawText, platform) {
                     telegram_chat_id: platform === 'telegram' ? from : undefined, 
                     project_scope: `${projectScope} (Status: Fully Paid Portal Form)`, 
                     calculated_price: parsedBasePrice, 
+                    coupon_code: "11VI20",
                     email: clientEmail, 
                     discussion_notes: paidAdminAlert
                 });
@@ -1692,6 +1696,7 @@ async function processUnifiedMessage(from, rawText, platform) {
                 telegram_chat_id: platform === 'telegram' ? from : undefined, 
                 project_scope: projectScope, 
                 calculated_price: calculatedPrice, 
+                coupon_code: "11VI20",
                 email: clientEmail, 
                 discussion_notes: adminNotification 
             });
@@ -1949,7 +1954,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         return sendUnifiedMessage(from, prompt, platform);
     }
 
-    // 🎯 STATE 4: INBOUND CHAT REGISTRATION COMPLETED (WHERE YOUR SCREENSHOT ISSUE WAS)
+    // 🎯 STATE 4: INBOUND CHAT REGISTRATION COMPLETED
     if (currentStep === 'ask_name_email') {
         let cleanName = ""; 
         let cleanEmail = "";
@@ -2014,6 +2019,7 @@ async function processUnifiedMessage(from, rawText, platform) {
                 telegram_chat_id: platform === 'telegram' ? from : undefined, 
                 project_scope: userSessions[from].projectScope, 
                 calculated_price: finalPayable, 
+                coupon_code: "11VI20",
                 email: cleanEmail, 
                 discussion_notes: chatAdminNotification 
             });
@@ -2436,7 +2442,8 @@ async function finalizeConsultationLead(from, textInput, res, platform) {
             requested_slot: dynamicSlot,
             discussion_notes: `*User Stated Objectives:* "${textInput}"\n\n${comprehensiveAdminAlert}`, 
             project_scope: textInput, 
-            calculated_price: finalCalculatedPrice 
+            calculated_price: finalCalculatedPrice,
+            coupon_code: "11VI20"
         });
     } catch (apiErr) { console.error("Dashboard parameters execution failure handler."); }
 

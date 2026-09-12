@@ -541,7 +541,7 @@ zamZamBot.on('callback_query', async (query) => {
                     ]
                 }
             };
-            await zamZamBot.editMessageText(welcomeMessage, { chat_id: chatId, message_id: messageId, parse_mode: 'Markdown', reply_markup: options.reply_markup });
+            await zamZamBot.editMessageText(welcomeMessage, { chat_id: chatId, message_id: messageId, parse_mode: 'Markdown', reply_markup: options.reply_markup: options.reply_markup });
         }
         else if (data === 'timings') {
             const timingMsg = isEn 
@@ -1509,7 +1509,7 @@ async function processUnifiedMessage(from, rawText, platform) {
                         <div style="text-align: center; margin: 30px 0;">
                             <a href="${onboardingLink}" style="background-color: #28a745; color: white; padding: 15px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">🔗 Connect Google Business Profile (GBP)</a>
                         </div>
-                        <p>Please ensure you login/authorize <strong>ONLY</strong> with the Gmail/Google Account that is officially registered to your Google Business Profile.</p>
+                        <p>Please ensure you authorize ONLY with the Gmail/Google Account that is officially registered to your Google Business Profile.</p>
                         <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
                         <p><a href="${waKickoffLink}">🚀 Connect with Shahid on WhatsApp (Instant Kickoff)</a></p>
                         <p><br>Best Regards,<br><strong>Shahid Creatives AI Team</strong></p>
@@ -1519,7 +1519,7 @@ async function processUnifiedMessage(from, rawText, platform) {
             transporter.sendMail(mailOptions).catch(err => console.log("Demo Mail Error:", err));
         }
 
-        const successMsgEN = `🎉 *Thank you & Congratulations ${clientName}!* 🚀\n\nYour *3-Day Free VIP Demo* for *${bizName}* has been successfully registered and queued for activation!\n\n🆔 *Demo ID:* \`${demoId}\`\n👤 *Client / Contact:* ${clientName}\n📱 *Phone / WhatsApp:* ${displayPhone.startsWith('+') ? displayPhone : '+' + displayPhone}\n✉️ *Email:* ${clientEmail}\n📍 *Location:* ${city}\n🏷️ *Category:* ${category}\n\n⚡ *Included in Growth Triad:*\n1️⃣ Google Business Profile (GMB) AI Engine (Auto 5-star review replies)\n2️⃣ Hyper-Local SEO Audit Simulator (Competitor keyword ranking gaps)\n3️⃣ 24/7 Telegram & Meta-Verified WhatsApp Business API Bot (Official verified integration)\n\n✅ *Official Meta Business Verified | Zero Risk Guarantee*\n⏱️ *Activation Timeline:* *Minimum 5 Hours to Maximum 1 Working Day*\n_(Our technical team is configuring your dedicated node, knowledgebase, and verified GBP sync.)_\n\n🔗 *GBP AI Onboarding Link:*\n${onboardingLink}\n\n⚠️ *Zaroori Instruction:* Kripya GBP onboarding link ko apne *Google Business Profile (GBP) registered Google/Gmail account* se hi open/authorize karein.\n\n👉 *Direct Demo Portal:* https://shahidcreatives.com/#combo-demo\n\n- Shahid Creatives (https://shahidcreatives.com)`;
+        const successMsgEN = `🎉 *Thank you & Congratulations ${bizName}!* 🚀\n\nYour *3-Day Free VIP Demo* for *${bizName}* has been successfully registered and queued for activation!\n\n🆔 *Demo ID:* \`${demoId}\`\n👤 *Client / Contact:* ${clientName}\n📱 *Phone / WhatsApp:* ${displayPhone.startsWith('+') ? displayPhone : '+' + displayPhone}\n✉️ *Email:* ${clientEmail}\n📍 *Location:* ${city}\n🏷️ *Category:* ${category}\n\n⚡ *Included in Growth Triad:*\n1️⃣ Google Business Profile (GMB) AI Engine (Auto 5-star review replies)\n2️⃣ Hyper-Local SEO Audit Simulator (Competitor keyword ranking gaps)\n3️⃣ 24/7 Telegram & Meta-Verified WhatsApp Business API Bot (Official verified integration)\n\n✅ *Official Meta Business Verified | Zero Risk Guarantee*\n⏱️ *Activation Timeline:* *Minimum 5 Hours to Maximum 1 Working Day*\n_(Our technical team is configuring your dedicated node, knowledgebase, and verified GBP sync.)_\n\n🔗 *GBP AI Onboarding Link:*\n${onboardingLink}\n\n⚠️ *Zaroori Instruction:* Kripya GBP onboarding link ko apne *Google Business Profile (GBP) registered Google/Gmail account* se hi open/authorize karein.\n\n👉 *Direct Demo Portal:* https://shahidcreatives.com/#combo-demo\n\n- Shahid Creatives (https://shahidcreatives.com)`;
 
         const successMsgHIN = `🎉 *Thank you & Congratulations ${bizName}!* 🚀\n\nAapka *3-Day Free VIP Demo* (*${bizName}* ke liye) successfully registered aur activation queue me save ho gaya hai!\n\n🆔 *Demo ID:* \`${demoId}\`\n👤 *Client / Contact:* ${clientName}\n📱 *Phone / WhatsApp:* ${displayPhone.startsWith('+') ? displayPhone : '+' + displayPhone}\n✉️ *Email:* ${clientEmail}\n📍 *Location:* ${city}\n🏷️ *Category:* ${category}\n\n⚡ *Included in Growth Triad:*\n1️⃣ Google Business Profile (GMB) AI Engine (Auto 5-star review replies)\n2️⃣ Hyper-Local SEO Audit Simulator (Competitor keyword ranking gaps)\n3️⃣ 24/7 Telegram & Meta-Verified WhatsApp Business API Bot (Official verified integration)\n\n✅ *Official Meta Business Verified | Zero Risk Guarantee*\n⏱️ *Activation Timeline:* *Minimum 5 Hours se lekar Maximum 1 Working Day*\n_(Humari technical team aapka dedicated node, knowledgebase aur verified GBP sync configure kar rahi hai.)_\n\n🔗 *GBP AI Onboarding Link:*\n${onboardingLink}\n\n⚠️ *Zaroori Instruction:* Kripya GBP onboarding link ko apne *Google Business Profile (GBP) registered Google/Gmail account* se hi open/authorize karein.\n\n👉 *Direct Demo Portal:* https://shahidcreatives.com/#combo-demo\n\n- Shahid Creatives (https://shahidcreatives.com)`;
 
@@ -1760,8 +1760,8 @@ async function processUnifiedMessage(from, rawText, platform) {
 
         if (processedRoute) {
             let replyText = (userLang === 'EN')
-                ? "Hello! Welcome to *Shahid Creatives*. 🚀\nSelect a professional stack tier via option number:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI-Powered Growth Retainers**\n3️⃣ **🚀 Special Combo Offers (🔥 HOT)**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid Creatives' Team (Direct Consultation)**\n6️⃣ **🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)**"
-                : "Hello! Welcome to *Shahid Creatives*. 🚀\nKoshish ko aage badhane ke liye ek option number reply kijiye:\n\n1️⃣ *Web Development Tiers*\n2️⃣ *AI-Powered Growth Retainers*\n3️⃣ *🚀 Special Combo Offers (🔥 HOT)*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives ki Team* (Direct Consultation)\n6️⃣ **🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)**";
+                ? "Hello! Welcome to *Shahid Creatives*. 🚀 Select a professional stack tier via option number:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI-Powered Growth Retainers**\n3️⃣ **🚀 Special Combo Offers (🔥 HOT)**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid Creatives' Team (Direct Consultation)**\n6️⃣ **🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)**"
+                : "Hello! Welcome to *Shahid Creatives*. 🚀 Select layout choice number:\n\n1️⃣ *Web Development Tiers*\n2️⃣ *AI-Powered Growth Retainers*\n3️⃣ *🚀 Special Combo Offers (🔥 HOT)*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives ki Team* (Direct Consultation)\n6️⃣ **🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)**";
             return sendUnifiedMessage(from, replyText, platform);
         } else {
             return sendUnifiedMessage(from, "Welcome to *Shahid Creatives*! 🚀 Please select your location layout to proceed:\n\n1️⃣ **India (Tax/Billing: ₹ INR)**\n2️⃣ **Outside India (Global Billing: $ USD)**", platform);
@@ -2406,7 +2406,7 @@ async function finalizeConsultationLead(from, textInput, res, platform) {
         timestamp: apptTimestamp,
         clientName: cleanName,
         reminded: { 
-            '10': diffHoursInitial <= 10, 
+            '10': diffHoursInitial <= 10,
             '3': diffHoursInitial <= 3, 
             '2': diffHoursInitial <= 2,   
             '1': diffHoursInitial <= 1    

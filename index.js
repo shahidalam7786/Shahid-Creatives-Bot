@@ -434,8 +434,8 @@ salonBot.on('message', async (msg) => {
             });
             
             const receiptMsg = isEn 
-                ? `🎉 *Booking Request Sent!*\n\nHello *${session.name}*, your appointment request has been successfully received.\n\n🧾 *Booking Summary:*\n📅 *Date & Time:* ${session.dateTime}\n💇‍♀️ *Service:* ${session.service}\n💰 *Price:* ${session.price}\n👨‍🎨 *Specialist:* ${session.specialist}\n\n👤 *Client Details:*\n    ▫️ *Name:* ${session.name}\n    ▫️ *Contact:* ${session.phone}\n    ▫️ *Pre-details:* ${session.hairstyleDetails}\n\n📍 *Location:* Phase 11, Mohali\n🗺️ *GPS Location:* [Navigate Here](https://www.google.com/maps/dir//Ground+Floor,+Fit+hair+artist+Unisex+Family+Salon,+SCO+50,+Phase+11,+Sector+65,+Sahibzada+Ajit+Singh+Nagar,+Punjab+160062/@30.6811159,76.7420617,822m/data=!3m1!1e3!4m17!1m7!3m6!1s0x390fed26d2a12c33:0xbc77237be76b2e81!2sFit+hair+artist+Unisex+Family+Salon!8m2!3d30.6811113!4d76.744642!16s%2Fg%2F11wtm3plgb!4m8!1m0!1m5!1m1!1s0x390fed26d2a12c33:0xbc77237be76b2e81!2m2!1d76.744642!2d30.6811113!3e0?entry=ttu&g_ep=EgoyMDI2MDcxNS4wIKXMDSoASAFQAw%3D%3D)\n\n_Our team will contact you shortly for final confirmation._ ✨\n\n🌐 _Powered by Shahid Creatives_`
-                : `🎉 *Booking Request Sent!*\n\nNamaste *${session.name}*, aapki appointment request successfully receive ho gayi hai.\n\n🧾 *Booking Summary:*\n📅 *Date & Time:* ${session.dateTime}\n💇‍♀️ *Service:* ${session.service}\n💰 *Price:* ${session.price}\n👨‍🎨 *Specialist:* ${session.specialist}\n\n👤 *Client Details:*\n    ▫️ *Name:* ${session.name}\n    ▫️ *Contact:* ${session.phone}\n    ▫️ *Pre-details:* ${session.hairstyleDetails}\n\n📍 *Location:* Phase 11, Mohali\n🗺️ *GPS Location:* [Navigate Here](https://www.google.com/maps/dir//Ground+Floor,+Fit+hair+artist+Unisex+Family+Salon,+SCO+50,+Phase+11,+Sector+65,+Sahibzada+Ajit+Singh+Nagar,+Punjab+160062/@30.6811159,76.7420617,822m/data=!3m1!1e3!4m17!1m7!3m6!1s0x390fed26d2a12c33:0xbc77237be76b2e81!2sFit+hair+artist+Unisex+Family+Salon!8m2!3d30.6811113!4d76.744642!16s%2Fg%2F11wtm3plgb!4m8!1m0!1m5!1m1!1s0x390fed26d2a12c33:0xbc77237be76b2e81!2m2!1d76.744642!2d30.6811113!3e0?entry=ttu&g_ep=EgoyMDI2MDcxNS4wIKXMDSoASAFQAw%3D%3D)\n\n_Humari team jald hi aapse final confirmation ke liye sampark karegi._ ✨\n\n🌐 _Powered by Shahid Creatives_`;
+                ? `🎉 *Booking Request Sent!*\n\nHello *${session.name}*, your appointment request has been successfully received.\n\n🧾 *Booking Summary:*\n📅 *Date & Time:* ${session.dateTime}\n💇‍♀️ *Service:* ${session.service}\n💰 *Price:* ${session.price}\n👨‍🎨 *Specialist:* ${session.specialist}\n\n👤 *Client Details:*\n   ▫️ *Name:* ${session.name}\n   ▫️ *Contact:* ${session.phone}\n   ▫️ *Pre-details:* ${session.hairstyleDetails}\n\n📍 *Location:* Phase 11, Mohali\n🗺️ *GPS Location:* [Navigate Here](https://www.google.com/maps/dir//Ground+Floor,+Fit+hair+artist+Unisex+Family+Salon,+SCO+50,+Phase+11,+Sector+65,+Sahibzada+Ajit+Singh+Nagar,+Punjab+160062/@30.6811159,76.7420617,822m/data=!3m1!1e3!4m17!1m7!3m6!1s0x390fed26d2a12c33:0xbc77237be76b2e81!2sFit+hair+artist+Unisex+Family+Salon!8m2!3d30.6811113!4d76.744642!16s%2Fg%2F11wtm3plgb!4m8!1m0!1m5!1m1!1s0x390fed26d2a12c33:0xbc77237be76b2e81!2m2!1d76.744642!2d30.6811113!3e0?entry=ttu&g_ep=EgoyMDI2MDcxNS4wIKXMDSoASAFQAw%3D%3D)\n\n_Our team will contact you shortly for final confirmation._ ✨\n\n🌐 _Powered by Shahid Creatives_`
+                : `🎉 *Booking Request Sent!*\n\nNamaste *${session.name}*, aapki appointment request successfully receive ho gayi hai.\n\n🧾 *Booking Summary:*\n📅 *Date & Time:* ${session.dateTime}\n💇‍♀️ *Service:* ${session.service}\n💰 *Price:* ${session.price}\n👨‍🎨 *Specialist:* ${session.specialist}\n\n👤 *Client Details:*\n   ▫️ *Name:* ${session.name}\n   ▫️ *Contact:* ${session.phone}\n   ▫️ *Pre-details:* ${session.hairstyleDetails}\n\n📍 *Location:* Phase 11, Mohali\n🗺️ *GPS Location:* [Navigate Here](https://www.google.com/maps/dir//Ground+Floor,+Fit+hair+artist+Unisex+Family+Salon,+SCO+50,+Phase+11,+Sector+65,+Sahibzada+Ajit+Singh+Nagar,+Punjab+160062/@30.6811159,76.7420617,822m/data=!3m1!1e3!4m17!1m7!3m6!1s0x390fed26d2a12c33:0xbc77237be76b2e81!2sFit+hair+artist+Unisex+Family+Salon!8m2!3d30.6811113!4d76.744642!16s%2Fg%2F11wtm3plgb!4m8!1m0!1m5!1m1!1s0x390fed26d2a12c33:0xbc77237be76b2e81!2m2!1d76.744642!2d30.6811113!3e0?entry=ttu&g_ep=EgoyMDI2MDcxNS4wIKXMDSoASAFQAw%3D%3D)\n\n_Humari team jald hi aapse final confirmation ke liye sampark karegi._ ✨\n\n🌐 _Powered by Shahid Creatives_`;
             
             salonBot.sendMessage(chatId, receiptMsg, { parse_mode: "Markdown", disable_web_page_preview: true, reply_markup: { remove_keyboard: true } });
 
@@ -508,11 +508,11 @@ zamZamBot.on('callback_query', async (query) => {
             const clientChatId = parts[3]; 
 
             if (action === 'confirm') {
-                await zamZamBot.editMessageText(query.message.text + "\n\n✅ *STATUS: BOOKING CONFIRMED BY YOU*", { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
+                await zamZamBot.editMessageText(query.message.text + "\n\n✅ *STATUS: BOOKING CONFIRMED BY YOU*", { chat_id: chatId, messageId: messageId, parse_mode: "Markdown" });
                 await zamZamBot.sendMessage(clientChatId, "🎉 *Great News!*\n\nAapki appointment Clinic dwara *CONFIRM* kar di gayi hai. Kripya samay par pahuchein! 🩺\n\n🌐 _Powered by Shahid Creatives_", { parse_mode: "Markdown" });
             } else if (action === 'resched') {
                 zamzamAdminState = clientChatId; 
-                await zamZamBot.editMessageText(query.message.text + "\n\n🔄 *STATUS: PENDING TIME UPDATE*", { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
+                await zamZamBot.editMessageText(query.message.text + "\n\n🔄 *STATUS: PENDING TIME UPDATE*", { chat_id: chatId, messageId: messageId, parse_mode: "Markdown" });
                 await zamZamBot.sendMessage(chatId, `⚠️ Aapne Patient (${clientChatId}) ke liye *Reschedule/Update Time* chuna hai.\n\n👉 *Kripya naya Time ya Message type karke bhejein:*\n_(Yeh message seedha patient ko bhej diya jayega)_`, { parse_mode: "Markdown" });
             }
             return zamZamBot.answerCallbackQuery(query.id);
@@ -698,14 +698,14 @@ zamZamBot.on('message', async (msg) => {
             let formattedPatientDetails = "";
             
             if (detailsArr.length >= 3) {
-                formattedPatientDetails = `\n    ▫️ *Name:* ${detailsArr[0]}\n    ▫️ *Age:* ${detailsArr[1]}`;
+                formattedPatientDetails = `\n   ▫️ *Name:* ${detailsArr[0]}\n   ▫️ *Age:* ${detailsArr[1]}`;
                 if (detailsArr.length >= 4) {
-                     formattedPatientDetails += `\n    ▫️ *Gender:* ${detailsArr[2]}\n    ▫️ *Mobile:* ${detailsArr[3]}`;
+                     formattedPatientDetails += `\n   ▫️ *Gender:* ${detailsArr[2]}\n   ▫️ *Mobile:* ${detailsArr[3]}`;
                 } else {
-                     formattedPatientDetails += `\n    ▫️ *Mobile:* ${detailsArr[2]}`;
+                     formattedPatientDetails += `\n   ▫️ *Mobile:* ${detailsArr[2]}`;
                 }
             } else {
-                formattedPatientDetails = `\n    ▫️ *Info:* ${text}`;
+                formattedPatientDetails = `\n   ▫️ *Info:* ${text}`;
             }
 
             const slotKey = `${session.date}_${session.time}`;
@@ -968,10 +968,8 @@ app.post('/send-payment-reminder', async (req, res) => {
 
 app.get('/webhook', (req, res) => {
     const VERIFY_TOKEN = "mysecrettoken";
-    if (req.query['hub.mode'] && req.query['hub.verify_token']) {
-        if (req.query['hub.mode'] === 'subscribe' && req.query['hub.verify_token'] === VERIFY_TOKEN) {
-            return res.status(200).send(req.query['hub.challenge']);
-        }
+    if (req.query['hub.mode'] === 'subscribe' && req.query['hub.verify_token'] === VERIFY_TOKEN) {
+        return res.status(200).send(req.query['hub.challenge']);
     }
     res.sendStatus(403);
 });
@@ -1025,6 +1023,7 @@ async function processUnifiedMessage(from, rawText, platform) {
 
     // 🎯 ==============================================================
     // 🚨 PRIORITY -1: BULLETPROOF PRE-FILLED WEBSITE LEAD INTERCEPTOR
+    // 100% Guaranteed to catch the form even with URL previews, emojis, bullets, & nudge active state
     // ==============================================================
     const isWebsiteDemoInbound = 
         cleanNormalized.includes("3dayfreevipdemo") ||
@@ -1034,6 +1033,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         cleanNormalized.includes("activationtimeline") ||
         (cleanNormalized.includes("demoid") && cleanNormalized.includes("clientcontact")) ||
         (cleanNormalized.includes("congratulations") && cleanNormalized.includes("vipdemo")) ||
+        cleanNormalized.includes("registrationdetails") ||
         rawText.includes("DEMO-39516") ||
         rawText.includes("DEMO-38661") ||
         rawText.includes("SHAHID ENTERPRISES") ||
@@ -1085,9 +1085,10 @@ async function processUnifiedMessage(from, rawText, platform) {
             skipIdentityCapture: true
         };
 
+        // 🟢 PROFESSIONAL, POLITE TIMELINE & CONNECT CONFIRMATION (NO APPOINTMENT BOOKING)
         const replyMsgEN = `👋 Hello *${clientName}*, thank you for choosing *Shahid Creatives*! 🚀\n\nWe have successfully received all your details for the *3-Day Free VIP Demo* (ID: \`${demoId}\`).\n\n⏱️ *Activation Timeline:* *Minimum 5 Hours to Maximum 1 Working Day*\nOur engineering team is already configuring your dedicated AI node, Google Business sync, and verified bot setup. Your service will be activated shortly within this timeframe.\n\n📞 *Next Step:* Our team from *Shahid Creatives* will connect with you directly here for confirmation and activation as soon as it goes live! You don't need to take any further action. ✨\n\n🌐 _Powered by Shahid Creatives (https://shahidcreatives.com)_`;
 
-        const replyMsgHIN = `👋 Namaste *${clientName}*, *Shahid Creatives* mein aapka swagat hai! 🚀\n\nWebsite se aapka *3-Day Free VIP Demo* submission (ID: \`${demoId}\`) humein successfully receive ho gaya hai.\n\n⏱️ *Activation Timeline:* *Minimum 5 Hours se lekar Maximum 1 Working Day*\nAapki service diye gaye samay ke andar activate kar di jayegi. Humari technical team aapka dedicated node, Google Business sync aur verified bot setup configure kar rahi hai.\n\n📞 *Next Step:* *Shahid Creatives* ki team confirmation aur activation ke liye aapse bohot jald isi chat par connect karegi! Aapko abhi koi appointment book karne ya detail bhejne ki zaroorat nahi hai. ✨\n\n🌐 _Powered by Shahid Creatives (https://shahidcreatives.com)_`;
+        const replyMsgHIN = `👋 Namaste *${clientName}*, *Shahid Creatives* mein aapka swagat hai! 🚀\n\nWebsite se aapka *3-Day Free VIP Demo* submission (ID: \`${demoId}\`) humein successfully receive ho gaya hai.\n\n⏱️ *Activation Timeline:* *Minimum 5 Hours se lekar Maximum 1 Working Day*\nAapki service diye gaye samay ke andar activate kar di jayegi. Humari technical team aapka dedicated node, Google Business sync aur verified bot setup configure kar rahi hai.\n\n📞 *Next Step:* *Shahid Creatives* ki team confirmation aur activation ke liye aapse bohot jald isi chat par connect karegi! Aapko abhi koi appointment book karne ya detail bhejne ki zaroorat nahi hai. ✨\n\n🌐 _Powered by Shahid Creatives_`;
 
         const finalMsg = isEnglishUser ? replyMsgEN : replyMsgHIN;
 
@@ -1104,6 +1105,7 @@ async function processUnifiedMessage(from, rawText, platform) {
             discussion_notes: adminAlertMsg 
         }).catch(()=>{});
 
+        // 🛑 DIRECT RETURN: Halts execution completely, stops appointment booking & Stage 1 prompt
         return sendUnifiedMessage(from, finalMsg, platform);
     }
 
@@ -1189,6 +1191,7 @@ async function processUnifiedMessage(from, rawText, platform) {
 
         const isEnglishUser = isInternationalNumber || isGlobalWebsiteTemplate;
 
+        // 🔒 Lock session permanently so no additional details or location layout prompt is asked
         userSessions[from] = {
             step: 'completed',
             lang: isEnglishUser ? 'EN' : 'HINGLISH',
@@ -1265,7 +1268,6 @@ async function processUnifiedMessage(from, rawText, platform) {
 
     // 🟢 ==============================================================
     // 💡 10-MIN GUARD WINDOW & SMART INQUIRY/RESET TRIGGER
-    // (Pehla Message / General inquiry par direct initial flow dega)
     // ==============================================================
     const resetTriggers = [
         'hi', 'hello', 'menu', 'start', '/start', 'hey',
@@ -1350,11 +1352,13 @@ async function processUnifiedMessage(from, rawText, platform) {
         const tokenCurrency = isINRLead ? 'INR' : 'USD';
         const matchedBasePriceStr = getBasePriceByPlan(projectScope, isUSDTrack);
         const matchedBasePrice = parseFloat(matchedBasePriceStr) || (isINRLead ? 8713 : 110);
-        const savingAmount = Math.round(matchedBasePrice * 0.30);
+        
+        // 🟢 20% DISCOUNT UPDATED (11VI20)
+        const savingAmount = Math.round(matchedBasePrice * 0.20);
         const discountedBasePrice = matchedBasePrice - savingAmount;
         const finalPayable = calculateTotalPayable(discountedBasePrice, isUSDTrack);
         
-        const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${projectID}&amount=${tokenAmount}&currency=${tokenCurrency}&totalPrice=${finalPayable}&name=${encodeURIComponent(clientName)}&email=${encodeURIComponent(clientEmail)}&phone=${from}&plan=${encodeURIComponent(projectScope)}&coupon=MILAD30`;
+        const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${projectID}&amount=${tokenAmount}&currency=${tokenCurrency}&totalPrice=${finalPayable}&name=${encodeURIComponent(clientName)}&email=${encodeURIComponent(clientEmail)}&phone=${from}&plan=${encodeURIComponent(projectScope)}&coupon=11VI20`;
 
         userSessions[from] = { 
             step: 'payment_failed_resolution',
@@ -1371,7 +1375,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         };
 
         const currencyAdmin = isUSDTrack ? '$' : '₹';
-        const alertMsg = `🚨 *URGENT: PAYMENT DROP-OFF REPORTED!* 🚨\n\n📱 *Client:* ${platform === 'telegram' ? 'TG-' : '+'}${from}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n👤 *Name:* ${clientName}\n📝 *Plan Scope:* ${projectScope}\n🆔 *Client ID:* ${projectID}\n💵 *Base Price:* ${currencyAdmin}${matchedBasePrice}\n🔥 *Discount Applied:* ${currencyAdmin}${savingAmount} (MILAD30)\n💰 *Calculated Price:* ${currencyAdmin}${finalPayable}\n\n⚠️ *Action:* Client bot interaction active to check debit/cancel status.`;
+        const alertMsg = `🚨 *URGENT: PAYMENT DROP-OFF REPORTED!* 🚨\n\n📱 *Client:* ${platform === 'telegram' ? 'TG-' : '+'}${from}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n👤 *Name:* ${clientName}\n📝 *Plan Scope:* ${projectScope}\n🆔 *Client ID:* ${projectID}\n💵 *Base Price:* ${currencyAdmin}${matchedBasePrice}\n🔥 *Discount Applied:* ${currencyAdmin}${savingAmount} (11VI20)\n💰 *Calculated Price:* ${currencyAdmin}${finalPayable}\n\n⚠️ *Action:* Client bot interaction active to check debit/cancel status.`;
         sendAdminAlert(alertMsg);
 
         let replyMsg = isINRLead
@@ -1690,7 +1694,8 @@ async function processUnifiedMessage(from, rawText, platform) {
         const isINRLead = !formIsUSDTrack;
         const currencyAdmin = isINRLead ? '₹' : '$';
 
-        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* ${platform === 'telegram' ? 'TG-' : '+'}${from}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n👤 *Name:* ${clientName}\n📝 *Plan Scope:* ${projectScope}\n💵 *Base Price:* ${currencyAdmin}${calculatedPrice + savedAmountWeb}\n🔥 *Discount Applied:* ${currencyAdmin}${savedAmountWeb} (MILAD30)\n💰 *Calculated Price:* ${currencyAdmin}${calculatedPrice}`;
+        // 🟢 20% DISCOUNT UPDATED (11VI20)
+        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* ${platform === 'telegram' ? 'TG-' : '+'}${from}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n👤 *Name:* ${clientName}\n📝 *Plan Scope:* ${projectScope}\n💵 *Base Price:* ${currencyAdmin}${calculatedPrice + savedAmountWeb}\n🔥 *Discount Applied:* ${currencyAdmin}${savedAmountWeb} (11VI20)\n💰 *Calculated Price:* ${currencyAdmin}${calculatedPrice}`;
         sendAdminAlert(adminNotification);
 
         try {
@@ -1710,11 +1715,12 @@ async function processUnifiedMessage(from, rawText, platform) {
         const tokenCurrency = isINRLead ? 'INR' : 'USD';
         const guaranteeText = isINRLead ? 'INR Slot Guarantee' : 'USD Slot Guarantee';
 
-        const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmount}&currency=${tokenCurrency}&totalPrice=${calculatedPrice}&name=${encodeURIComponent(clientName)}&email=${encodeURIComponent(clientEmail)}&phone=${from}&plan=${encodeURIComponent(projectScope)}&coupon=MILAD30`;
+        // 🟢 20% DISCOUNT UPDATED (11VI20)
+        const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmount}&currency=${tokenCurrency}&totalPrice=${calculatedPrice}&name=${encodeURIComponent(clientName)}&email=${encodeURIComponent(clientEmail)}&phone=${from}&plan=${encodeURIComponent(projectScope)}&coupon=11VI20`;
 
         let clientReply = isINRLead
-            ? `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved to our dashboard.\n\n🔥 *URGENT:* Aapka **Flat 30% OFF (MILAD30)** coupon apply ho chuka hai! Aapne is deal par sidha **₹${savedAmountWeb > 0 ? savedAmountWeb : '30%'}** save kar liya hai. Ye limited-time Eid Milad-un-Nabi offer 10-09-2026 ko expire hone se pehle apna slot lock karein. (*T&C Apply*)\n\n🔗 *Pay Securely Here (${guaranteeText}):* ${selfPayLink}\n\n_Note: Payment verify hote hi Shahid Creatives ki Team seedha aapse sampark karegi!_`
-            : `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved to our dashboard.\n\n🔥 *URGENT:* Your **Flat 30% OFF (MILAD30)** coupon is currently applied! You just saved **$${savedAmountWeb > 0 ? savedAmountWeb : '30%'}** on this deal. Lock your slot before this limited-time Eid Milad-un-Nabi offer expires on 10-09-2026. (*T&C Apply*)\n\n🔗 *Pay Securely Here (${guaranteeText}):* ${selfPayLink}\n\n_Note: Shahid Creatives' Team will reach out immediately upon confirmation!_`;
+            ? `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved to our dashboard.\n\n🔥 *URGENT:* Aapka **Flat 20% OFF (11VI20)** coupon apply ho chuka hai! Aapne is deal par sidha **₹${savedAmountWeb > 0 ? savedAmountWeb : '20%'}** save kar liya hai. Ye limited-time 11vi Sharif Special Offer 30-09-2026 ko expire hone se pehle apna slot lock karein. (*T&C Apply*)\n\n🔗 *Pay Securely Here (${guaranteeText}):* ${selfPayLink}\n\n_Note: Payment verify hote hi Shahid Creatives ki Team seedha aapse sampark karegi!_`
+            : `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved to our dashboard.\n\n🔥 *URGENT:* Your **Flat 20% OFF (11VI20)** coupon is currently applied! You just saved **$${savedAmountWeb > 0 ? savedAmountWeb : '20%'}** on this deal. Lock your slot before this limited-time 11vi Sharif Special Offer expires on 30-09-2026. (*T&C Apply*)\n\n🔗 *Pay Securely Here (${guaranteeText}):* ${selfPayLink}\n\n_Note: Shahid Creatives' Team will reach out immediately upon confirmation!_`;
         
         return sendUnifiedMessage(from, clientReply, platform);
     }
@@ -1753,8 +1759,8 @@ async function processUnifiedMessage(from, rawText, platform) {
 
         if (processedRoute) {
             let replyText = (userLang === 'EN')
-                ? "Hello! Welcome to *Shahid Creatives*. 🚀\nSelect a professional stack tier via option number:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI-Powered Growth Retainers**\n3️⃣ **🚀 Special Combo Offers (🔥 HOT)**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid Creatives' Team (Direct Consultation)**\n6️⃣ **🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)**"
-                : "Hello! Welcome to *Shahid Creatives*. 🚀\nKoshish ko aage badhane ke liye ek option number reply kijiye:\n\n1️⃣ *Web Development Tiers*\n2️⃣ *AI-Powered Growth Retainers*\n3️⃣ *🚀 Special Combo Offers (🔥 HOT)*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives ki Team* (Direct Consultation)\n6️⃣ **🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)**";
+                ? "Hello! Welcome to *Shahid Creatives*. 🚀 Select a professional stack tier via option number:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI-Powered Growth Retainers**\n3️⃣ **🚀 Special Combo Offers (🔥 HOT)**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid Creatives' Team (Direct Consultation)**\n6️⃣ **🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)**"
+                : "Hello! Welcome to *Shahid Creatives*. 🚀 Select layout choice number:\n\n1️⃣ *Web Development Tiers*\n2️⃣ *AI-Powered Growth Retainers*\n3️⃣ *🚀 Special Combo Offers (🔥 HOT)*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives ki Team* (Direct Consultation)\n6️⃣ **🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)**";
             return sendUnifiedMessage(from, replyText, platform);
         } else {
             return sendUnifiedMessage(from, "Welcome to *Shahid Creatives*! 🚀 Please select your location layout to proceed:\n\n1️⃣ **India (Tax/Billing: ₹ INR)**\n2️⃣ **Outside India (Global Billing: $ USD)**", platform);
@@ -2003,14 +2009,17 @@ async function processUnifiedMessage(from, rawText, platform) {
         const matchedBasePriceStr = getBasePriceByPlan(userSessions[from].projectScope, isUSDTrack);
         const matchedBasePrice = parseFloat(matchedBasePriceStr);
 
-        const savingAmount = Math.round(matchedBasePrice * 0.30); 
+        // 🟢 20% DISCOUNT UPDATED (11VI20)
+        const savingAmount = Math.round(matchedBasePrice * 0.20); 
         const discountedBasePrice = matchedBasePrice - savingAmount;
+
         const finalPayable = calculateTotalPayable(discountedBasePrice, isUSDTrack);
         const currencySymbol = isUSDTrack ? '$' : '₹';
 
         const displayPhone = userSessions[from].clientPhone || (platform === 'whatsapp' ? from : "Not Provided");
 
-        const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* ${displayPhone} ${platform === 'telegram' ? '(Telegram)' : '(WhatsApp)'}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${cleanEmail}\n📝 *Plan Scope:* ${userSessions[from].projectScope}\n💵 *Base Price:* ${currencySymbol}${matchedBasePrice}\n🔥 *Discount Applied:* ${currencySymbol}${savingAmount} (MILAD30)\n💰 *Calculated Price:* ${currencySymbol}${finalPayable}`;
+        // 🟢 20% DISCOUNT UPDATED (11VI20)
+        const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* ${displayPhone} ${platform === 'telegram' ? '(Telegram)' : '(WhatsApp)'}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${cleanEmail}\n📝 *Plan Scope:* ${userSessions[from].projectScope}\n💵 *Base Price:* ${currencySymbol}${matchedBasePrice}\n🔥 *Discount Applied:* ${currencySymbol}${savingAmount} (11VI20)\n💰 *Calculated Price:* ${currencySymbol}${finalPayable}`;
         sendAdminAlert(chatAdminNotification);
 
         try {
@@ -2030,11 +2039,13 @@ async function processUnifiedMessage(from, rawText, platform) {
         const encodedEmail = encodeURIComponent(cleanEmail); 
         const encodedPlan = encodeURIComponent(userSessions[from].projectScope);
 
-        const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${isUSDTrack ? 49 : 999}&currency=${isUSDTrack ? 'USD' : 'INR'}&totalPrice=${finalPayable}&name=${encodedName}&email=${encodedEmail}&phone=${displayPhone}&plan=${encodedPlan}&coupon=MILAD30`;
+        // 🟢 20% DISCOUNT UPDATED (11VI20)
+        const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${isUSDTrack ? 49 : 999}&currency=${isUSDTrack ? 'USD' : 'INR'}&totalPrice=${finalPayable}&name=${encodedName}&email=${encodedEmail}&phone=${displayPhone}&plan=${encodedPlan}&coupon=11VI20`;
 
+        // 🟢 20% DISCOUNT UPDATED (11VI20 - Valid till 30 September 2026)
         let replyText = isUSDTrack 
-            ? `🎉 *Success!* Your requirement for *${userSessions[from].projectScope}* is formally registered.\n\n🔥 *URGENT:* A special **Flat 30% OFF (MILAD30)** coupon has been automatically applied to your base price! You are saving **$${savingAmount}** today. Lock your price now before the Eid Milad-un-Nabi offer expires on 10-09-2026. (*T&C Apply*)\n\n*Next Steps:*\nTo initiate your project development slot, please process the standard booking token ($49 USD) via our secure gateway below:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Shahid Creatives' Team will reach out immediately upon confirmation!_\n\n🌐 _Powered by Shahid Creatives_`
-            : `🎉 *Mubarak ho!* Aapki requirement (*${userSessions[from].projectScope}*) successfully hamare dashboard mein register ho gayi hai.\n\n🔥 *URGENT:* Aapke base price par **Flat 30% OFF (MILAD30)** coupon automatically apply kar diya gaya hai! Aaj is deal par aap **₹${savingAmount}** bacha rahe hain. Ye Eid Milad-un-Nabi offer 10-09-2026 ko expire hone se pehle apna price lock karein. (*T&C Apply*)\n\n*Next Steps:*\nApna slot pakka karne aur project shuru karne ke liye kripya apna Token Amount (₹999 INR) niche diye gaye secure payment link par clear karein:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Payment verify hote hi Shahid Creatives ki Team seedha aapse sampark karegi!_\n\n🌐 _Powered by Shahid Creatives_`;
+            ? `🎉 *Success!* Your requirement for *${userSessions[from].projectScope}* is formally registered.\n\n🔥 *URGENT:* A special **Flat 20% OFF (11VI20)** coupon has been automatically applied to your base price! You are saving **$${savingAmount}** today. Lock your price now before the 11vi Sharif Special Offer expires on 30-09-2026. (*T&C Apply*)\n\n*Next Steps:*\nTo initiate your project development slot, please process the standard booking token ($49 USD) via our secure gateway below:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Shahid Creatives' Team will reach out immediately upon confirmation!_\n\n🌐 _Powered by Shahid Creatives_`
+            : `🎉 *Mubarak ho!* Aapki requirement (*${userSessions[from].projectScope}*) successfully hamare dashboard mein register ho gayi hai.\n\n🔥 *URGENT:* Aapke base price par **Flat 20% OFF (11VI20)** coupon automatically apply kar diya gaya hai! Aaj is deal par aap **₹${savingAmount}** bacha rahe hain. Ye 11vi Sharif Special Offer 30-09-2026 ko expire hone se pehle apna price lock karein. (*T&C Apply*)\n\n*Next Steps:*\nApna slot pakka karne aur project shuru karne ke liye kripya apna Token Amount (₹999 INR) niche diye gaye secure payment link par clear karein:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Payment verify hote hi Shahid Creatives ki Team seedha aapse sampark karegi!_\n\n🌐 _Powered by Shahid Creatives_`;
         
         return sendUnifiedMessage(from, replyText, platform);
     }
@@ -2235,7 +2246,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         } else if (targetMenuRoute === '3') {
             userSessions[from].step = 'process_combo_menu';
             return sendUnifiedMessage(from, (userLang === 'EN')
-                ? "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\nPlease select your preferred Special Combo Package & Billing Cycle by replying with 1, 2, 3, or 4:\n\n1️⃣ **PLAN 1: Local AI & GMB Growth [MONTHLY]**\n• Price: Setup $69 + $39/mo\n\n2️⃣ **PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - SAVE ~25%]**\n• Price: $399/Year (Save $138)\n• Bonus: Free Domain + Citation Blast + VIP Support\n\n3️⃣ **PLAN 2: Full Digital & AI Scale Launch [MONTHLY]**\n• Price: Setup $169 + $79/mo\n\n4️⃣ **PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - SAVE ~32%]**\n• Price: $799/Year (Save $318)\n• Bonus: Free Premium Hosting + Domain + 12 SEO Blogs + AI CRM Sync\n\n⚠️ *Package Note:* Domain & Hosting Fees are NOT included in Monthly setups. Annual Passes include Free Hosting & Domain Perks!"
+                ? "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\nPlease select your preferred Special Combo Package & Billing Cycle by replying with 1, 2, 3, or 4:\n\n1️⃣ **PLAN 1: Local AI & GMB Growth [MONTHLY]**\n• Price: Setup $69 + $39/mo\n\n2️⃣ **PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - SAVE ~25%]**\n• Price: $399/Year (Save $138)\n• Bonus: Free Domain + Citation Blast + VIP Support\n\n3️⃣ **PLAN 2: Full Digital & AI Scale Launch [MONTHLY]*\n• Price: Setup $169 + $79/mo\n\n4️⃣ **PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - SAVE ~32%]**\n• Price: $799/Year (Save $318)\n• Bonus: Free Premium Hosting + Domain + 12 SEO Blogs + AI CRM Sync\n\n⚠️ *Package Note:* Domain & Hosting Fees are NOT included in Monthly setups. Annual Passes include Free Hosting & Domain Perks!"
                 : "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\nKripya apna preferred Special Combo Package aur Billing Cycle chunne ke liye 1, 2, 3 ya 4 reply karein:\n\n1️⃣ **PLAN 1: Local AI & GMB Growth [MONTHLY RETAINER]**\n• Price: Setup ₹4,999 + Monthly ₹2,499/mo\n\n2️⃣ **PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - SAVE ~30%]**\n• Price: ₹24,999/Year (Bachat ₹10,000)\n• Bonus Perks: Free 1-Yr Domain + Citation Blast + VIP Support\n\n3️⃣ **PLAN 2: Full Digital & AI Scale Launch [MONTHLY RETAINER]**\n• Price: Setup ₹12,999 + Monthly ₹4,999/mo\n\n4️⃣ **PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - SAVE ~32%]**\n• Price: ₹49,999/Year (Bachat ₹23,000)\n• Bonus Perks: Free Premium Hosting + Domain + 12 SEO Blogs + AI WhatsApp CRM Sync\n\n⚠️ *Package Note:* Monthly packages me Domain & Hosting Fees included nahi hai. Annual Pass me Free Hosting aur Domain Perks shamil hain!", platform);
         } else if (targetMenuRoute === '4') {
             userSessions[from].step = 'process_requirement_menu';
@@ -2280,7 +2291,8 @@ async function finalizeConsultationLead(from, textInput, res, platform) {
     const matchedBasePriceStr = getBasePriceByPlan(textInput, isUSDTrack);
     const matchedBasePrice = parseFloat(matchedBasePriceStr);
     
-    const savingAmount = Math.round(matchedBasePrice * 0.30);
+    // 🟢 20% DISCOUNT UPDATED (11VI20)
+    const savingAmount = Math.round(matchedBasePrice * 0.20);
     const discountedBasePrice = matchedBasePrice - savingAmount;
     const finalCalculatedPrice = calculateTotalPayable(discountedBasePrice, isUSDTrack);
     
@@ -2393,7 +2405,7 @@ async function finalizeConsultationLead(from, textInput, res, platform) {
         timestamp: apptTimestamp,
         clientName: cleanName,
         reminded: { 
-            '10': diffHoursInitial <= 10, 
+            '10': diffHoursInitial <= 10,
             '3': diffHoursInitial <= 3, 
             '2': diffHoursInitial <= 2,   
             '1': diffHoursInitial <= 1    
@@ -2403,7 +2415,8 @@ async function finalizeConsultationLead(from, textInput, res, platform) {
     const optionsDate = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' };
     let displayAdminDate = new Date(apptTimestamp).toLocaleString('en-IN', optionsDate);
 
-    const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* ${displayPhone} ${platform === 'telegram' ? '(Telegram)' : '(WhatsApp)'}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details:* ${displayAdminDate} (Input: ${dynamicSlot})\n💬 *User Stated Objectives:* "${textInput}"\n💵 *Base Price:* ${currency}${matchedBasePrice}\n🔥 *Discount Applied:* ${currency}${savingAmount} (MILAD30)\n💰 *Calculated Price:* ${currency}${finalCalculatedPrice} (${taxLabel})\n\n🤖 *Status:* Live details captured securely!`;
+    // 🟢 20% DISCOUNT UPDATED (11VI20)
+    const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* ${displayPhone} ${platform === 'telegram' ? '(Telegram)' : '(WhatsApp)'}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details:* ${displayAdminDate} (Input: ${dynamicSlot})\n💬 *User Stated Objectives:* "${textInput}"\n💵 *Base Price:* ${currency}${matchedBasePrice}\n🔥 *Discount Applied:* ${currency}${savingAmount} (11VI20)\n💰 *Calculated Price:* ${currency}${finalCalculatedPrice} (${taxLabel})\n\n🤖 *Status:* Live details captured securely!`;
     
     const WHATSAPP_ADMIN_NUMBER = "917529839762";
     sendWhatsAppMessage(WHATSAPP_ADMIN_NUMBER, comprehensiveAdminAlert);

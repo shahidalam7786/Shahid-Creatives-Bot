@@ -102,7 +102,6 @@ function getApptTimestamp(dateStr, timeStr) {
 const TELEGRAM_TOKEN = '8563313484:AAHo9aqVSETs4aXntUXn01yIuHN3OdzxTq8';
 const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: true });
 
-// 🛠️ FIX FOR 409 CONFLICT & NETWORK ERRORS
 bot.on('polling_error', (error) => {
     console.log("Original Telegram Polling Error (Ignored to prevent crash):", error.message);
 });
@@ -115,7 +114,6 @@ bot.on('callback_query', async (query) => {
     const chatId = query.message.chat.id.toString();
     const data = query.data;
 
-    // 🟢 ADMIN APPROVAL HANDLING FOR CONSULTATION
     if (data.startsWith('admin_cons_')) {
         const parts = data.split('_');
         const action = parts[2]; 
@@ -144,7 +142,6 @@ bot.on('callback_query', async (query) => {
         await processUnifiedMessage(chatId, `Custom Time: ${selectedTime}`, 'telegram');
         bot.answerCallbackQuery(query.id).catch(()=>{});
     }
-    // 🟢 Route UI button selections seamlessly to the text mapping engine
     else if (data.startsWith('sel_web_') || data.startsWith('sel_ai_') || data.startsWith('sel_combo_')) {
         const number = data.split('_')[2];
         await processUnifiedMessage(chatId, number, 'telegram');
@@ -157,9 +154,8 @@ bot.on('message', async (msg) => {
     const chatId = msg.chat.id.toString();
     const text = msg.text;
 
-    if (!text) return; // Ignore non-text messages (photos, etc.)
+    if (!text) return;
 
-    // Admin message interceptor for main bot consultation reschedule
     if (chatId === '8885973325' && mainAdminState) {
         const clientChatId = mainAdminState;
         const clientLang = userSessions[clientChatId] ? userSessions[clientChatId].lang : 'EN';
@@ -175,7 +171,6 @@ bot.on('message', async (msg) => {
         return;
     }
 
-    // 🟢 Prevent Double Messages in Telegram by caching processing status
     if (processingLocks[chatId]) return;
     processingLocks[chatId] = true;
 
@@ -191,7 +186,7 @@ bot.on('message', async (msg) => {
 // ==========================================
 const SALON_TELEGRAM_TOKEN = '8602924285:AAGRgdN8F6pr5BhzCysFaM8uXoXNo93gyeY';
 const salonBot = new TelegramBot(SALON_TELEGRAM_TOKEN, { polling: true });
-const SALON_ADMIN_CHAT_ID = '8885973325'; // 🚨 ADMIN CHAT ID SET HERE
+const SALON_ADMIN_CHAT_ID = '8885973325';
 
 salonBot.on('polling_error', (error) => {
     console.log("Salon Bot Polling Error (Ignored):", error.message);
@@ -200,11 +195,9 @@ salonBot.on('error', (error) => {
     console.log("Salon Bot General Error (Ignored):", error.message);
 });
 
-// Lightweight memory for Salon Bot
 const salonSessions = {};
 let salonAdminState = null;
 
-// 🟢 ADMIN & USER INLINE BUTTON HANDLER (SALON)
 salonBot.on('callback_query', async (query) => {
     const chatId = query.message.chat.id.toString();
     const data = query.data;
@@ -213,8 +206,8 @@ salonBot.on('callback_query', async (query) => {
     try {
         if (chatId === SALON_ADMIN_CHAT_ID && data.startsWith('admin_sln_')) {
             const parts = data.split('_'); 
-            const action = parts[2]; // confirm / resched
-            const clientChatId = parts[3]; // user's chat id
+            const action = parts[2]; 
+            const clientChatId = parts[3]; 
 
             if (action === 'confirm') {
                 await salonBot.editMessageText(query.message.text + "\n\n✅ *STATUS: BOOKING CONFIRMED BY YOU*", { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
@@ -337,7 +330,6 @@ salonBot.on('callback_query', async (query) => {
     } catch(err) { console.log(err.message); }
 });
 
-// 🟢 USER MESSAGES ROUTER (SALON)
 salonBot.on('message', async (msg) => {
     const chatId = msg.chat.id.toString();
     let text = msg.text;
@@ -636,7 +628,6 @@ zamZamBot.on('callback_query', async (query) => {
     } catch(err) { console.log(err.message); }
 });
 
-// 3. Handle Messages & Admin Alert Logic (Zam Zam)
 zamZamBot.on('message', async (msg) => {
     const chatId = msg.chat.id.toString();
     const text = msg.text;
@@ -1019,15 +1010,13 @@ app.post('/webhook', async (req, res) => {
 async function processUnifiedMessage(from, rawText, platform) {
     const userText = rawText.trim().toLowerCase();
     
-    // 🟢 BULLETPROOF NORMALIZER: Strips all emojis, special characters, bullets and spaces
+    // 🟢 BULLETPROOF NORMALIZER
     const cleanNormalized = userText.replace(/[^a-z0-9]/g, '');
     
     const isInternationalNumber = platform === 'whatsapp' ? !from.startsWith("91") : false;
     const isGlobalWebsiteTemplate = rawText.includes("Global USD") || rawText.includes("Worldwide") || rawText.includes("$") || rawText.includes("lock in my custom website estimate");
 
-    // 🎯 ==============================================================
-    // 🚨 PRIORITY -1: BULLETPROOF PRE-FILLED WEBSITE LEAD INTERCEPTOR
-    // ==============================================================
+    // 🎯 PRIORITY -1: BULLETPROOF PRE-FILLED WEBSITE LEAD INTERCEPTOR
     const isWebsiteDemoInbound = 
         cleanNormalized.includes("3dayfreevipdemo") ||
         cleanNormalized.includes("queuedforactivation") ||
@@ -1109,7 +1098,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         return sendUnifiedMessage(from, finalMsg, platform);
     }
 
-    // 🚨 1. PRIORITY ZERO INTERCEPTOR A: GBP AUTHORIZATION & DEMO CONFIRMATION
+    // 🚨 1. PRIORITY ZERO INTERCEPTOR A: GBP AUTHORIZATION
     if (
         userText.includes("successfully authorized and connected") || 
         userText.includes("i have successfully authorized") ||
@@ -1265,9 +1254,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         return sendUnifiedMessage(from, replyConfirmation, platform, tgOptions);
     }
 
-    // 🟢 ==============================================================
-    // 💡 10-MIN GUARD WINDOW & SMART INQUIRY/RESET TRIGGER
-    // ==============================================================
+    // 🟢 10-MIN GUARD WINDOW & RESET TRIGGER
     const resetTriggers = [
         'hi', 'hello', 'menu', 'start', '/start', 'hey',
         'hi shahid', 'hello shahid',
@@ -1284,7 +1271,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         const recentlyCompleted = existingSession &&
             existingSession.step === 'completed' &&
             existingSession.lastSubmitedTime &&
-            (Date.now() - existingSession.lastSubmitedTime < 10 * 60 * 1000); // 10-min guard window
+            (Date.now() - existingSession.lastSubmitedTime < 10 * 60 * 1000);
 
         if (recentlyCompleted) {
             let alreadyMsg = (existingSession.lang === 'EN')
@@ -1435,7 +1422,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         return sendUnifiedMessage(from, replyMsg, platform);
     }
 
-    // 🎯 STATE: 3-DAY FREE DEMO ACTIVATION SUBMIT HANDLER (From Menu Option 6 Form)
+    // 🎯 STATE: 3-DAY FREE DEMO ACTIVATION SUBMIT HANDLER
     if (currentStep === 'demo_activation_submit') {
         if (rawText.length < 25 || (!rawText.toLowerCase().includes('name') && !rawText.toLowerCase().includes('business'))) {
             let errMsg = (userLang === 'EN')
@@ -1536,7 +1523,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         return sendUnifiedMessage(from, finalSuccessMsg, platform, tgOptions);
     }
 
-    // 🎯 STATE: PAYMENT FAILED RESOLUTION - Check Debit Status
+    // 🎯 STATE: PAYMENT FAILED RESOLUTION
     if (currentStep === 'payment_failed_resolution') {
         const isINRLead = userLang !== 'EN';
         
@@ -1692,10 +1679,9 @@ async function processUnifiedMessage(from, rawText, platform) {
         const isINRLead = !formIsUSDTrack;
         const currencyAdmin = isINRLead ? '₹' : '$';
 
-        // 🟢 FIX: Define finalPayable safely to prevent crash
         const finalPayable = calculateTotalPayable(calculatedPrice, formIsUSDTrack);
 
-        // 🟢 20% DISCOUNT UPDATED (11VI20)
+        // 🟢 20% DISCOUNT (11VI20)
         const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* ${platform === 'telegram' ? 'TG-' : '+'}${from}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n👤 *Name:* ${clientName}\n📝 *Plan Scope:* ${projectScope}\n💵 *Base Price:* ${currencyAdmin}${calculatedPrice + savedAmountWeb}\n🔥 *Discount Applied:* ${currencyAdmin}${savedAmountWeb} (11VI20)\n💰 *Calculated Price:* ${currencyAdmin}${calculatedPrice}`;
         sendAdminAlert(adminNotification);
 
@@ -1725,7 +1711,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         return sendUnifiedMessage(from, clientReply, platform);
     }
 
-    // 🎯 HIGH-PRIORITY INTERCEPTOR STATE: AUTOMATED FOLLOW-UP NUDGES
+    // 🎯 HIGH-PRIORITY NUDGE REPLIES
     if (currentStep === 'nudge_sent_waiting_reply') {
         const positiveTriggers = ['yes', 'yeah', 'yup', 'haan', 'ji', 'help', 'ok', 'okay', 'sure', 'help chahiye', 'bataiye'];
         if (positiveTriggers.includes(userText)) {
@@ -1794,7 +1780,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         }
     }
 
-    // 🎯 STATE 1: COLLECT IDENTITY
+    // 🎯 STATE 1: COLLECT IDENTITY (LANDING / INBOUND ENTRY POINT)
     if (currentStep === 'collect_consultation_identity') {
         let cleanName = ""; 
         let cleanEmail = "";
@@ -1952,7 +1938,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         return finalizeConsultationLead(from, selectedScope, null, platform);
     }
 
-    // 🎯 STATE 3: INBOUND SEQUENCE (Fallback)
+    // 🎯 STATE 3: INBOUND SEQUENCE
     if (currentStep === 'collect_details') {
         userSessions[from].projectScope = rawText; 
         userSessions[from].step = 'ask_name_email';
@@ -1963,7 +1949,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         return sendUnifiedMessage(from, prompt, platform);
     }
 
-    // 🎯 STATE 4: INBOUND CHAT REGISTRATION COMPLETED
+    // 🎯 STATE 4: INBOUND CHAT REGISTRATION COMPLETED (WHERE YOUR SCREENSHOT ISSUE WAS)
     if (currentStep === 'ask_name_email') {
         let cleanName = ""; 
         let cleanEmail = "";
@@ -2017,7 +2003,7 @@ async function processUnifiedMessage(from, rawText, platform) {
 
         const displayPhone = userSessions[from].clientPhone || (platform === 'whatsapp' ? from : "Not Provided");
 
-        // 🟢 20% DISCOUNT UPDATED (11VI20)
+        // 🟢 100% FIXED: 11VI20 Promo Code & Exact 20% Discount in Alert
         const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* ${displayPhone} ${platform === 'telegram' ? '(Telegram)' : '(WhatsApp)'}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${cleanEmail}\n📝 *Plan Scope:* ${userSessions[from].projectScope}\n💵 *Base Price:* ${currencySymbol}${matchedBasePrice}\n🔥 *Discount Applied:* ${currencySymbol}${savingAmount} (11VI20)\n💰 *Calculated Price:* ${currencySymbol}${finalPayable}`;
         sendAdminAlert(chatAdminNotification);
 
@@ -2038,11 +2024,12 @@ async function processUnifiedMessage(from, rawText, platform) {
         const encodedEmail = encodeURIComponent(cleanEmail); 
         const encodedPlan = encodeURIComponent(userSessions[from].projectScope);
 
-        // 🟢 20% DISCOUNT UPDATED (11VI20)
+        // 🟢 100% FIXED: Checkout Link with coupon 11VI20
         const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${isUSDTrack ? 49 : 999}&currency=${isUSDTrack ? 'USD' : 'INR'}&totalPrice=${finalPayable}&name=${encodedName}&email=${encodedEmail}&phone=${displayPhone}&plan=${encodedPlan}&coupon=11VI20`;
 
+        // 🟢 100% FIXED: Output Message for 11vi Sharif & Code 11VI20
         let replyText = isUSDTrack 
-            ? `🎉 *11vi Sharif Mubarak!* Your requirement for *${userSessions[from].projectScope}* is formally registered.\n\n🔥 *URGENT:* A special **Flat 20% OFF (11VI20)** coupon has been automatically applied to your base price! You are saving **$${savingAmount}** today. Lock your price now before the 11vi Sharif Special Offer expires. (*T&C Apply*)\n\n*Next Steps:*\nTo initiate your project development slot, please process the standard booking token ($49 USD) via our secure gateway below:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Shahid Creatives' Team will reach out immediately upon confirmation!_\n\n🌐 _Powered by Shahid Creatives_`
+            ? `🎉 *11vi Sharif Mubarak!* Your requirement (*${userSessions[from].projectScope}*) is formally registered.\n\n🔥 *URGENT:* A special **Flat 20% OFF (11VI20)** coupon has been automatically applied to your base price! You are saving **$${savingAmount}** today. Lock your price now before the 11vi Sharif Special Offer expires. (*T&C Apply*)\n\n*Next Steps:*\nTo initiate your project development slot, please process the standard booking token ($49 USD) via our secure gateway below:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Shahid Creatives' Team will reach out immediately upon confirmation!_\n\n🌐 _Powered by Shahid Creatives_`
             : `🎉 *11vi Sharif Mubarak!* Aapki requirement (*${userSessions[from].projectScope}*) successfully hamare dashboard mein register ho gayi hai.\n\n🔥 *URGENT:* Aapke base price par **Flat 20% OFF (11VI20)** coupon automatically apply kar diya gaya hai! Aaj is deal par aap **₹${savingAmount}** bacha rahe hain. Ye 11vi Sharif Special Offer expire hone se pehle apna price lock karein. (*T&C Apply*)\n\n*Next Steps:*\nApna slot pakka karne aur project shuru karne ke liye kripya apna Token Amount (₹999 INR) niche diye gaye secure payment link par clear karein:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Payment verify hote hi Shahid Creatives ki Team seedha aapse sampark karegi!_\n\n🌐 _Powered by Shahid Creatives_`;
         
         return sendUnifiedMessage(from, replyText, platform);
@@ -2413,7 +2400,7 @@ async function finalizeConsultationLead(from, textInput, res, platform) {
     const optionsDate = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' };
     let displayAdminDate = new Date(apptTimestamp).toLocaleString('en-IN', optionsDate);
 
-    // 🟢 20% DISCOUNT UPDATED (11VI20)
+    // 🟢 20% DISCOUNT (11VI20)
     const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* ${displayPhone} ${platform === 'telegram' ? '(Telegram)' : '(WhatsApp)'}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details:* ${displayAdminDate} (Input: ${dynamicSlot})\n💬 *User Stated Objectives:* "${textInput}"\n💵 *Base Price:* ${currency}${matchedBasePrice}\n🔥 *Discount Applied:* ${currency}${savingAmount} (11VI20)\n💰 *Calculated Price:* ${currency}${finalCalculatedPrice} (${taxLabel})\n\n🤖 *Status:* Live details captured securely!`;
     
     const WHATSAPP_ADMIN_NUMBER = "917529839762";

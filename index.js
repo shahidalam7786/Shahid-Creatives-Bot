@@ -30,8 +30,8 @@ const transporter = nodemailer.createTransport({
     port: 465,
     secure: true,
     auth: {
-        user: 'your-email@shahidcreatives.com', // ⚠️ UPDATE THIS
-        pass: 'your-app-password'               // ⚠️ UPDATE THIS
+        user: 'contact@shahidcreatives.com', // ⚠️ UPDATE THIS
+        pass: 'lirfzonjgyaadznj'               // ⚠️ UPDATE THIS
     }
 });
 

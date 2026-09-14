@@ -99,7 +99,7 @@ function getApptTimestamp(dateStr, timeStr) {
 // ==========================================
 // 🚀 1. TELEGRAM BOT SETUP (ORIGINAL SHAHID CREATIVES)
 // ==========================================
-const TELEGRAM_TOKEN = '8563313484:AAG9McxPMQkHSiTCjA0HjUzJ3P6e8pgkcDw';
+const TELEGRAM_TOKEN = '8563313484:AAHo9aqVSETs4aXntUXn01yIuHN3OdzxTq8';
 const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: true });
 
 bot.on('polling_error', (error) => {
@@ -1760,8 +1760,8 @@ async function processUnifiedMessage(from, rawText, platform) {
 
         if (processedRoute) {
             let replyText = (userSessions[from].lang === 'EN')
-                ? "Hello! Welcome to *Shahid Creatives*. 🚀 Please select an option number to proceed:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI-Powered Growth Retainers**\n3️⃣ **🚀 Special Combo Offers (🔥 HOT)**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid Creatives' Team (Direct Consultation)**\n6️⃣ **🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)**\n7️⃣ **📱 Custom Mobile App Development (iOS & Android)**"
-                : "Hello! Welcome to *Shahid Creatives*. 🚀 Koshish ko aage badhane ke liye ek option number reply kijiye:\n\n1️⃣ *Web Development Tiers*\n2️⃣ *AI-Powered Growth Retainers*\n3️⃣ *🚀 Special Combo Offers (🔥 HOT)*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives ki Team* (Direct Consultation)\n6️⃣ **🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)**\n7️⃣ **📱 Custom Mobile App Development (iOS & Android)**";
+                ? "Hello! Welcome to *Shahid Creatives*. 🚀\nPlease select an option number to proceed:\n\n1️⃣ **Web & Mobile Development Tiers**\n2️⃣ **AI-Powered Growth Retainers**\n3️⃣ **🚀 Special Combo Offers (🔥 HOT)**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid Creatives' Team (Direct Consultation)**\n6️⃣ **🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)**\n7️⃣ **📱 Custom Mobile App Development (iOS & Android)**"
+                : "Hello! Welcome to *Shahid Creatives*. 🚀\nKoshish ko aage badhane ke liye ek option number reply kijiye:\n\n1️⃣ *Web & Mobile Development Tiers*\n2️⃣ *AI-Powered Growth Retainers*\n3️⃣ *🚀 Special Combo Offers (🔥 HOT)*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives ki Team* (Direct Consultation)\n6️⃣ **🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)**\n7️⃣ **📱 Custom Mobile App Development (iOS & Android)**";
             return sendUnifiedMessage(from, replyText, platform);
         } else {
             return sendUnifiedMessage(from, "Welcome to *Shahid Creatives*! 🚀 Please select your location layout to proceed:\n\n1️⃣ **India (Tax/Billing: ₹ INR)**\n2️⃣ **Outside India (Global Billing: $ USD)**", platform);
@@ -1861,8 +1861,8 @@ async function processUnifiedMessage(from, rawText, platform) {
 
             if (catType === 'web') {
                 interceptorReply = isUSDTrack 
-                    ? "⚠️ Please be specific! Which Web scope do you need? \n\n👉 Reply with an option number (1-4):\n1️⃣ *Starter Plan* ($199)\n2️⃣ *Basic Plan* ($299)\n3️⃣ *Starter Business Site* ($499)\n4️⃣ *E-Commerce Hub* ($899)"
-                    : "⚠️ Kripya clear batayein! Aapko hamare active modules mein se kis tarah ki website chahiye? \n\n👉 Niche diye gaye options mein se ek number (1-4) reply karein:\n1️⃣ *Landing Page/Funnel* (₹12,300)\n2️⃣ *Business/Corporate Website* (Base: ₹25,500)\n3️⃣ *E-commerce Website (Online Store)* (₹47,500)\n4️⃣ *Custom Web Application* (₹1,45,000+)";
+                    ? "⚠️ Please be specific! Which Web or App scope do you need? \n\n👉 Reply with an option number (1-7):\n1️⃣ *Starter Plan* ($199)\n2️⃣ *Basic Plan* ($299)\n3️⃣ *Starter Business Site* ($499)\n4️⃣ *E-Commerce Hub* ($899)\n5️⃣ *Starter Mobile MVP* ($399)\n6️⃣ *Business Pro App* ($799)\n7️⃣ *Enterprise App & Scale* ($1,499)"
+                    : "⚠️ Kripya clear batayein! Aapko hamare active modules mein se kis tarah ka web/app chahiye? \n\n👉 Niche diye gaye options mein se ek number (1-7) reply karein:\n1️⃣ *Landing Page/Funnel* (₹12,300)\n2️⃣ *Business/Corporate Website* (Base: ₹25,500)\n3️⃣ *E-commerce Website (Online Store)* (₹47,500)\n4️⃣ *Custom Web Application* (₹1,45,000+)\n5️⃣ *Starter Mobile MVP (App)* (₹24,999)\n6️⃣ *Business Pro (Dual Store App)* (₹49,500)\n7️⃣ *Custom Enterprise & Scale (App)* (₹95,000)";
             } else if (catType === 'combo') {
                 interceptorReply = isUSDTrack
                     ? "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\n👉 Reply with option number (1 to 4):\n\n1️⃣ *PLAN 1: Local AI & GMB Growth [MONTHLY]*\n💰 Setup: $69 (50% OFF) + $39/mo Retainer\n📍 GMB Verification & Map Pack Top 3 SEO\n\n2️⃣ *PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - SAVE ~25%]*\n💰 Price: $399 / Year (Save $138)\n🎁 Bonus: Free Domain (.com/.in) + Citation Blast + VIP Support\n\n3️⃣ *PLAN 2: Full Digital & AI Scale Launch [MONTHLY]*\n💰 Setup: $169 (35% OFF) + $79/mo Retainer\n💻 Custom Next.js Site + Multi-Client AI Agent\n\n4️⃣ *PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - SAVE ~30%]*\n💰 Price: $799 / Year (Save $318)\n🎁 Bonus: Free Hosting & Domain + 12 SEO Blogs + WhatsApp AI CRM Sync\n\n⚠️ *Note:* Domain & Hosting Fees are NOT included in monthly setup. Clients can purchase their own OR Shahid Creatives can assist at cost."
@@ -1882,11 +1882,13 @@ async function processUnifiedMessage(from, rawText, platform) {
                     options = {
                         reply_markup: {
                             inline_keyboard: isUSDTrack ? [
-                                [{ text: "1️⃣ Starter Plan", callback_data: "sel_web_1" }, { text: "2️⃣ Basic Plan", callback_data: "sel_web_2" }],
-                                [{ text: "3️⃣ Business Site", callback_data: "sel_web_3" }, { text: "4️⃣ E-Commerce Hub", callback_data: "sel_web_4" }]
+                                [{ text: "1️⃣ Starter ($199)", callback_data: "sel_web_1" }, { text: "2️⃣ Basic ($299)", callback_data: "sel_web_2" }],
+                                [{ text: "3️⃣ Business ($499)", callback_data: "sel_web_3" }, { text: "4️⃣ E-Com ($899)", callback_data: "sel_web_4" }],
+                                [{ text: "📱 Starter MVP ($399)", callback_data: "sel_web_5" }, { text: "📱 Biz Pro ($799)", callback_data: "sel_web_6" }]
                             ] : [
-                                [{ text: "1️⃣ Landing Page/Funnel", callback_data: "sel_web_1" }, { text: "2️⃣ Corporate Website", callback_data: "sel_web_2" }],
-                                [{ text: "3️⃣ E-commerce Website", callback_data: "sel_web_3" }, { text: "4️⃣ Custom App", callback_data: "sel_web_4" }]
+                                [{ text: "1️⃣ Funnel (₹12,300)", callback_data: "sel_web_1" }, { text: "2️⃣ Corporate (₹25,500)", callback_data: "sel_web_2" }],
+                                [{ text: "3️⃣ Store (₹47,500)", callback_data: "sel_web_3" }, { text: "4️⃣ Custom App", callback_data: "sel_web_4" }],
+                                [{ text: "📱 Starter MVP (₹24,999)", callback_data: "sel_web_5" }, { text: "📱 Biz Pro (₹49,500)", callback_data: "sel_web_6" }]
                             ]
                         }
                     };
@@ -1946,11 +1948,17 @@ async function processUnifiedMessage(from, rawText, platform) {
                 else if (userText === '2') selectedScope = "Basic Plan";
                 else if (userText === '3') selectedScope = "Starter Business Site";
                 else if (userText === '4') selectedScope = "E-Commerce Hub";
+                else if (userText === '5') selectedScope = "Starter Mobile MVP";
+                else if (userText === '6') selectedScope = "Business Pro (Dual Store)";
+                else if (userText === '7') selectedScope = "Custom Enterprise & Scale";
             } else {
                 if (userText === '1') selectedScope = "Landing Page/Funnel";
                 else if (userText === '2') selectedScope = "Business/Corporate Website";
                 else if (userText === '3') selectedScope = "E-commerce Website";
                 else if (userText === '4') selectedScope = "Custom Web Application";
+                else if (userText === '5') selectedScope = "Starter Mobile MVP";
+                else if (userText === '6') selectedScope = "Business Pro (Dual Store)";
+                else if (userText === '7') selectedScope = "Custom Enterprise & Scale";
             }
         } else if (cat === 'combo') {
             if (userText === '1') selectedScope = "PLAN 1: Local AI & GMB Growth [MONTHLY RETAINER]";
@@ -2047,7 +2055,6 @@ async function processUnifiedMessage(from, rawText, platform) {
 
         const displayPhone = userSessions[from].clientPhone || (platform === 'whatsapp' ? from : "Not Provided");
 
-        // 🟢 100% FIXED: 11VI20 Promo Code & Exact 20% Discount in Alert
         const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* ${displayPhone} ${platform === 'telegram' ? '(Telegram)' : '(WhatsApp)'}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${cleanEmail}\n📝 *Plan Scope:* ${userSessions[from].projectScope}\n💵 *Base Price:* ${currencySymbol}${matchedBasePrice}\n🔥 *Discount Applied:* ${currencySymbol}${savingAmount} (11VI20)\n💰 *Calculated Price:* ${currencySymbol}${finalPayable}`;
         sendAdminAlert(chatAdminNotification);
 
@@ -2069,10 +2076,8 @@ async function processUnifiedMessage(from, rawText, platform) {
         const encodedEmail = encodeURIComponent(cleanEmail); 
         const encodedPlan = encodeURIComponent(userSessions[from].projectScope);
 
-        // 🟢 100% FIXED: Checkout Link with coupon 11VI20
         const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${isUSDTrack ? 49 : 999}&currency=${isUSDTrack ? 'USD' : 'INR'}&totalPrice=${finalPayable}&name=${encodedName}&email=${encodedEmail}&phone=${displayPhone}&plan=${encodedPlan}&coupon=11VI20`;
 
-        // 🟢 100% FIXED: Output Message for 11vi Sharif & Code 11VI20
         let replyText = isUSDTrack 
             ? `🎉 *11vi Sharif Mubarak!* Your requirement (*${userSessions[from].projectScope}*) is formally registered.\n\n🔥 *URGENT:* A special **Flat 20% OFF (11VI20)** coupon has been automatically applied to your base price! You are saving **$${savingAmount}** today. Lock your price now before the 11vi Sharif Special Offer expires. (*T&C Apply*)\n\n*Next Steps:*\nTo initiate your project development slot, please process the standard booking token ($49 USD) via our secure gateway below:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Shahid Creatives' Team will reach out immediately upon confirmation!_\n\n🌐 _Powered by Shahid Creatives_`
             : `🎉 *11vi Sharif Mubarak!* Aapki requirement (*${userSessions[from].projectScope}*) successfully hamare dashboard mein register ho gayi hai.\n\n🔥 *URGENT:* Aapke base price par **Flat 20% OFF (11VI20)** coupon automatically apply kar diya gaya hai! Aaj is deal par aap **₹${savingAmount}** bacha rahe hain. Ye 11vi Sharif Special Offer expire hone se pehle apna price lock karein. (*T&C Apply*)\n\n*Next Steps:*\nApna slot pakka karne aur project shuru karne ke liye kripya apna Token Amount (₹999 INR) niche diye gaye secure payment link par clear karein:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Payment verify hote hi Shahid Creatives ki Team seedha aapse sampark karegi!_\n\n🌐 _Powered by Shahid Creatives_`;
@@ -2085,8 +2090,8 @@ async function processUnifiedMessage(from, rawText, platform) {
         if (userText === '1' || userText.includes("token") || userText.includes("book") || userText.includes("confirm")) {
             userSessions[from].step = 'process_requirement_menu';
             let requirementPrompt = (userLang === 'EN')
-                ? "Please select what you want to build today by replying with the option number (**1 to 5**):\n\n1️⃣ Starter Plan ($199)\n2️⃣ Basic Plan ($299)\n3️⃣ Starter Business Site ($499)\n4️⃣ E-Commerce Hub ($899)\n5️⃣ Custom Enterprise App ($2,499)"
-                : "Perfect! Pehle aapki structural requirement lock kar lete hain. 🚀\n\nNiche diye gaye options mein se koi ek number (*1 se 4*) reply kijiye:\n\n1️⃣ **Landing Page/Funnel** (Base: ₹12,300)\n2️⃣ **Business/Corporate Website** (Base: ₹25,500)\n3️⃣ **E-commerce Website** (Base: ₹47,500)\n4️⃣ **Custom Web Application / Software** (Base: ₹1,45,000+)";
+                ? "Please select what you want to build today by replying with the option number (**1 to 7**):\n\n1️⃣ Starter Plan ($199)\n2️⃣ Basic Plan ($299)\n3️⃣ Starter Business Site ($499)\n4️⃣ E-Commerce Hub ($899)\n5️⃣ Starter Mobile MVP ($399)\n6️⃣ Business Pro App ($799)\n7️⃣ Custom Enterprise & Scale ($1,499)"
+                : "Perfect! Pehle aapki structural requirement lock kar lete hain. 🚀\n\nNiche diye gaye options mein se koi ek number (*1 se 7*) reply kijiye:\n\n1️⃣ **Landing Page/Funnel** (Base: ₹12,300)\n2️⃣ **Business/Corporate Website** (Base: ₹25,500)\n3️⃣ **E-commerce Website** (Base: ₹47,500)\n4️⃣ **Custom Web Application / Software** (Base: ₹1,45,000+)\n5️⃣ **Starter Mobile MVP** (Base: ₹24,999)\n6️⃣ **Business Pro (Dual Store App)** (Base: ₹49,500)\n7️⃣ **Custom Enterprise & Scale App** (Base: ₹95,000)";
             return sendUnifiedMessage(from, requirementPrompt, platform);
         } else if (userText === '2' || userText.includes("discuss") || userText.includes("call") || userText.includes("strategy")) {
             userSessions[from].step = 'post_registration';
@@ -2094,7 +2099,7 @@ async function processUnifiedMessage(from, rawText, platform) {
         }
     }
 
-    // 🎯 STATE 5.1: PROCESSOR FOR SUB-MENU (WEB DEVP)
+    // 🎯 STATE 5.1: PROCESSOR FOR SUB-MENU (WEB & APP DEVP)
     if (currentStep === 'process_requirement_menu') {
         let isMatchFound = false; 
         let dynamicCategory = ""; 
@@ -2105,12 +2110,17 @@ async function processUnifiedMessage(from, rawText, platform) {
             else if (userText === '2' || userText.includes("basic plan")) { dynamicCategory = "Basic Plan"; isMatchFound = true; }
             else if (userText === '3' || userText.includes("starter business")) { dynamicCategory = "Starter Business Site"; isMatchFound = true; }
             else if (userText === '4' || userText.includes("e-commerce hub")) { dynamicCategory = "E-Commerce Hub"; isMatchFound = true; }
-            else if (userText === '5' || userText.includes("custom enterprise")) { dynamicCategory = "Custom Enterprise App"; isMatchFound = true; }
+            else if (userText === '5' || userText.includes("starter mobile") || userText.includes("mvp")) { dynamicCategory = "Starter Mobile MVP"; isMatchFound = true; }
+            else if (userText === '6' || userText.includes("business pro") || userText.includes("dual")) { dynamicCategory = "Business Pro (Dual Store)"; isMatchFound = true; }
+            else if (userText === '7' || userText.includes("custom enterprise") || userText.includes("scale")) { dynamicCategory = "Custom Enterprise & Scale"; isMatchFound = true; }
         } else {
             if (userText === '1' || userText.includes("landing")) { dynamicCategory = "Landing Page/Funnel (Single Page Lead Gen)"; isMatchFound = true; }
-            else if (userText === '2' || userText.includes("business")) { dynamicCategory = "Business/Corporate Website (Brand Showcase)"; isMatchFound = true; }
+            else if (userText === '2' || userText.includes("business/corporate") || userText.includes("corporate")) { dynamicCategory = "Business/Corporate Website (Brand Showcase)"; isMatchFound = true; }
             else if (userText === '3' || userText.includes("e-commerce")) { dynamicCategory = "E-commerce Website (Online Store)"; isMatchFound = true; }
-            else if (userText === '4' || userText.includes("software")) { dynamicCategory = "Custom Web Application / Software"; isMatchFound = true; }
+            else if (userText === '4' || userText.includes("software") || userText.includes("custom web application")) { dynamicCategory = "Custom Web Application / Software"; isMatchFound = true; }
+            else if (userText === '5' || userText.includes("starter mobile") || userText.includes("mvp")) { dynamicCategory = "Starter Mobile MVP"; isMatchFound = true; }
+            else if (userText === '6' || userText.includes("business pro") || userText.includes("dual")) { dynamicCategory = "Business Pro (Dual Store)"; isMatchFound = true; }
+            else if (userText === '7' || userText.includes("custom enterprise") || userText.includes("scale")) { dynamicCategory = "Custom Enterprise & Scale"; isMatchFound = true; }
         }
 
         if (isMatchFound) {
@@ -2123,7 +2133,7 @@ async function processUnifiedMessage(from, rawText, platform) {
             
             return sendUnifiedMessage(from, promptText, platform);
         } else {
-            return sendUnifiedMessage(from, isUSDTrack ? "❌ Invalid choice. Reply from valid options." : "❌ Samajh nahi paye. Kripya list mein se ek number bheinje.", platform);
+            return sendUnifiedMessage(from, isUSDTrack ? "❌ Invalid choice. Please reply with 1 to 7." : "❌ Samajh nahi paye. Kripya 1 se 7 ke beech koi number reply karein.", platform);
         }
     }
 
@@ -2290,31 +2300,31 @@ async function processUnifiedMessage(from, rawText, platform) {
 
         if (!isCoreMatch) {
             let replyText = (userSessions[from].lang === 'EN')
-                ? "Hello! Welcome to *Shahid Creatives*. 🚀 Please select an option number to proceed:\n\n1️⃣ **Web Development Tiers**\n2️⃣ **AI-Powered Growth Retainers**\n3️⃣ **🚀 Special Combo Offers (🔥 HOT)**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid Creatives' Team (Direct Consultation)**\n6️⃣ **🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)**\n7️⃣ **📱 Custom Mobile App Development (iOS & Android)**"
-                : "Hello! Welcome to *Shahid Creatives*. 🚀 Koshish ko aage badhane ke liye ek option number reply kijiye:\n\n1️⃣ *Web Development Tiers*\n2️⃣ *AI-Powered Growth Retainers*\n3️⃣ *🚀 Special Combo Offers (🔥 HOT)*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives ki Team* (Direct Consultation)\n6️⃣ **🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)**\n7️⃣ **📱 Custom Mobile App Development (iOS & Android)**";
+                ? "Hello! Welcome to *Shahid Creatives*. 🚀\nPlease select an option number to proceed:\n\n1️⃣ **Web & Mobile Development Tiers**\n2️⃣ **AI-Powered Growth Retainers**\n3️⃣ **🚀 Special Combo Offers (🔥 HOT)**\n4️⃣ **💳 Direct Booking & Token System**\n5️⃣ **👤 Talk to Shahid Creatives' Team (Direct Consultation)**\n6️⃣ **🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)**\n7️⃣ **📱 Custom Mobile App Development (iOS & Android)**"
+                : "Hello! Welcome to *Shahid Creatives*. 🚀\nKoshish ko aage badhane ke liye ek option number reply kijiye:\n\n1️⃣ *Web & Mobile Development Tiers*\n2️⃣ *AI-Powered Growth Retainers*\n3️⃣ *🚀 Special Combo Offers (🔥 HOT)*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives ki Team* (Direct Consultation)\n6️⃣ **🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)**\n7️⃣ **📱 Custom Mobile App Development (iOS & Android)**";
             return sendUnifiedMessage(from, replyText, platform);
         }
 
         if (targetMenuRoute === '1') {
             userSessions[from].step = 'process_requirement_menu'; 
-            return sendUnifiedMessage(from, (userLang === 'EN') 
-                ? "Please select what you want to build today by replying with option number:\n1️⃣ Starter Plan ($199)\n2️⃣ Basic Plan ($299)\n3️⃣ Starter Business Site ($499)\n4️⃣ E-Commerce Hub ($899)\n5️⃣ Custom Enterprise App ($2,499)" 
-                : "Kripya select kijiye ki aap kya banwana chahte hain, reply mein number bheinjein:\n1️⃣ **Landing Page/Funnel** (Base: ₹12,300)\n2️⃣ **Business/Corporate Website** (Base: ₹25,500)\n3️⃣ **E-commerce Website (Online Store)** (Base: ₹47,500)\n4️⃣ **Custom Web Application / Software** (Base: ₹1,45,000+)", platform);
+            return sendUnifiedMessage(from, (userSessions[from].lang === 'EN') 
+                ? "Please select what you want to build today by replying with option number:\n\n1️⃣ Starter Plan ($199)\n2️⃣ Basic Plan ($299)\n3️⃣ Starter Business Site ($499)\n4️⃣ E-Commerce Hub ($899)\n5️⃣ Starter Mobile MVP ($399)\n6️⃣ Business Pro App ($799)\n7️⃣ Custom Enterprise & Scale ($1,499)" 
+                : "Kripya select kijiye ki aap kya banwana chahte hain, reply mein number bheinjein:\n\n1️⃣ **Landing Page/Funnel** (Base: ₹12,300)\n2️⃣ **Business/Corporate Website** (Base: ₹25,500)\n3️⃣ **E-commerce Website (Online Store)** (Base: ₹47,500)\n4️⃣ **Custom Web Application / Software** (Base: ₹1,45,000+)\n5️⃣ **Starter Mobile MVP (App)** (Base: ₹24,999)\n6️⃣ **Business Pro (Dual Store App)** (Base: ₹49,500)\n7️⃣ **Custom Enterprise & Scale (App)** (Base: ₹95,000)", platform);
         } else if (targetMenuRoute === '2') {
             userSessions[from].step = 'process_automation_menu';
-            return sendUnifiedMessage(from, (userLang === 'EN')
+            return sendUnifiedMessage(from, (userSessions[from].lang === 'EN')
                 ? "🤖 **AI-Powered Growth Retainers & Telegram Bots**\nPlease reply with an option number (**1 to 8**):\n\n1️⃣ Starter Digital Maintainer ($77/Mo)\n2️⃣ Web Conversion Engine ($155/Mo)\n3️⃣ Omnichannel Growth Partner ($311/Mo)\n4️⃣ Full-Scale Ecosystem Operations ($499/Mo)\n5️⃣ Elite Intelligence & Bespoke Systems ($799/Mo)\n6️⃣ Telegram Universal Automation - Starter ($77/Mo)\n7️⃣ Telegram Universal Automation - Growth ($155/Mo)\n8️⃣ Telegram Universal Automation - Elite ($311/Mo)\n\n📲 *Live Demo:* https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo"
                 : "🤖 **AI-Powered Growth Retainers & Telegram Bots**\nKripya niche diye gaye list mein se ek option number (**1 se 8**) ya naam reply kijiye:\n\n1️⃣ **Starter Digital Maintainer** (Base: ₹4,999/Mo)\n2️⃣ **Web Conversion Engine** (Base: ₹9,499/Mo)\n3️⃣ **Omnichannel Growth Partner** (Base: ₹18,999/Mo)\n4️⃣ **Full-Scale Ecosystem Operations** (Base: ₹29,999/Mo)\n5️⃣ **Elite Intelligence & Bespoke Systems** (Base: ₹49,999/Mo)\n6️⃣ **Telegram Universal Automation - Starter** (Base: ₹3,999/Mo)\n7️⃣ **Telegram Universal Automation - Growth** (Base: ₹7,599/Mo)\n8️⃣ **Telegram Universal Automation - Elite** (Base: ₹15,199/Mo)\n\n📲 *Live Demo Link:* https://shahidcreatives.com/?demo_cat=b2b_wholesale&mode=whatsapp#demo", platform);
         } else if (targetMenuRoute === '3') {
             userSessions[from].step = 'process_combo_menu';
-            return sendUnifiedMessage(from, (userLang === 'EN')
+            return sendUnifiedMessage(from, (userSessions[from].lang === 'EN')
                 ? "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\nPlease select your preferred Special Combo Package & Billing Cycle by replying with 1, 2, 3, or 4:\n\n1️⃣ **PLAN 1: Local AI & GMB Growth [MONTHLY]**\n• Price: Setup $69 + $39/mo\n\n2️⃣ **PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - SAVE ~25%]**\n• Price: $399/Year (Save $138)\n• Bonus: Free Domain + Citation Blast + VIP Support\n\n3️⃣ **PLAN 2: Full Digital & AI Scale Launch [MONTHLY]*\n• Price: Setup $169 + $79/mo\n\n4️⃣ **PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - SAVE ~32%]**\n• Price: $799/Year (Save $318)\n• Bonus: Free Premium Hosting + Domain + 12 SEO Blogs + AI CRM Sync\n\n⚠️ *Package Note:* Domain & Hosting Fees are NOT included in Monthly setups. Annual Passes include Free Hosting & Domain Perks!"
                 : "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\nKripya apna preferred Special Combo Package aur Billing Cycle chunne ke liye 1, 2, 3 ya 4 reply karein:\n\n1️⃣ **PLAN 1: Local AI & GMB Growth [MONTHLY RETAINER]**\n• Price: Setup ₹4,999 + Monthly ₹2,499/mo\n\n2️⃣ **PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - SAVE ~30%]**\n• Price: ₹24,999/Year (Bachat ₹10,000)\n• Bonus Perks: Free 1-Yr Domain + Citation Blast + VIP Support\n\n3️⃣ **PLAN 2: Full Digital & AI Scale Launch [MONTHLY RETAINER]**\n• Price: Setup ₹12,999 + Monthly ₹4,999/mo\n\n4️⃣ **PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - SAVE ~32%]**\n• Price: ₹49,999/Year (Bachat ₹23,000)\n• Bonus Perks: Free Premium Hosting + Domain + 12 SEO Blogs + AI WhatsApp CRM Sync\n\n⚠️ *Package Note:* Monthly packages me Domain & Hosting Fees included nahi hai. Annual Pass me Free Hosting aur Domain Perks shamil hain!", platform);
         } else if (targetMenuRoute === '4') {
             userSessions[from].step = 'process_requirement_menu';
-            return sendUnifiedMessage(from, (userLang === 'EN')
-                ? "💳 *Direct Booking & Token System ($49)*\n\nPlease select the project type you want to lock slot for via option number:\n\n1️⃣ Starter Plan ($199)\n2️⃣ Basic Plan ($299)\n3️⃣ Starter Business Site ($499)\n4️⃣ E-Commerce Hub ($899)\n5️⃣ Custom Enterprise App ($2,499)"
-                : "💳 *Direct Booking & Token System (₹999 Slot Lock)*\n\nAap jis project layout ke liye secure token register karna chahte hain, kripya uska option number bheinje:\n\n1️⃣ **Landing Page/Funnel** (Base: ₹12,300)\n2️⃣ **Business/Corporate Website** (Base: ₹25,500)\n3️⃣ **E-commerce Website** (Base: ₹47,500)\n4️⃣ **Custom Web Application / Software** (Base: ₹1,45,000+)", platform);
+            return sendUnifiedMessage(from, (userSessions[from].lang === 'EN')
+                ? "💳 *Direct Booking & Token System ($49)*\n\nPlease select the project type you want to lock slot for via option number:\n\n1️⃣ Starter Plan ($199)\n2️⃣ Basic Plan ($299)\n3️⃣ Starter Business Site ($499)\n4️⃣ E-Commerce Hub ($899)\n5️⃣ Starter Mobile MVP ($399)\n6️⃣ Business Pro App ($799)\n7️⃣ Custom Enterprise & Scale ($1,499)"
+                : "💳 *Direct Booking & Token System (₹999 Slot Lock)*\n\nAap jis project layout ke liye secure token register karna chahte hain, kripya uska option number bheinje:\n\n1️⃣ **Landing Page/Funnel** (Base: ₹12,300)\n2️⃣ **Business/Corporate Website** (Base: ₹25,500)\n3️⃣ **E-commerce Website** (Base: ₹47,500)\n4️⃣ **Custom Web Application / Software** (Base: ₹1,45,000+)\n5️⃣ **Starter Mobile MVP (App)** (Base: ₹24,999)\n6️⃣ **Business Pro (Dual Store App)** (Base: ₹49,500)\n7️⃣ **Custom Enterprise & Scale (App)** (Base: ₹95,000)", platform);
         } else if (targetMenuRoute === '5') {
             userSessions[from].step = 'awaiting_consultation_slot';
             const currentHourIST = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Kolkata"})).getHours();
@@ -2482,7 +2492,6 @@ async function finalizeConsultationLead(from, textInput, res, platform) {
     const optionsDate = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' };
     let displayAdminDate = new Date(apptTimestamp).toLocaleString('en-IN', optionsDate);
 
-    // 🟢 20% DISCOUNT (11VI20)
     const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* ${displayPhone} ${platform === 'telegram' ? '(Telegram)' : '(WhatsApp)'}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details:* ${displayAdminDate} (Input: ${dynamicSlot})\n💬 *User Stated Objectives:* "${textInput}"\n💵 *Base Price:* ${currency}${matchedBasePrice}\n🔥 *Discount Applied:* ${currency}${savingAmount} (11VI20)\n💰 *Calculated Price:* ${currency}${finalCalculatedPrice} (${taxLabel})\n\n🤖 *Status:* Live details captured securely!`;
     
     const WHATSAPP_ADMIN_NUMBER = "917529839762";

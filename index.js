@@ -1,10 +1,12 @@
-process.env.TZ = 'Asia/Kolkata'; // 🟢 DEFAULT INDIAN STANDARDIZED TIME ADDED
+require('dotenv').config();
+
+process.env.TZ = process.env.TZ || 'Asia/Kolkata';
 
 const express = require('express');
 const bodyParser = require('body-parser'); 
 const axios = require('axios');
-const TelegramBot = require('node-telegram-bot-api'); // 🟢 TELEGRAM LIBRARY ADDED
-const nodemailer = require('nodemailer'); // 🟢 EMAIL LIBRARY ADDED FOR GBP ONBOARDING
+const TelegramBot = require('node-telegram-bot-api'); 
+const nodemailer = require('nodemailer'); 
 
 // ==========================================
 // 🛡️ GLOBAL ANTI-CRASH SYSTEM (KEEPS SERVER ALIVE 24/7)
@@ -23,29 +25,27 @@ const app = express();
 app.use(bodyParser.json());
 
 // ==========================================
-// 📧 GOOGLE WORKSPACE SMTP TRANSPORTER (DEMO ONBOARDING)
+// 📧 GOOGLE WORKSPACE SMTP TRANSPORTER (FROM .ENV)
 // ==========================================
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 465,
     secure: true,
     auth: {
-        user: 'contact@shahidcreatives.com', // ⚠️ UPDATE THIS
-        pass: 'lirfzonjgyaadznj'                // ⚠️ UPDATE THIS
+        user: process.env.SMTP_USER || 'contact@shahidcreatives.com',
+        pass: process.env.SMTP_PASS || 'lirfzonjgyaadznj'
     }
 });
 
 // ==========================================
-// 🚀 GLOBAL SCHEDULING & REMINDER ENGINE (NEW)
+// 🚀 GLOBAL SCHEDULING & REMINDER ENGINE
 // ==========================================
 const bookedSlots = { salon: {}, clinic: {}, consultation_hourly: {} }; 
-const activeAppointments = []; // Stores appointments for auto-reminders
-let mainAdminState = null; // To track admin reschedule targets for consultation
+const activeAppointments = []; 
+let mainAdminState = null; 
 
-// 🟢 CONCURRENCY LOCK (Fixes Telegram/WhatsApp Double Messages)
 const processingLocks = {};
 
-// Helper: Filter times based on IST, Past time hiding, & 4-client limit
 function getAvailableTimes(botType, selectedDateStr) {
     const isToday = selectedDateStr === 'Today';
     const nowIST = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
@@ -65,10 +65,9 @@ function getAvailableTimes(botType, selectedDateStr) {
         if (modifier === 'PM' && hours < 12) hours += 12;
         if (modifier === 'AM' && hours === 12) hours = 0;
 
-        // Slot Limit Logic (Max 4 bookings per slot block)
         const slotKey = `${selectedDateStr}_${t}`;
         const count = bookedSlots[botType][slotKey] || 0;
-        if (count >= 4) return; // Exclude full slots
+        if (count >= 4) return; 
 
         if (isToday) {
             if (hours > currentHour || (hours === currentHour && mins > currentMin)) {
@@ -81,7 +80,6 @@ function getAvailableTimes(botType, selectedDateStr) {
     return filteredTimes;
 }
 
-// Helper: Calculate Exact Timestamp for Reminders
 function getApptTimestamp(dateStr, timeStr) {
     const dateObj = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
     if (dateStr === 'Tomorrow') {
@@ -97,19 +95,19 @@ function getApptTimestamp(dateStr, timeStr) {
 }
 
 // ==========================================
-// 🚀 1. TELEGRAM BOT SETUP (ORIGINAL SHAHID CREATIVES)
+// 🚀 1. TELEGRAM BOT SETUP (FROM .ENV)
 // ==========================================
-const TELEGRAM_TOKEN = '8563313484:AAHo9aqVSETs4aXntUXn01yIuHN3OdzxTq8';
+const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN || '8563313484:AAHo9aqVSETs4aXntUXn01yIuHN3OdzxTq8';
 const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: true });
+const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || '8885973325';
 
 bot.on('polling_error', (error) => {
-    console.log("Original Telegram Polling Error (Ignored to prevent crash):", error.message);
+    console.log("Original Telegram Polling Error (Ignored):", error.message);
 });
 bot.on('error', (error) => {
     console.log("Original Telegram General Error:", error.message);
 });
 
-// Telegram - Handling Callback Queries for Consultation Buttons
 bot.on('callback_query', async (query) => {
     const chatId = query.message.chat.id.toString();
     const data = query.data;
@@ -149,14 +147,13 @@ bot.on('callback_query', async (query) => {
     }
 });
 
-// Telegram - Handling User Inputs & Routing to Master Engine
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id.toString();
     const text = msg.text;
 
     if (!text) return;
 
-    if (chatId === '8885973325' && mainAdminState) {
+    if (chatId === ADMIN_CHAT_ID && mainAdminState) {
         const clientChatId = mainAdminState;
         const clientLang = userSessions[clientChatId] ? userSessions[clientChatId].lang : 'EN';
         const isEn = clientLang === 'EN';
@@ -184,9 +181,9 @@ bot.on('message', async (msg) => {
 // ==========================================
 // ✨ SALON AI VIRTUAL RECEPTIONIST BOT
 // ==========================================
-const SALON_TELEGRAM_TOKEN = '8602924285:AAGRgdN8F6pr5BhzCysFaM8uXoXNo93gyeY';
+const SALON_TELEGRAM_TOKEN = process.env.SALON_TELEGRAM_TOKEN || '8602924285:AAGRgdN8F6pr5BhzCysFaM8uXoXNo93gyeY';
 const salonBot = new TelegramBot(SALON_TELEGRAM_TOKEN, { polling: true });
-const SALON_ADMIN_CHAT_ID = '8885973325';
+const SALON_ADMIN_CHAT_ID = ADMIN_CHAT_ID;
 
 salonBot.on('polling_error', (error) => {
     console.log("Salon Bot Polling Error (Ignored):", error.message);
@@ -474,9 +471,9 @@ salonBot.on('message', async (msg) => {
 // ==========================================
 // ✨ ZAM ZAM CLINIC VIRTUAL RECEPTIONIST BOT
 // ==========================================
-const ZAMZAM_TELEGRAM_TOKEN = '8707737273:AAEIKAFSF4pxb3gKnbQTNZVxhwEKaYE_mE0';
+const ZAMZAM_TELEGRAM_TOKEN = process.env.ZAMZAM_TELEGRAM_TOKEN || '8707737273:AAEIKAFSF4pxb3gKnbQTNZVxhwEKaYE_mE0';
 const zamZamBot = new TelegramBot(ZAMZAM_TELEGRAM_TOKEN, { polling: true });
-const ZAMZAM_ADMIN_CHAT_ID = '8885973325'; 
+const ZAMZAM_ADMIN_CHAT_ID = ADMIN_CHAT_ID; 
 
 zamZamBot.on('polling_error', (error) => {
     console.log("Zam Zam Bot Polling Error (Ignored):", error.message);
@@ -751,9 +748,6 @@ zamZamBot.on('message', async (msg) => {
     } catch(err) { console.log(err.message); }
 });
 
-// ==========================================
-// ⏰ BACKGROUND AUTOMATED REMINDERS ENGINE 
-// ==========================================
 setInterval(() => {
     const now = Date.now();
     activeAppointments.forEach(appt => {
@@ -806,10 +800,6 @@ setInterval(() => {
     });
 }, 60000); 
 
-// ==========================================
-// 🟢 2. WHATSAPP ENGINE & SERVER LOGIC
-// ==========================================
-
 const userSessions = {};
 
 function calculateTotalPayable(basePrice, isUSD = false) {
@@ -832,7 +822,6 @@ function getBasePriceByPlan(planScope, isUSD = false) {
     const text = String(planScope).toLowerCase().trim();
     
     if (isUSD) {
-        // 📱 MOBILE APP DEVELOPMENT PLANS (USD)
         if (text.includes("starter mobile mvp") || (text.includes("mobile") && text.includes("mvp")) || (text.includes("starter") && text.includes("mobile"))) return "399";
         if (text.includes("business pro") || text.includes("dual store") || (text.includes("mobile") && text.includes("business"))) return "799";
         if (text.includes("custom enterprise & scale") || text.includes("enterprise & scale") || (text.includes("mobile") && (text.includes("enterprise") || text.includes("scale")))) return "1499";
@@ -863,7 +852,6 @@ function getBasePriceByPlan(planScope, isUSD = false) {
         
         return "110";
     } else {
-        // 📱 MOBILE APP DEVELOPMENT PLANS (INR)
         if (text.includes("starter mobile mvp") || (text.includes("mobile") && text.includes("mvp")) || (text.includes("starter") && text.includes("mobile"))) return "24999";
         if (text.includes("business pro") || text.includes("dual store") || (text.includes("mobile") && text.includes("business"))) return "49500";
         if (text.includes("custom enterprise & scale") || text.includes("enterprise & scale") || (text.includes("mobile") && (text.includes("enterprise") || text.includes("scale")))) return "95000";
@@ -1015,9 +1003,6 @@ app.post('/webhook', async (req, res) => {
     }
 }); 
 
-// ==========================================
-// 🧠 UNIFIED BOT ENGINE (PROCESSES BOTH TG & WA)
-// ==========================================
 async function processUnifiedMessage(from, rawText, platform) {
     const userText = rawText.trim().toLowerCase();
     const cleanNormalized = userText.replace(/[^a-z0-9]/g, '');
@@ -1025,7 +1010,6 @@ async function processUnifiedMessage(from, rawText, platform) {
     const isInternationalNumber = platform === 'whatsapp' ? !from.startsWith("91") : false;
     const isGlobalWebsiteTemplate = rawText.includes("Global USD") || rawText.includes("Worldwide") || rawText.includes("$") || rawText.includes("lock in my custom website estimate");
 
-    // 🎯 PRIORITY -1: BULLETPROOF PRE-FILLED WEBSITE LEAD INTERCEPTOR
     const isWebsiteDemoInbound = 
         cleanNormalized.includes("3dayfreevipdemo") ||
         cleanNormalized.includes("queuedforactivation") ||
@@ -1108,7 +1092,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         return sendUnifiedMessage(from, finalMsg, platform);
     }
 
-    // 🚨 1. PRIORITY ZERO INTERCEPTOR A: GBP AUTHORIZATION
     if (
         userText.includes("successfully authorized and connected") || 
         userText.includes("i have successfully authorized") ||
@@ -1154,7 +1137,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         return sendUnifiedMessage(from, authReply, platform);
     }
 
-    // 🚨 1. PRIORITY ZERO INTERCEPTOR B: 3-DAY DEMO INBOUND FORMS SYNC
     if (
         rawText.includes("3-DAY FREE DEMO ACTIVATION") ||
         rawText.includes("11VI SHARIF SPECIAL") ||
@@ -1266,7 +1248,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         return sendUnifiedMessage(from, replyConfirmation, platform, tgOptions);
     }
 
-    // 🟢 10-MIN GUARD WINDOW & RESET TRIGGER
     const resetTriggers = [
         'hi', 'hello', 'menu', 'start', '/start', 'hey',
         'hi shahid', 'hello shahid',
@@ -1315,7 +1296,6 @@ async function processUnifiedMessage(from, rawText, platform) {
     const currentStep = userSessions[from].step;
     const session = userSessions[from]; 
 
-    // 🚨 PAYMENT FAILED SUPPORT INTERCEPTOR
     if (rawText.includes("payment transaction failed") || rawText.includes("Failed/Incomplete Booking") || rawText.includes("cancelled or was incomplete")) {
         let clientName = "Valued Client"; 
         let projectScope = "Project"; 
@@ -1351,7 +1331,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         const matchedBasePriceStr = getBasePriceByPlan(projectScope, isUSDTrack);
         const matchedBasePrice = parseFloat(matchedBasePriceStr) || (isINRLead ? 8713 : 110);
         
-        // 🟢 20% DISCOUNT UPDATED (11VI20)
         const savingAmount = Math.round(matchedBasePrice * 0.20);
         const discountedBasePrice = matchedBasePrice - savingAmount;
         const finalPayable = calculateTotalPayable(discountedBasePrice, isUSDTrack);
@@ -1383,7 +1362,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         return sendUnifiedMessage(from, replyMsg, platform);
     }
 
-    // 🎯 WHATSAPP PRE-FILLED LEAD FORM
     if (rawText.includes("Name:") && rawText.includes("Phone:") && rawText.includes("Email:") && !rawText.includes("Target City")) {
         let clientName = "Valued Client";
         let clientEmail = "Not Provided";
@@ -1434,7 +1412,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         return sendUnifiedMessage(from, replyMsg, platform);
     }
 
-    // 🎯 STATE: 3-DAY FREE DEMO ACTIVATION SUBMIT HANDLER
     if (currentStep === 'demo_activation_submit') {
         if (rawText.length < 25 || (!rawText.toLowerCase().includes('name') && !rawText.toLowerCase().includes('business'))) {
             let errMsg = (userLang === 'EN')
@@ -1536,7 +1513,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         return sendUnifiedMessage(from, finalSuccessMsg, platform, tgOptions);
     }
 
-    // 🎯 STATE: PAYMENT FAILED RESOLUTION
     if (currentStep === 'payment_failed_resolution') {
         const isINRLead = userLang !== 'EN';
         
@@ -1558,7 +1534,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         }
     }
 
-    // 🎯 STATE: PAYMENT FAILED RETRY OPTIONS
     if (currentStep === 'payment_failed_retry_options') {
         const isINRLead = userLang !== 'EN';
         const payLink = session.payLink || "https://shahidcreatives.com/";
@@ -1596,7 +1571,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         return sendUnifiedMessage(from, courtesyReply, platform);
     }
 
-    // 🎯 TOP PRIORITY INTERCEPTOR: WEBSITE INBOUND FORM SYNC
     if (rawText.includes("Hi Shahid Creatives!") || rawText.includes("lock in my custom website estimate") || rawText.includes("Estimated Price:") || rawText.includes("Grand Total:") || rawText.includes("Project/Category:")) {
         if (userSessions[from] && userSessions[from].lastSubmitedTime && (Date.now() - userSessions[from].lastSubmitedTime < 15000)) { 
             return; 
@@ -1695,7 +1669,6 @@ async function processUnifiedMessage(from, rawText, platform) {
 
         const finalPayable = calculateTotalPayable(calculatedPrice, formIsUSDTrack);
 
-        // 🟢 20% DISCOUNT (11VI20)
         const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* ${platform === 'telegram' ? 'TG-' : '+'}${from}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n👤 *Name:* ${clientName}\n📝 *Plan Scope:* ${projectScope}\n💵 *Base Price:* ${currencyAdmin}${calculatedPrice + savedAmountWeb}\n🔥 *Discount Applied:* ${currencyAdmin}${savedAmountWeb} (11VI20)\n💰 *Calculated Price:* ${currencyAdmin}${calculatedPrice}`;
         sendAdminAlert(adminNotification);
 
@@ -1726,7 +1699,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         return sendUnifiedMessage(from, clientReply, platform);
     }
 
-    // 🎯 HIGH-PRIORITY NUDGE REPLIES
     if (currentStep === 'nudge_sent_waiting_reply') {
         const positiveTriggers = ['yes', 'yeah', 'yup', 'haan', 'ji', 'help', 'ok', 'okay', 'sure', 'help chahiye', 'bataiye'];
         if (positiveTriggers.includes(userText)) {
@@ -1745,7 +1717,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         }
     }
 
-    // 🎯 STATE -1: REGION CHECK ENGINE
     if (currentStep === 'region_check') {
         let processedRoute = false;
         if (userText === '1' || userText.includes("india") || userText.includes("inr")) { 
@@ -1768,7 +1739,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         }
     }
 
-    // 🎯 CAPTURE ROUTE FOR CUSTOM SCHEDULING TEXT
     if (currentStep === 'awaiting_custom_time_input') {
         userSessions[from].requestedSlot = rawText;
         
@@ -1795,7 +1765,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         }
     }
 
-    // 🎯 STATE 1: COLLECT IDENTITY (LANDING / INBOUND ENTRY POINT)
     if (currentStep === 'collect_consultation_identity') {
         let cleanName = ""; 
         let cleanEmail = "";
@@ -1842,7 +1811,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         return sendUnifiedMessage(from, descriptivePrompt, platform);
     }
 
-    // 🎯 STATE 2: INTERCEPTOR FOR SELECTIONS
     if (currentStep === 'collect_custom_query_and_time') {
         const isUSDTrack = (userLang === 'EN');
 
@@ -1866,7 +1834,7 @@ async function processUnifiedMessage(from, rawText, platform) {
             } else if (catType === 'combo') {
                 interceptorReply = isUSDTrack
                     ? "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\n👉 Reply with option number (1 to 4):\n\n1️⃣ *PLAN 1: Local AI & GMB Growth [MONTHLY]*\n💰 Setup: $69 (50% OFF) + $39/mo Retainer\n📍 GMB Verification & Map Pack Top 3 SEO\n\n2️⃣ *PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - SAVE ~25%]*\n💰 Price: $399 / Year (Save $138)\n🎁 Bonus: Free Domain (.com/.in) + Citation Blast + VIP Support\n\n3️⃣ *PLAN 2: Full Digital & AI Scale Launch [MONTHLY]*\n💰 Setup: $169 (35% OFF) + $79/mo Retainer\n💻 Custom Next.js Site + Multi-Client AI Agent\n\n4️⃣ *PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - SAVE ~30%]*\n💰 Price: $799 / Year (Save $318)\n🎁 Bonus: Free Hosting & Domain + 12 SEO Blogs + WhatsApp AI CRM Sync\n\n⚠️ *Note:* Domain & Hosting Fees are NOT included in monthly setup. Clients can purchase their own OR Shahid Creatives can assist at cost."
-                    : "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\n👉 Niche me se ek number (1 se 4) reply karein:\n\n1️⃣ *PLAN 1: Local AI & GMB Growth [MONTHLY RETAINER]*\n💰 Setup: ₹4,999 (50% OFF) + Monthly ₹2,499/mo\n📍 Local Map Pack SEO, Citations & Review Bot\n\n2️⃣ *PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - SAVE ~30%]*\n💰 Price: ₹24,999 / Year (Save ₹10,000)\n🎁 Perks: Free 1-Yr Domain + Citation Blast + Unlimited AI Credits + VIP Support\n\n3️⃣ *PLAN 2: Full Digital & AI Scale Launch [MONTHLY RETAINER]*\n💰 Setup: ₹12,999 (35% OFF) + Monthly ₹4,999/mo\n💻 High-Speed Next.js Website + Multi-Client AI Agent\n\n4️⃣ *PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - SAVE ~32%]*\n💰 Price: ₹49,999 / Year (Save ₹23,000)\n🎁 Perks: Free Premium Hosting + Domain + 12 SEO Blogs + WhatsApp AI CRM Sync\n\n⚠️ *Note:* Monthly packages me Domain & Hosting Fees included nahi hai. Client khud le sakte hain ya Shahid Creatives actual cost par purchase karwa degi.";
+                    : "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\n👉 Niche me se ek number (1 se 4) reply karein:\n\n1️⃣ *PLAN 1: Local AI & GMB Growth [MONTHLY RETAINER]*\n💰 Setup: ₹4,999 (50% OFF) + Monthly ₹2,499/mo\n📍 Local Map Pack SEO, Citations & Review Bot\n\n2️⃣ *PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - SAVE ~30%]*\n💰 Price: ₹24,999 / Year (Save ₹10,000)\n🎁 Perks: Free 1-Yr Domain + Citation Blast + Unlimited AI Credits + VIP Support\n\n3️⃣ *PLAN 2: Full Digital & AI Scale Launch [MONTHLY RETAINER]*\n💰 Setup: ₹12,999 (35% OFF) + Monthly ₹4,999/mo\n💻 High-Speed Next.js Website + Multi-Client AI Agent\n\n4️⃣ *PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - SAVE ~32%]*\n💰 Price: ₹49,999 / Year (Save ₹23,000)\n🎁 Perks: Free Premium Hosting + Domain + 12 SEO Blogs + AI WhatsApp CRM Sync\n\n⚠️ *Note:* Monthly packages me Domain & Hosting Fees included nahi hai. Client khud le sakte hain ya Shahid Creatives actual cost par purchase karwa degi.";
             } else if (catType === 'app') {
                 interceptorReply = isUSDTrack
                     ? "📱 *CUSTOM MOBILE APP DEVELOPMENT (iOS & Android)*\n\n👉 Reply with an option number (1-3):\n1️⃣ *Starter Mobile MVP* ($399)\n2️⃣ *Business Pro (Dual Store)* ($799)\n3️⃣ *Custom Enterprise & Scale* ($1,499)"
@@ -1936,7 +1904,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         return finalizeConsultationLead(from, rawText, null, platform);
     }
 
-    // 🎯 STATE 2.1: FINAL DISPATCH AFTER SUB-MENU SELECTION
     if (currentStep === 'awaiting_specific_service_selection') {
         let selectedScope = rawText;
         const isUSDTrack = (userLang === 'EN');
@@ -1990,7 +1957,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         return finalizeConsultationLead(from, selectedScope, null, platform);
     }
 
-    // 🎯 STATE 3: INBOUND SEQUENCE
     if (currentStep === 'collect_details') {
         userSessions[from].projectScope = rawText; 
         userSessions[from].step = 'ask_name_email';
@@ -2001,7 +1967,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         return sendUnifiedMessage(from, prompt, platform);
     }
 
-    // 🎯 STATE 4: INBOUND CHAT REGISTRATION COMPLETED
     if (currentStep === 'ask_name_email') {
         let cleanName = ""; 
         let cleanEmail = "";
@@ -2046,7 +2011,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         const matchedBasePriceStr = getBasePriceByPlan(userSessions[from].projectScope, isUSDTrack);
         const matchedBasePrice = parseFloat(matchedBasePriceStr);
 
-        // 🟢 20% DISCOUNT UPDATED (11VI20)
         const savingAmount = Math.round(matchedBasePrice * 0.20); 
         const discountedBasePrice = matchedBasePrice - savingAmount;
 
@@ -2085,7 +2049,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         return sendUnifiedMessage(from, replyText, platform);
     }
 
-    // 🎯 STATE 5: INTERCEPTING MENU CHOICES FOR WEBSITE ACTION
     if (currentStep === 'awaiting_website_action') {
         if (userText === '1' || userText.includes("token") || userText.includes("book") || userText.includes("confirm")) {
             userSessions[from].step = 'process_requirement_menu';
@@ -2099,7 +2062,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         }
     }
 
-    // 🎯 STATE 5.1: PROCESSOR FOR SUB-MENU (WEB & APP DEVP)
     if (currentStep === 'process_requirement_menu') {
         let isMatchFound = false; 
         let dynamicCategory = ""; 
@@ -2137,7 +2099,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         }
     }
 
-    // 🎯 STATE 5.2: PROCESS AUTOMATION REQ SELECTION
     if (currentStep === 'process_automation_menu') {
         let isAutomateMatch = false;
         let dynamicCategory = "";
@@ -2168,7 +2129,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         }
     }
 
-    // 🎯 STATE 5.3: PROCESS SPECIAL COMBO SELECTION 
     if (currentStep === 'process_combo_menu') {
         let isComboMatch = false;
         let dynamicCategory = "";
@@ -2201,7 +2161,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         }
     }
 
-    // 🎯 STATE 5.4: PROCESS CUSTOM MOBILE APP SELECTION
     if (currentStep === 'process_app_menu') {
         let isAppMatch = false;
         let dynamicCategory = "";
@@ -2232,7 +2191,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         }
     }
 
-    // 🎯 STATE 6: CONSULTATION FIXED SLOTS ROUTING
     if (currentStep === 'awaiting_consultation_slot') {
         const currentHourIST = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Kolkata"})).getHours();
         let chosenOptionClean = userText.replace(/[\-\*•\(\)]/g, '').trim();
@@ -2285,7 +2243,6 @@ async function processUnifiedMessage(from, rawText, platform) {
         }
     }
 
-    // 🎯 STATE 8: CORE ENGINE - MAIN MENU ROUTER
     if (currentStep === 'welcome' || currentStep === 'main_menu') {
         userSessions[from].step = 'main_menu';
         let isCoreMatch = false; let targetMenuRoute = userText;
@@ -2354,7 +2311,6 @@ async function processUnifiedMessage(from, rawText, platform) {
     }
 }
 
-// 🎯 REUSABLE LOGIC: FINALIZE CONSULTATION LEAD
 async function finalizeConsultationLead(from, textInput, res, platform) {
     const session = userSessions[from];
     const cleanName = session.clientName || "Valued Client";
@@ -2368,7 +2324,6 @@ async function finalizeConsultationLead(from, textInput, res, platform) {
     const matchedBasePriceStr = getBasePriceByPlan(textInput, isUSDTrack);
     const matchedBasePrice = parseFloat(matchedBasePriceStr);
     
-    // 🟢 20% DISCOUNT UPDATED (11VI20)
     const savingAmount = Math.round(matchedBasePrice * 0.20);
     const discountedBasePrice = matchedBasePrice - savingAmount;
     const finalCalculatedPrice = calculateTotalPayable(discountedBasePrice, isUSDTrack);
@@ -2494,10 +2449,10 @@ async function finalizeConsultationLead(from, textInput, res, platform) {
 
     const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* ${displayPhone} ${platform === 'telegram' ? '(Telegram)' : '(WhatsApp)'}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details:* ${displayAdminDate} (Input: ${dynamicSlot})\n💬 *User Stated Objectives:* "${textInput}"\n💵 *Base Price:* ${currency}${matchedBasePrice}\n🔥 *Discount Applied:* ${currency}${savingAmount} (11VI20)\n💰 *Calculated Price:* ${currency}${finalCalculatedPrice} (${taxLabel})\n\n🤖 *Status:* Live details captured securely!`;
     
-    const WHATSAPP_ADMIN_NUMBER = "917529839762";
+    const WHATSAPP_ADMIN_NUMBER = process.env.WHATSAPP_ADMIN_NUMBER || "917529839762";
     sendWhatsAppMessage(WHATSAPP_ADMIN_NUMBER, comprehensiveAdminAlert);
     
-    const TELEGRAM_ADMIN_ID = "8885973325"; 
+    const TELEGRAM_ADMIN_ID = ADMIN_CHAT_ID; 
     try {
         let htmlText = comprehensiveAdminAlert
             .replace(/\*(.*?)\*/g, '<b>$1</b>')
@@ -2560,10 +2515,10 @@ async function sendUnifiedMessage(to, text, platform, options = null) {
 }
 
 async function sendAdminAlert(text) {
-    const WHATSAPP_ADMIN_NUMBER = "917529839762";
+    const WHATSAPP_ADMIN_NUMBER = process.env.WHATSAPP_ADMIN_NUMBER || "917529839762";
     await sendWhatsAppMessage(WHATSAPP_ADMIN_NUMBER, text);
     
-    const TELEGRAM_ADMIN_ID = "8885973325"; 
+    const TELEGRAM_ADMIN_ID = ADMIN_CHAT_ID; 
     try {
         let htmlText = text
             .replace(/\*(.*?)\*/g, '<b>$1</b>')
@@ -2575,8 +2530,8 @@ async function sendAdminAlert(text) {
 }
 
 async function sendWhatsAppMessage(to, text) {
-    const SECURED_ACCESS_TOKEN = "EAAOT5XBXyVwBR7v5XwYnbITF4zF3xWzQXikBjAH1w2qu0sQTbVkyqpNvmRAqhkmU7BqCEcthw5CHelfzr3fmDF2C3la6lw28iYLPI3EmZAZC6vDQoHQyiZAKz7QmfuiZBh0TKhusnrH6CeJZBJLdwU30MOzyr7Vkn26w5dE4md74Bu4OwoLzqfmCCtFDZA9AZDZD"; 
-    const DEFAULT_PHONE_NUMBER_ID = "1202984902891472"; 
+    const SECURED_ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN || "EAAOT5XBXyVwBR7v5XwYnbITF4zF3xWzQXikBjAH1w2qu0sQTbVkyqpNvmRAqhkmU7BqCEcthw5CHelfzr3fmDF2C3la6lw28iYLPI3EmZAZC6vDQoHQyiZAKz7QmfuiZBh0TKhusnrH6CeJZBJLdwU30MOzyr7Vkn26w5dE4md74Bu4OwoLzqfmCCtFDZA9AZDZD"; 
+    const DEFAULT_PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID || "1202984902891472"; 
     try {
         await axios({
             method: "POST", 

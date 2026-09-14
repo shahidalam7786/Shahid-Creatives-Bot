@@ -99,7 +99,7 @@ function getApptTimestamp(dateStr, timeStr) {
 // ==========================================
 // 🚀 1. TELEGRAM BOT SETUP (ORIGINAL SHAHID CREATIVES)
 // ==========================================
-const TELEGRAM_TOKEN = '8563313484:AAHo9aqVSETs4aXntUXn01yIuHN3OdzxTq8';
+const TELEGRAM_TOKEN = '8563313484:AAG9McxPMQkHSiTCjA0HjUzJ3P6e8pgkcDw';
 const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: true });
 
 bot.on('polling_error', (error) => {

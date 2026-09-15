@@ -95,9 +95,9 @@ function getApptTimestamp(dateStr, timeStr) {
 }
 
 // ==========================================
-// 🚀 1. TELEGRAM BOT SETUP (FROM .ENV)
+// 🚀 1. TELEGRAM BOT SETUP (UPDATED NEW TOKEN)
 // ==========================================
-const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN || '8563313484:AAHo9aqVSETs4aXntUXn01yIuHN3OdzxTq8';
+const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN || '8563313484:AAG9McxPMQkHSiTCjA0HjUzJ3P6e8pgkcDw';
 const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: true });
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || '8885973325';
 
@@ -1195,7 +1195,7 @@ async function processUnifiedMessage(from, rawText, platform) {
             const mailOptions = {
                 from: '"Shahid Creatives AI" <contact@shahidcreatives.com>',
                 to: clientEmail,
-                subject: `🎉 Action Required: Your 3-Day Free VIP Demo & GBP Onboarding [${activationId}]`,
+                subject: `🎉 Action Required: Your 3-Day Free VIP Demo & GBP Onboarding [${demoId}]`,
                 html: `
                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
                         <h2 style="color: #0056b3;">Thank you & Congratulations, ${bizName}! 🚀</h2>
@@ -1208,7 +1208,7 @@ async function processUnifiedMessage(from, rawText, platform) {
                         <div style="text-align: center; margin: 30px 0;">
                             <a href="${onboardingLink}" style="background-color: #28a745; color: white; padding: 15px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">🔗 Connect Google Business Profile (GBP)</a>
                         </div>
-                        <p>Please ensure you authorize ONLY with the Google account registered to your GBP.</p>
+                        <p>Please ensure you authorize ONLY with the Gmail/Google Account that is officially registered to your Google Business Profile.</p>
                         <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
                         <p><a href="${waKickoffLink}">🚀 Connect with Shahid on WhatsApp (Instant Kickoff)</a></p>
                         <p><br>Best Regards,<br><strong>Shahid Creatives AI Team</strong></p>
@@ -1233,7 +1233,7 @@ async function processUnifiedMessage(from, rawText, platform) {
                 coupon_code: "11VI20",
                 email: clientEmail, 
                 discussion_notes: adminAlertMsg 
-            }).catch(()=>{});
+            });
         } catch (e) {}
 
         const tgOptions = {
@@ -1246,6 +1246,271 @@ async function processUnifiedMessage(from, rawText, platform) {
         };
 
         return sendUnifiedMessage(from, replyConfirmation, platform, tgOptions);
+    }
+
+    const resetTriggers = [
+        'hi', 'hello', 'menu', 'start', '/start', 'hey',
+        'hi shahid', 'hello shahid',
+        'inquire about your services',
+        'i want to inquire about your services',
+        'want to inquire about your services',
+        'services', 'service', 'inquiry'
+    ];
+
+    const isMatchReset = resetTriggers.some(t => userText === t || (userText.startsWith('hi') && userText.includes('inquire')) || (userText.includes('inquire') && userText.includes('service')));
+
+    if (isMatchReset) {
+        const existingSession = userSessions[from];
+        const recentlyCompleted = existingSession &&
+            existingSession.step === 'completed' &&
+            existingSession.lastSubmitedTime &&
+            (Date.now() - existingSession.lastSubmitedTime < 10 * 60 * 1000);
+
+        if (recentlyCompleted) {
+            let alreadyMsg = (existingSession.lang === 'EN')
+                ? `Hi *${existingSession.clientName}*! Your request (*${existingSession.projectScope}*) is already registered. Our team will connect with you shortly for confirmation and activation! (Timeline: *Minimum 5 Hours to Maximum 1 Working Day*). 🚀\n\n🌐 _Powered by Shahid Creatives_`
+                : `Hi *${existingSession.clientName}*! Aapki request (*${existingSession.projectScope}*) already register ho chuki hai. Humari team confirmation aur activation ke liye aapse bohot jald connect karegi! (Timeline: *Minimum 5 Hours se Maximum 1 Working Day*). 🚀\n\n🌐 _Powered by Shahid Creatives_`;
+            return sendUnifiedMessage(from, alreadyMsg, platform);
+        }
+
+        userSessions[from] = null;
+    }
+
+    if (!userSessions[from]) {
+        userSessions[from] = { 
+            step: 'region_check', 
+            lang: (isInternationalNumber || isGlobalWebsiteTemplate) ? 'EN' : 'HINGLISH', 
+            platform: platform, 
+            clientName: "Valued Client", 
+            clientEmail: "", 
+            projectScope: "Custom Project Development", 
+            requestedSlot: "Not Selected", 
+            lastSubmitedTime: 0, 
+            lastInteractionTime: Date.now(), 
+            nudgeSent: false 
+        };
+    }
+    
+    userSessions[from].lastInteractionTime = Date.now();
+    const userLang = userSessions[from].lang;
+    const currentStep = userSessions[from].step;
+    const session = userSessions[from]; 
+
+    if (rawText.includes("payment transaction failed") || rawText.includes("Failed/Incomplete Booking") || rawText.includes("cancelled or was incomplete")) {
+        let clientName = "Valued Client"; 
+        let projectScope = "Project"; 
+        let projectID = `SC-${Math.floor(1000 + Math.random() * 9000)}`;
+        let clientEmail = "Not Provided";
+        
+        try {
+            const nameMatch = rawText.match(/Client Profile:\s*([^(\n]+)/i);
+            const scopeMatch = rawText.match(/Project Category:\s*([^(\n]+)/i);
+            const idMatch = rawText.match(/Project ID:\s*([^(\n]+)/i);
+            const emailMatch = rawText.match(/Email:\s*([^\n\r]+)/i);
+            
+            if (nameMatch) clientName = nameMatch[1].replace(/[*_]/g, '').trim();
+            if (scopeMatch) projectScope = scopeMatch[1].replace(/[*_\[\]]/g, '').trim();
+            if (emailMatch) clientEmail = emailMatch[1].trim();
+            
+            if (idMatch) {
+                let extractedId = idMatch[1].trim();
+                projectID = extractedId.replace(/^[A-Za-z]+-/, 'SC-');
+                if(!projectID.startsWith('SC-')) {
+                    projectID = `SC-${projectID.replace(/\D/g, '') || Math.floor(1000 + Math.random() * 9000)}`;
+                }
+            }
+        } catch (e) { }
+
+        const isExplicitUSD = rawText.includes('USD') || rawText.includes('$');
+        const isExplicitINR = rawText.includes('INR') || rawText.includes('₹');
+        const isUSDTrack = isExplicitUSD ? true : (isExplicitINR ? false : isInternationalNumber);
+        const isINRLead = !isUSDTrack;
+
+        const tokenAmount = isINRLead ? 999 : 49;
+        const tokenCurrency = isINRLead ? 'INR' : 'USD';
+        const matchedBasePriceStr = getBasePriceByPlan(projectScope, isUSDTrack);
+        const matchedBasePrice = parseFloat(matchedBasePriceStr) || (isINRLead ? 8713 : 110);
+        
+        const savingAmount = Math.round(matchedBasePrice * 0.20);
+        const discountedBasePrice = matchedBasePrice - savingAmount;
+        const finalPayable = calculateTotalPayable(discountedBasePrice, isUSDTrack);
+        
+        const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${projectID}&amount=${tokenAmount}&currency=${tokenCurrency}&totalPrice=${finalPayable}&name=${encodeURIComponent(clientName)}&email=${encodeURIComponent(clientEmail)}&phone=${from}&plan=${encodeURIComponent(projectScope)}&coupon=11VI20`;
+
+        userSessions[from] = { 
+            step: 'payment_failed_resolution',
+            lang: isUSDTrack ? 'EN' : 'HINGLISH',
+            platform: platform,
+            clientName: clientName, 
+            clientEmail: clientEmail,
+            projectScope: projectScope, 
+            savedPlan: projectScope, 
+            projectID: projectID,
+            payLink: selfPayLink,
+            lastInteractionTime: Date.now(), 
+            nudgeSent: true 
+        };
+
+        const currencyAdmin = isUSDTrack ? '$' : '₹';
+        const alertMsg = `🚨 *URGENT: PAYMENT DROP-OFF REPORTED!* 🚨\n\n📱 *Client:* ${platform === 'telegram' ? 'TG-' : '+'}${from}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n👤 *Name:* ${clientName}\n📝 *Plan Scope:* ${projectScope}\n🆔 *Client ID:* ${projectID}\n💵 *Base Price:* ${currencyAdmin}${matchedBasePrice}\n🔥 *Discount Applied:* ${currencyAdmin}${savingAmount} (11VI20)\n💰 *Calculated Price:* ${currencyAdmin}${finalPayable}\n\n⚠️ *Action:* Client bot interaction active to check debit/cancel status.`;
+        sendAdminAlert(alertMsg);
+
+        let replyMsg = isINRLead
+            ? `Oh no! 😟 Maafi chahte hain *${clientName}*, lagta hai aapka *${projectScope}* ka transaction technical issue ki wajah se ruk gaya hai.\n\nKripya batayein ki aapke account ka status kya hai? Niche diye gaye options mein se ek (1 ya 2) chunein:\n\n1️⃣ **Payment account se kat gaya hai (Amount Debited)**\n2️⃣ **Payment fail ya cancel ho gaya tha (Failed/Cancelled)**`
+            : `Oh no! 😟 I'm sorry to hear that your transaction for the *${projectScope}* encountered an issue, *${clientName}*.\n\nCould you please confirm your account status? Reply with 1 or 2:\n\n1️⃣ **The amount was debited from my account**\n2️⃣ **The payment failed or was cancelled**`;
+            
+        return sendUnifiedMessage(from, replyMsg, platform);
+    }
+
+    if (rawText.includes("Name:") && rawText.includes("Phone:") && rawText.includes("Email:") && !rawText.includes("Target City")) {
+        let clientName = "Valued Client";
+        let clientEmail = "Not Provided";
+        let clientPhone = platform === 'whatsapp' ? from : "";
+        let projectScope = "Consultation Inquiry";
+        
+        try {
+            const nameMatch = rawText.match(/Name:\s*([^\n\r]+)/i);
+            const phoneMatch = rawText.match(/Phone:\s*([^\n\r]+)/i);
+            const emailMatch = rawText.match(/Email:\s*([^\n\r]+)/i);
+            const interestMatch = rawText.match(/interested in\s*([^\.\n]+)/i);
+
+            if (nameMatch) clientName = nameMatch[1].replace(/[*_📌]/g, '').trim();
+            if (phoneMatch) clientPhone = phoneMatch[1].replace(/[*_📞]/g, '').trim();
+            if (emailMatch) clientEmail = emailMatch[1].replace(/[*_✉️]/g, '').trim();
+            if (interestMatch) projectScope = interestMatch[1].trim();
+        } catch (e) {}
+
+        const isExplicitUSD = rawText.includes('USD') || rawText.includes('$');
+        const isExplicitINR = rawText.includes('INR') || rawText.includes('₹') || rawText.toLowerCase().includes('punjab') || rawText.toLowerCase().includes('india');
+        const isUSDTrack = isExplicitUSD ? true : (isExplicitINR ? false : isInternationalNumber);
+
+        userSessions[from] = {
+            step: 'awaiting_consultation_slot',
+            lang: isUSDTrack ? 'EN' : 'HINGLISH',
+            platform: platform,
+            clientName: clientName,
+            clientEmail: clientEmail,
+            clientPhone: clientPhone, 
+            projectScope: projectScope,
+            savedPlan: projectScope,
+            lastInteractionTime: Date.now(),
+            nudgeSent: false,
+            skipIdentityCapture: true 
+        };
+
+        const currentHourIST = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Kolkata"})).getHours();
+        
+        const optionA = (currentHourIST >= 17) ? "A) *Kal Shaam 5:00 Baje*" : "A) *Aaj Shaam 5:00 Baje*";
+        const optionB = (currentHourIST >= 17) ? "B) *Parso Dopahar 12:00 Baje*" : "B) *Kal Dopahar 12:00 Baje*";
+        const optionA_EN = (currentHourIST >= 17) ? "A) *Tomorrow at 5:00 PM*" : "A) *Today at 5:00 PM*";
+        const optionB_EN = (currentHourIST >= 17) ? "B) *Day After Tomorrow at 12:00 PM*" : "B) *Tomorrow at 12:00 PM*";
+
+        const replyMsg = isUSDTrack 
+            ? `Hello *${clientName}*! We received your details for *${projectScope}*.\n\n👤 *Direct Consultation Setup:*\n\n${optionA_EN}\n${optionB_EN}\n🅲️ *Custom Time (Type preferred time below)*\n\n👉 Reply with A, B, or C!`
+            : `Hello *${clientName}*! Humne aapki details save kar li hain (*${projectScope}*).\n\n👤 *Direct Consultation Setup:*\n\n${optionA}\n${optionB}\n🅲️ *Custom Time (Apna secure timing niche type karein)*\n\n👉 Kripya **A, B, ya C** likh kar reply kijiye!`;
+
+        return sendUnifiedMessage(from, replyMsg, platform);
+    }
+
+    if (currentStep === 'demo_activation_submit') {
+        if (rawText.length < 25 || (!rawText.toLowerCase().includes('name') && !rawText.toLowerCase().includes('business'))) {
+            let errMsg = (userLang === 'EN')
+                ? "⚠️ *Incomplete Details!*\nPlease copy the full form template provided above, fill in your business details, and reply to activate your demo."
+                : "⚠️ *Incomplete Details!*\nKripya upar diye gaye form template ko pura copy karein, apni business details bharein, aur fir reply karke apna demo activate karein.";
+            return sendUnifiedMessage(from, errMsg, platform);
+        }
+
+        userSessions[from].step = 'completed';
+        
+        let clientName = "Demo Client";
+        let clientEmail = "Not Provided";
+        let displayPhone = platform === 'whatsapp' ? from : "Not Provided";
+        let bizName = "Valued Business";
+        let city = "Ludhiana";
+        let category = "General";
+
+        try {
+            const nameMatch = rawText.match(/Contact Person Name:\s*([^\n\r]+)/i);
+            const emailMatch = rawText.match(/Email Address \(Optional\):\s*([^\n\r]+)/i);
+            const phoneMatch = rawText.match(/WhatsApp \/ Phone Number:\s*([^\n\r]+)/i);
+            
+            const bizNameMatch = rawText.match(/Business or Brand Name:\s*([^\n\r]+)/i);
+            const locMatch = rawText.match(/Target City \/ Location:\s*([^\n\r]+)/i);
+            const catMatch = rawText.match(/Business Category:\s*([^\n\r]+)/i);
+            
+            if (nameMatch) clientName = nameMatch[1].replace(/[*_]/g, '').trim();
+            if (emailMatch) clientEmail = emailMatch[1].replace(/[*_]/g, '').trim();
+            if (phoneMatch) displayPhone = phoneMatch[1].replace(/[*_]/g, '').trim();
+            
+            if (bizNameMatch) bizName = bizNameMatch[1].replace(/[*_]/g, '').trim();
+            if (locMatch) city = locMatch[1].replace(/[*_]/g, '').trim();
+            if (catMatch) category = catMatch[1].replace(/[*_]/g, '').trim();
+        } catch (e) {}
+
+        const demoId = `DEMO-${Math.floor(10000 + Math.random() * 90000)}`;
+        const onboardingLink = `https://api.shahidcreatives.com/connect-gmb?clientId=${demoId}`;
+        const waText = encodeURIComponent(`Hello Shahid! I have successfully authorized and connected Google Business Profile for: ${demoId} (ID: ${demoId}). Please confirm our 24/7 AI review bot status!`);
+        const waKickoffLink = `https://wa.me/917529839762?text=${waText}`;
+
+        const adminAlert = `🚨 *NEW 3-DAY DEMO ACTIVATION!* 🚨\n\n📱 *Contact:* ${displayPhone} (${platform})\n💬 *Chat ID:* ${from}\n👤 *Extracted Name:* ${clientName}\n🏢 *Business:* ${bizName}\n🆔 *Demo ID:* ${demoId}\n📍 *City:* ${city}\n🏷️ *Category:* ${category}\n\n*📋 Submitted Form Data:*\n${rawText}`;
+        sendAdminAlert(adminAlert);
+
+        try {
+            await axios.post('https://shahidcreatives.com/api/whatsapp-leads', { 
+                client_name: clientName, 
+                whatsapp_number: displayPhone, 
+                telegram_chat_id: platform === 'telegram' ? from : undefined, 
+                project_scope: `3-Day Free VIP Demo Request (${bizName})`, 
+                calculated_price: 0, 
+                coupon_code: "11VI20",
+                email: clientEmail, 
+                discussion_notes: adminAlert 
+            });
+        } catch (e) { }
+
+        if (clientEmail && clientEmail !== "Not Provided" && clientEmail.includes("@")) {
+            const mailOptions = {
+                from: '"Shahid Creatives AI" <contact@shahidcreatives.com>',
+                to: clientEmail,
+                subject: `🎉 Action Required: Your 3-Day Free VIP Demo & GBP Onboarding [${demoId}]`,
+                html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                        <h2 style="color: #0056b3;">Thank you & Congratulations, ${bizName}! 🚀</h2>
+                        <p>Your <strong>3-Day Free VIP Demo</strong> for <strong>${bizName}</strong> has been successfully registered and queued for activation!</p>
+                        <p><strong>Your Unique Demo ID:</strong> <span style="background: #eee; padding: 5px 10px; border-radius: 5px; font-weight: bold;">${demoId}</span></p>
+                        <p>⏱️ <strong>Activation Timeline:</strong> Minimum 5 Hours to Maximum 1 Working Day.</p>
+                        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                        <h3 style="color: #d9534f;">⚠️ Important Instruction: GBP Connection</h3>
+                        <p>To enable the AI review responder and Maps ranking sync, please connect your Google Business Profile below:</p>
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="${onboardingLink}" style="background-color: #28a745; color: white; padding: 15px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">🔗 Connect Google Business Profile (GBP)</a>
+                        </div>
+                        <p>Please ensure you authorize ONLY with the Gmail/Google Account that is officially registered to your Google Business Profile.</p>
+                        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                        <p><a href="${waKickoffLink}">🚀 Connect with Shahid on WhatsApp (Instant Kickoff)</a></p>
+                        <p><br>Best Regards,<br><strong>Shahid Creatives AI Team</strong></p>
+                    </div>
+                `
+            };
+            transporter.sendMail(mailOptions).catch(err => console.log("Demo Mail Error:", err));
+        }
+
+        const successMsgEN = `🎉 *Thank you & Congratulations ${bizName}!* 🚀\n\nYour *3-Day Free VIP Demo* for *${bizName}* has been successfully registered and queued for activation!\n\n🆔 *Demo ID:* \`${demoId}\`\n👤 *Client / Contact:* ${clientName}\n📱 *Phone / WhatsApp:* ${displayPhone.startsWith('+') ? displayPhone : '+' + displayPhone}\n✉️ *Email:* ${clientEmail}\n📍 *Location:* ${city}\n🏷️ *Category:* ${category}\n\n⚡ *Included in Growth Triad:*\n1️⃣ Google Business Profile (GMB) AI Engine (Auto 5-star review replies)\n2️⃣ Hyper-Local SEO Audit Simulator (Competitor keyword ranking gaps)\n3️⃣ 24/7 Telegram & Meta-Verified WhatsApp Business API Bot (Official verified integration)\n\n✅ *Official Meta Business Verified | Zero Risk Guarantee*\n⏱️ *Activation Timeline:* *Minimum 5 Hours to Maximum 1 Working Day*\n_(Our technical team is configuring your dedicated node, knowledgebase, and verified GBP sync.)_\n\n🔗 *GBP AI Onboarding Link:*\n${onboardingLink}\n\n⚠️ *Zaroori Instruction:* Kripya GBP onboarding link ko apne *Google Business Profile (GBP) registered Google/Gmail account* se hi open/authorize karein.\n\n👉 *Direct Demo Portal:* https://shahidcreatives.com/#combo-demo\n\n- Shahid Creatives (https://shahidcreatives.com)`;
+
+        const successMsgHIN = `🎉 *Thank you & Congratulations ${bizName}!* 🚀\n\nAapka *3-Day Free VIP Demo* (*${bizName}* ke liye) successfully registered aur activation queue me save ho gaya hai!\n\n🆔 *Demo ID:* \`${demoId}\`\n👤 *Client / Contact:* ${clientName}\n📱 *Phone / WhatsApp:* ${displayPhone.startsWith('+') ? displayPhone : '+' + displayPhone}\n✉️ *Email:* ${clientEmail}\n📍 *Location:* ${city}\n🏷️ *Category:* ${category}\n\n⚡ *Included in Growth Triad:*\n1️⃣ Google Business Profile (GMB) AI Engine (Auto 5-star review replies)\n2️⃣ Hyper-Local SEO Audit Simulator (Competitor keyword ranking gaps)\n3️⃣ 24/7 Telegram & Meta-Verified WhatsApp Business API Bot (Official verified integration)\n\n✅ *Official Meta Business Verified | Zero Risk Guarantee*\n⏱️ *Activation Timeline:* *Minimum 5 Hours se lekar Maximum 1 Working Day*\n_(Humari technical team aapka dedicated node, knowledgebase aur verified GBP sync configure kar rahi hai.)_\n\n🔗 *GBP AI Onboarding Link:*\n${onboardingLink}\n\n⚠️ *Zaroori Instruction:* Kripya GBP onboarding link ko apne *Google Business Profile (GBP) registered Google/Gmail account* se hi open/authorize karein.\n\n👉 *Direct Demo Portal:* https://shahidcreatives.com/#combo-demo\n\n- Shahid Creatives (https://shahidcreatives.com)`;
+
+        const finalSuccessMsg = (userLang === 'EN') ? successMsgEN : successMsgHIN;
+
+        const tgOptions = {
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: "🔗 Connect Google Business Profile (GBP)", url: onboardingLink }],
+                    [{ text: "🚀 Notify Authorization (Send to Team)", url: waKickoffLink }]
+                ]
+            }
+        };
+
+        return sendUnifiedMessage(from, finalSuccessMsg, platform, tgOptions);
     }
 
     const resetTriggers = [

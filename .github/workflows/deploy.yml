@@ -19,12 +19,4 @@ jobs:
 
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
 
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} << 'EOF'
-            set -e
-            cd /home/contact/Shahid-Creatives-Bot
-            git fetch origin main
-            git reset --hard origin/main
-            npm install --production
-            pm2 restart shahid-creatives-bot --update-env
-            pm2 save
-          EOF
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} "bash -lc 'cd /home/contact/Shahid-Creatives-Bot && git fetch origin main && git reset --hard origin/main && npm install --production && pm2 restart shahid-creatives-bot --update-env && pm2 save'"

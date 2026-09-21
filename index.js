@@ -95,7 +95,7 @@ function getApptTimestamp(dateStr, timeStr) {
 }
 
 // ==========================================
-// 🚀 1. TELEGRAM BOT SETUP (UPDATED NEW TOKEN)
+// 🚀 1. TELEGRAM BOT SETUP
 // ==========================================
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN || '8563313484:AAG9McxPMQkHSiTCjA0HjUzJ3P6e8pgkcDw';
 const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: true });
@@ -822,27 +822,22 @@ function getBasePriceByPlan(planScope, isUSD = false) {
     const text = String(planScope).toLowerCase().trim();
     
     if (isUSD) {
-        // Meta Business (FB/IG) Standalone
         if (text.includes("starter ai suite (fb / ig)") || (text.includes("starter ai") && (text.includes("fb") || text.includes("ig")))) return "56";
         if (text.includes("growth ai suite (fb + ig dual)") || (text.includes("growth ai") && (text.includes("dual") || text.includes("fb + ig")))) return "112";
         if (text.includes("pro ai suite (multi-account & crm)") || text.includes("pro ai suite")) return "225";
 
-        // WhatsApp Standalone
         if (text.includes("whatsapp starter") || (text.includes("whatsapp") && text.includes("visiting card"))) return "22";
         if (text.includes("whatsapp growth") || (text.includes("whatsapp") && text.includes("booking"))) return "45";
         if (text.includes("whatsapp enterprise") || (text.includes("gemini") && text.includes("whatsapp"))) return "79";
 
-        // Complete Meta Suite (WhatsApp + IG + FB)
         if (text.includes("starter complete (meta & whatsapp)") || text.includes("starter complete")) return "101";
         if (text.includes("growth complete (omnichannel engine)") || text.includes("growth complete")) return "180";
         if (text.includes("business pro complete (enterprise meta)") || text.includes("business pro complete")) return "338";
 
-        // Mobile Apps
         if (text.includes("starter mobile mvp") || (text.includes("mobile") && text.includes("mvp")) || (text.includes("starter") && text.includes("mobile"))) return "399";
         if (text.includes("business pro") || text.includes("dual store") || (text.includes("mobile") && text.includes("business"))) return "799";
         if (text.includes("custom enterprise & scale") || text.includes("enterprise & scale") || (text.includes("mobile") && (text.includes("enterprise") || text.includes("scale")))) return "1499";
 
-        // Combos
         if (text.includes("local ai & gmb growth") || text.includes("plan 1")) {
             if (text.includes("annual") || text.includes("year") || text.includes("399")) { return "399"; }
             return "69"; 
@@ -852,7 +847,6 @@ function getBasePriceByPlan(planScope, isUSD = false) {
             return "169"; 
         }
 
-        // AI Retainers
         if (text.includes("starter digital") || text.includes("maintainer")) return "77";
         if (text.includes("web conversion") || text.includes("conversion engine")) return "155";
         if (text.includes("omnichannel") || text.includes("growth partner")) return "311";
@@ -862,7 +856,6 @@ function getBasePriceByPlan(planScope, isUSD = false) {
         if ((text.includes("telegram") && text.includes("growth"))) return "155";
         if ((text.includes("telegram") && text.includes("elite"))) return "311";
         
-        // Websites
         if (text.includes("starter plan") || text.includes("visiting card") || text.includes("starter / visiting card site")) return "199";
         if (text.includes("basic plan") || text.includes("landing page")) return "299";
         if (text.includes("starter business") || text.includes("business website")) return "499";
@@ -871,27 +864,22 @@ function getBasePriceByPlan(planScope, isUSD = false) {
         
         return "110";
     } else {
-        // Meta Business (FB/IG) Standalone
         if (text.includes("starter ai suite (fb / ig)") || (text.includes("starter ai") && (text.includes("fb") || text.includes("ig")))) return "3999";
         if (text.includes("growth ai suite (fb + ig dual)") || (text.includes("growth ai") && (text.includes("dual") || text.includes("fb + ig")))) return "7999";
         if (text.includes("pro ai suite (multi-account & crm)") || text.includes("pro ai suite")) return "15999";
 
-        // WhatsApp Standalone
         if (text.includes("whatsapp starter") || (text.includes("whatsapp") && text.includes("visiting card"))) return "1599";
         if (text.includes("whatsapp growth") || (text.includes("whatsapp") && text.includes("booking"))) return "3199";
         if (text.includes("whatsapp enterprise") || (text.includes("gemini") && text.includes("whatsapp"))) return "5599";
 
-        // Complete Meta Suite (WhatsApp + IG + FB)
         if (text.includes("starter complete (meta & whatsapp)") || text.includes("starter complete")) return "7199";
         if (text.includes("growth complete (omnichannel engine)") || text.includes("growth complete")) return "12799";
         if (text.includes("business pro complete (enterprise meta)") || text.includes("business pro complete")) return "23999";
 
-        // Mobile Apps
         if (text.includes("starter mobile mvp") || (text.includes("mobile") && text.includes("mvp")) || (text.includes("starter") && text.includes("mobile"))) return "24999";
         if (text.includes("business pro") || text.includes("dual store") || (text.includes("mobile") && text.includes("business"))) return "49500";
         if (text.includes("custom enterprise & scale") || text.includes("enterprise & scale") || (text.includes("mobile") && (text.includes("enterprise") || text.includes("scale")))) return "95000";
 
-        // Combos
         if (text.includes("local ai & gmb growth") || text.includes("plan 1")) {
             if (text.includes("annual") || text.includes("year") || text.includes("24999")) { return "24999"; }
             return "4999"; 
@@ -901,7 +889,6 @@ function getBasePriceByPlan(planScope, isUSD = false) {
             return "12999"; 
         }
 
-        // AI Retainers
         if (text.includes("starter digital") || text.includes("maintainer")) return "4999";
         if (text.includes("web conversion") || text.includes("conversion engine")) return "9499";
         if (text.includes("omnichannel") || text.includes("growth partner")) return "18999";
@@ -911,7 +898,6 @@ function getBasePriceByPlan(planScope, isUSD = false) {
         if ((text.includes("telegram") && text.includes("growth"))) return "7599";
         if ((text.includes("telegram") && text.includes("elite"))) return "15199";
         
-        // Websites
         if (text.includes("landing page") || text.includes("funnel")) return "12300";
         if (text.includes("business") || text.includes("corporate")) return "25500";
         if ((text.includes("e-commerce") || text.includes("store")) && !text.includes("sales automation") && !text.includes("retainer")) return "47500";
@@ -1881,7 +1867,7 @@ async function processUnifiedMessage(from, rawText, platform) {
             } else if (catType === 'meta') {
                 interceptorReply = isUSDTrack
                     ? "🌐 *COMPLETE META & WHATSAPP AI AUTOMATION (USD)*\n_(+20% Extra + 3.5% PG Fee included)_\n\n👉 Reply with an option number (1 to 9):\n\n🔹 *Meta Business (FB / IG):*\n1️⃣ Starter AI Suite (FB / IG) - Setup: $56 | $28/mo\n2️⃣ Growth AI Suite (FB + IG Dual) - Setup: $112 | $56/mo\n3️⃣ Pro AI Suite (Multi-Account & CRM) - Setup: $225 | $112/mo\n\n🔹 *WhatsApp Business (Standalone):*\n4️⃣ WhatsApp Starter - Setup: $22 | $56/mo\n5️⃣ WhatsApp Growth (Bookings & UPI) - Setup: $45 | $112/mo\n6️⃣ WhatsApp Enterprise (Gemini AI Bot) - Setup: $79 | $211/mo\n\n🔹 *Complete Meta Suite (WA + IG + FB):*\n7️⃣ Starter Complete (Meta & WhatsApp) - Setup: $101 | $35/mo\n8️⃣ Growth Complete (Omnichannel Engine) - Setup: $180 | $70/mo\n9️⃣ Business Pro Complete (Enterprise) - Setup: $338 | $127/mo"
-                    : "🌐 *COMPLETE META & WHATSAPP AI AUTOMATION (INR)*\n_(18% GST + 2.5% PG Fee | Flat 20% OFF Setup via 11VI20)_\n\n👉 Niche diye gaye options mein se ek number (1 se 9) reply karein:\n\n🔹 *Meta Business (FB / IG):*\n1️⃣ Starter AI Suite (FB / IG) - Setup: ₹3,999 | ₹1,999/mo\n2️⃣ Growth AI Suite (FB + IG Dual) - Setup: ₹7,999 | ₹3,999/mo\n3️⃣ Pro AI Suite (Multi-Account & CRM) - Setup: ₹15,999 | ₹7,999/mo\n\n🔹 *WhatsApp Business (Standalone):*\n4️⃣ WhatsApp Starter - Setup: ₹1,599 | ₹3,999/mo\n5️⃣ WhatsApp Growth (Bookings & UPI) - Setup: ₹3,199 | ₹7,999/mo\n6️⃣ WhatsApp Enterprise (Gemini AI Bot) - Setup: ₹5,599 | ₹14,999/mo\n\n🔹 *Complete Meta Suite (WA + IG + FB):*\n7️⃣ Starter Complete (Meta & WhatsApp) - Setup: ₹7,199 | ₹2,499/mo\n8️⃣ Growth Complete (Omnichannel Engine) - Setup: ₹12,799 | ₹4,999/mo\n9️⃣ Business Pro Complete (Enterprise) - Setup: ₹23,999 | ₹8,999/mo";
+                    : "🌐 *COMPLETE META & WHATSAPP AI AUTOMATION (INR)*\n_(18% GST + 2.5% PG Fee | Flat 20% OFF Setup via 11VI20)_\n\n👉 Niche diye gaye options mein se ek number (1 se 9) reply karein:\n\n🔹 *Meta Business (FB / IG):*\n1️⃣ Starter AI Suite (FB / IG) - Setup: ₹3,999 | ₹1,999/mo\n2️⃣ Growth AI Suite (FB + IG Dual) - Setup: ₹7,999 | ₹3,999/mo\n3️⃣ Pro AI Suite (Multi-Account & CRM) - Setup: ₹15,999 | ₹7,999/mo\n\n🔹 *WhatsApp Business (Standalone):*\n4️⃣ WhatsApp Starter - Setup: ₹1,599 | ₹3,999/mo\n5️⃣ WhatsApp Growth - Setup: ₹3,199 | ₹7,999/mo\n6️⃣ WhatsApp Enterprise (Gemini AI Bot) - Setup: ₹5,599 | ₹14,999/mo\n\n🔹 *Complete Meta Suite (WA + IG + FB):*\n7️⃣ Starter Complete (Meta & WhatsApp) - Setup: ₹7,199 | ₹2,499/mo\n8️⃣ Growth Complete (Omnichannel Engine) - Setup: ₹12,799 | ₹4,999/mo\n9️⃣ Business Pro Complete (Enterprise) - Setup: ₹23,999 | ₹8,999/mo";
             } else {
                 interceptorReply = isUSDTrack 
                     ? "⚠️ Please be specific! What AI architecture do you want? \n\n👉 Reply with an option number (1-8):\n1️⃣ *Starter Digital Maintainer* ($77)\n2️⃣ *Web Conversion Engine* ($155)\n3️⃣ *Omnichannel Growth Partner* ($311)\n4️⃣ *Full-Scale Ecosystem Operations* ($499)\n5️⃣ *Elite Intelligence* ($799)\n6️⃣ *Telegram Universal Automation - Starter* ($77)\n7️⃣ *Telegram Universal Automation - Growth* ($155)\n8️⃣ *Telegram Universal Automation - Elite* ($311)"
@@ -2338,8 +2324,8 @@ async function processUnifiedMessage(from, rawText, platform) {
             userSessions[from].projectScope = "3-Day Free VIP Demo";
             
             const demoMsg = (userLang === 'EN')
-                ? "🎁 *3-Day Free VIP Demo: Growth Triad (100% Free - Zero Risk)*\n\nExperience our entire automated revenue engine for 72 hours with no upfront cost or credit card:\n\n1️⃣ *Google Business Profile (GMB) AI Engine* (Auto 5-star review replies & Maps rank booster)\n2️⃣ *Hyper-Local SEO Audit Simulator* (Competitor keyword ranking gaps & citation score)\n3️⃣ *24/7 Telegram & Meta-Verified WhatsApp Business API Bot* (Official verified integration — Instant 3-sec reply & qualification)\n\n⚡ *Setup ready in 2-4 hours | Zero Risk Guarantee | ✅ Official Meta Business Verified*\n\n👇 *ACTIVATE YOUR DEMO NOW*\nPlease copy the form below, fill in your details, and reply. We will configure your dedicated node immediately:\n\n*Business or Brand Name:*\n*Contact Person Name:*\n*WhatsApp / Phone Number:*\n*Email Address (Optional):*\n*Target City / Location:*\n*Business Category:* (e.g., Local Services, Real Estate, Healthcare, etc.)\n*Website URL or Maps Link:*\n*Special Requirements:* "
-                : "🎁 *3-Day Free VIP Demo: Growth Triad (100% Free - Zero Risk)*\n\nBina kisi upfront cost ya credit card ke 72 hours tak hamara complete automated revenue engine test karein:\n\n1️⃣ *Google Business Profile (GMB) AI Engine* (Auto 5-star review replies & Maps rank booster)\n2️⃣ *Hyper-Local SEO Audit Simulator* (Competitor keyword ranking gaps & citation score)\n3️⃣ *24/7 Telegram & Meta-Verified WhatsApp Business API Bot* (Official verified integration — Instant 3-sec reply & qualification)\n\n⚡ *Setup ready in 2-4 hours | Zero Risk Guarantee | ✅ Official Meta Business Verified*\n\n👇 *ACTIVATE YOUR DEMO NOW*\nKripya niche diye gaye form ko copy karein, apni details bharein aur humein bhejein. Hum turant aapka dedicated node configure kar denge:\n\n*Business or Brand Name:*\n*Contact Person Name:*\n*WhatsApp / Phone Number:*\n*Email Address (Optional):*\n*Target City / Location:*\n*Business Category:* (e.g., Local Services, Real Estate, Healthcare, etc.)\n*Website URL or Maps Link:*\n*Special Requirements:* ";
+                ? "🎁 *3-Day Free VIP Demo: Growth Triad (100% Free - Zero Risk)*\n\nExperience our entire automated revenue engine for 72 hours with no upfront cost or credit card:\n\n1️⃣ *Google Business Profile (GMB) AI Engine* (Auto 5-star review replies & Maps rank booster)\n2️⃣ *Hyper-Local SEO Audit Simulator* (Competitor keyword ranking gaps & citation score)\n3️⃣ *24/7 Telegram & Meta-Verified WhatsApp Business API Bot* (Official verified integration — Instant 3-sec reply & qualification)\n\n⚡ *Setup ready in 5 hours to 1 working day | Zero Risk Guarantee | ✅ Official Meta Business Verified*\n\n👇 *ACTIVATE YOUR DEMO NOW*\nPlease copy the form below, fill in your details, and reply. We will configure your dedicated node immediately:\n\n*Business or Brand Name:*\n*Contact Person Name:*\n*WhatsApp / Phone Number:*\n*Email Address (Optional):*\n*Target City / Location:*\n*Business Category:* (e.g., Local Services, Real Estate, Healthcare, etc.)\n*Website URL or Maps Link:*\n*Special Requirements:* "
+                : "🎁 *3-Day Free VIP Demo: Growth Triad (100% Free - Zero Risk)*\n\nBina kisi upfront cost ya credit card ke 72 hours tak hamara complete automated revenue engine test karein:\n\n1️⃣ *Google Business Profile (GMB) AI Engine* (Auto 5-star review replies & Maps rank booster)\n2️⃣ *Hyper-Local SEO Audit Simulator* (Competitor keyword ranking gaps & citation score)\n3️⃣ *24/7 Telegram & Meta-Verified WhatsApp Business API Bot* (Official verified integration — Instant 3-sec reply & qualification)\n\n⚡ *Setup ready in 5 hours to 1 working day | Zero Risk Guarantee | ✅ Official Meta Business Verified*\n\n👇 *ACTIVATE YOUR DEMO NOW*\nKripya niche diye gaye form ko copy karein, apni details bharein aur humein bhejein. Hum turant aapka dedicated node configure kar denge:\n\n*Business or Brand Name:*\n*Contact Person Name:*\n*WhatsApp / Phone Number:*\n*Email Address (Optional):*\n*Target City / Location:*\n*Business Category:* (e.g., Local Services, Real Estate, Healthcare, etc.)\n*Website URL or Maps Link:*\n*Special Requirements:* ";
             return sendUnifiedMessage(from, demoMsg, platform);
         } else if (targetMenuRoute === '7') {
             userSessions[from].step = 'process_app_menu';

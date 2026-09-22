@@ -118,19 +118,30 @@ bot.on('callback_query', async (query) => {
         const clientChatId = parts.slice(3).join('_');
         
         if (action === 'confirm') {
-            bot.editMessageText(query.message.text + "\n\n✅ *STATUS: BOOKING CONFIRMED BY ADMIN*", { chat_id: chatId, message_id: query.message.message_id, parse_mode: "HTML" }).catch(()=>{});
+            await bot.editMessageText(query.message.text + "\n\n✅ STATUS: BOOKING CONFIRMED BY ADMIN", { 
+                chat_id: chatId, 
+                message_id: query.message.message_id,
+                reply_markup: { inline_keyboard: [] } 
+            }).catch(()=>{});
             
+            const clientPlatform = (userSessions[clientChatId] && userSessions[clientChatId].platform) ? userSessions[clientChatId].platform : (clientChatId.includes('91') || clientChatId.length > 10 ? 'whatsapp' : 'telegram');
             const clientLang = userSessions[clientChatId] ? userSessions[clientChatId].lang : 'EN';
+            
             const confirmMsg = clientLang === 'EN' 
                 ? `🎉 *Consultation Confirmed!*\n\nYour strategy call slot has been successfully verified by our team. We will call you exactly at your requested time! 🚀\n\n🌐 _Powered by Shahid Creatives_`
                 : `🎉 *Consultation Confirmed!*\n\nHumari team ne aapka strategy call slot verify aur confirm kar diya hai. Hum theek aapke diye hue samay par raabta karenge! 🚀\n\n🌐 _Powered by Shahid Creatives_`;
             
-            sendUnifiedMessage(clientChatId, confirmMsg, clientChatId.includes('91') || clientChatId.length > 10 ? 'whatsapp' : 'telegram');
+            await sendUnifiedMessage(clientChatId, confirmMsg, clientPlatform);
             
         } else if (action === 'resched') {
             mainAdminState = clientChatId;
-            bot.editMessageText(query.message.text + "\n\n🔄 *STATUS: PENDING RESCHEDULE UPDATE*", { chat_id: chatId, message_id: query.message.message_id, parse_mode: "HTML" }).catch(()=>{});
-            bot.sendMessage(chatId, `⚠️ Aapne Client (${clientChatId}) ke liye *Reschedule/Message* chuna hai.\n\n👉 *Kripya naya Time ya Message type karke bhejein:*\n_(Yeh message seedha client ko bhej diya jayega)_`, { parse_mode: "Markdown" }).catch(()=>{});
+            await bot.editMessageText(query.message.text + "\n\n🔄 STATUS: PENDING RESCHEDULE UPDATE", { 
+                chat_id: chatId, 
+                message_id: query.message.message_id,
+                reply_markup: { inline_keyboard: [] }
+            }).catch(()=>{});
+            
+            await bot.sendMessage(chatId, `⚠️ Aapne Client (${clientChatId}) ke liye *Reschedule/Message* chuna hai.\n\n👉 *Kripya naya Time ya Message type karke bhejein:*\n_(Yeh message seedha client ko bhej diya jayega)_`, { parse_mode: "Markdown" }).catch(()=>{});
         }
         return bot.answerCallbackQuery(query.id).catch(()=>{});
     }
@@ -155,6 +166,7 @@ bot.on('message', async (msg) => {
 
     if (chatId === ADMIN_CHAT_ID && mainAdminState) {
         const clientChatId = mainAdminState;
+        const clientPlatform = (userSessions[clientChatId] && userSessions[clientChatId].platform) ? userSessions[clientChatId].platform : (clientChatId.includes('91') || clientChatId.length > 10 ? 'whatsapp' : 'telegram');
         const clientLang = userSessions[clientChatId] ? userSessions[clientChatId].lang : 'EN';
         const isEn = clientLang === 'EN';
 
@@ -162,7 +174,7 @@ bot.on('message', async (msg) => {
             ? `⚠️ *Update from Shahid Creatives*\n\nSorry, your previously selected slot is unavailable. Our Team has an update for you:\n\n🔄 *Updated Time/Message:*\n${text}\n\n🌐 _Powered by Shahid Creatives_`
             : `⚠️ *Update from Shahid Creatives*\n\nMaafi chahte hain, aapka chuna hua slot available nahi hai. Humari team ka naya sandesh:\n\n🔄 *Updated Time/Message:*\n${text}\n\n🌐 _Powered by Shahid Creatives_`;
         
-        sendUnifiedMessage(clientChatId, updateMsg, clientChatId.includes('91') || clientChatId.length > 10 ? 'whatsapp' : 'telegram');
+        await sendUnifiedMessage(clientChatId, updateMsg, clientPlatform);
         bot.sendMessage(chatId, `✅ Update sent successfully to Client!`, { parse_mode: 'Markdown' }).catch(()=>{});
         mainAdminState = null; 
         return;
@@ -207,14 +219,22 @@ salonBot.on('callback_query', async (query) => {
             const clientChatId = parts[3]; 
 
             if (action === 'confirm') {
-                await salonBot.editMessageText(query.message.text + "\n\n✅ *STATUS: BOOKING CONFIRMED BY YOU*", { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
+                await salonBot.editMessageText(query.message.text + "\n\n✅ STATUS: BOOKING CONFIRMED BY YOU", { 
+                    chat_id: chatId, 
+                    message_id: messageId,
+                    reply_markup: { inline_keyboard: [] }
+                }).catch(()=>{});
                 await salonBot.sendMessage(clientChatId, "🎉 *Great News!*\n\nYour appointment has been *CONFIRMED* by the salon. Hum aapka intezaar kar rahe hain! ✨\n\n🌐 _Powered by Shahid Creatives_", { parse_mode: "Markdown" });
             } else if (action === 'resched') {
                 salonAdminState = clientChatId;
-                await salonBot.editMessageText(query.message.text + "\n\n🔄 *STATUS: PENDING TIME UPDATE*", { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
+                await salonBot.editMessageText(query.message.text + "\n\n🔄 STATUS: PENDING TIME UPDATE", { 
+                    chat_id: chatId, 
+                    message_id: messageId,
+                    reply_markup: { inline_keyboard: [] }
+                }).catch(()=>{});
                 await salonBot.sendMessage(chatId, `⚠️ Aapne Client (${clientChatId}) ke liye *Reschedule* chuna hai.\n\n👉 *Kripya naya Time ya Message type karke bhejein:*\n_(Yeh message seedha client ko bhej diya jayega)_`, { parse_mode: "Markdown" });
             }
-            return salonBot.answerCallbackQuery(query.id);
+            return salonBot.answerCallbackQuery(query.id).catch(()=>{});
         }
 
         if (!salonSessions[chatId]) salonSessions[chatId] = { step: 'start' };
@@ -497,14 +517,22 @@ zamZamBot.on('callback_query', async (query) => {
             const clientChatId = parts[3]; 
 
             if (action === 'confirm') {
-                await zamZamBot.editMessageText(query.message.text + "\n\n✅ *STATUS: BOOKING CONFIRMED BY YOU*", { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
+                await zamZamBot.editMessageText(query.message.text + "\n\n✅ STATUS: BOOKING CONFIRMED BY YOU", { 
+                    chat_id: chatId, 
+                    message_id: messageId,
+                    reply_markup: { inline_keyboard: [] }
+                }).catch(()=>{});
                 await zamZamBot.sendMessage(clientChatId, "🎉 *Great News!*\n\nAapki appointment Clinic dwara *CONFIRM* kar di gayi hai. Kripya samay par pahuchein! 🩺\n\n🌐 _Powered by Shahid Creatives_", { parse_mode: "Markdown" });
             } else if (action === 'resched') {
                 zamzamAdminState = clientChatId; 
-                await zamZamBot.editMessageText(query.message.text + "\n\n🔄 *STATUS: PENDING TIME UPDATE*", { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
+                await zamZamBot.editMessageText(query.message.text + "\n\n🔄 STATUS: PENDING TIME UPDATE", { 
+                    chat_id: chatId, 
+                    message_id: messageId,
+                    reply_markup: { inline_keyboard: [] }
+                }).catch(()=>{});
                 await zamZamBot.sendMessage(chatId, `⚠️ Aapne Patient (${clientChatId}) ke liye *Reschedule/Update Time* chuna hai.\n\n👉 *Kripya naya Time ya Message type karke bhejein:*\n_(Yeh message seedha patient ko bhej diya jayega)_`, { parse_mode: "Markdown" });
             }
-            return zamZamBot.answerCallbackQuery(query.id);
+            return zamZamBot.answerCallbackQuery(query.id).catch(()=>{});
         }
 
         if (!zamzamSessions[chatId]) zamzamSessions[chatId] = { step: 'start', lang: 'HIN' };
@@ -831,7 +859,7 @@ function getBasePriceByPlan(planScope, isUSD = false) {
         if (text.includes("whatsapp enterprise") || (text.includes("gemini") && text.includes("whatsapp"))) return "79";
 
         if (text.includes("starter complete (meta & whatsapp)") || text.includes("starter complete")) return "101";
-        if (text.includes("growth complete (omnichannel engine)") || text.includes("growth complete")) return "180";
+        if (text.includes("growth complete (om omnichannel engine)") || text.includes("growth complete")) return "180";
         if (text.includes("business pro complete (enterprise meta)") || text.includes("business pro complete")) return "338";
 
         if (text.includes("starter mobile mvp") || (text.includes("mobile") && text.includes("mvp")) || (text.includes("starter") && text.includes("mobile"))) return "399";
@@ -1034,9 +1062,6 @@ async function processUnifiedMessage(from, rawText, platform) {
     const isInternationalNumber = platform === 'whatsapp' ? !from.startsWith("91") : false;
     const isGlobalWebsiteTemplate = rawText.includes("Global USD") || rawText.includes("Worldwide") || rawText.includes("$") || rawText.includes("lock in my custom website estimate");
 
-    // =========================================================================
-    // 🚀 NEW UPGRADE: UNIVERSAL BOOK DEMO & CONSULTATION PLAN TRIGGER
-    // =========================================================================
     const isConsultationOrPlanTrigger = 
         userText.includes("book demo") || 
         userText.includes("book consultation") || 
@@ -1081,7 +1106,6 @@ async function processUnifiedMessage(from, rawText, platform) {
 
         return sendUnifiedMessage(from, replyMsg, platform);
     }
-    // =========================================================================
 
     const isWebsiteDemoInbound = 
         cleanNormalized.includes("3dayfreevipdemo") ||
@@ -1904,7 +1928,7 @@ async function processUnifiedMessage(from, rawText, platform) {
             if (catType === 'web') {
                 interceptorReply = isUSDTrack 
                     ? "⚠️ Please be specific! Which Web or App scope do you need? \n\n👉 Reply with an option number (1-7):\n1️⃣ *Starter Plan* ($199)\n2️⃣ *Basic Plan* ($299)\n3️⃣ *Starter Business Site* ($499)\n4️⃣ *E-Commerce Hub* ($899)\n5️⃣ *Starter Mobile MVP* ($399)\n6️⃣ *Business Pro App* ($799)\n7️⃣ *Enterprise App & Scale* ($1,499)"
-                    : "⚠️ Kripya clear batayein! Aapko hamare active modules mein se kis tarah ka web/app chahiye? \n\n👉 Niche diye gaye options mein se ek number (1-7) reply karein:\n1️⃣ *Landing Page/Funnel* (₹12,300)\n2️⃣ *Business/Corporate Website* (Base: ₹25,500)\n3️⃣ *E-commerce Website (Online Store)* (₹47,500)\n4️⃣ *Custom Web Application* (₹1,45,000+)\n5️⃣ *Starter Mobile MVP (App)* (₹24,999)\n6️⃣ *Business Pro (Dual Store App)* (₹49,500)\n7️⃣ *Custom Enterprise & Scale (App)* (₹95,000)";
+                    : "⚠️ Kripya clear batayein! Aapko hamare active modules mein se kis tarah ka web/app chahiye? \n\n👉 Niche diye gaye options mein se ek number (1-7) reply karein:\n1️⃣ *Landing Page/Funnel* (₹12,300)\n2️⃣ *Business/Corporate Website* (Base: ₹25,500)\n3️⃣ *E-commerce Website (Online Store)* (₹47,500)\n4️⃣ *Custom Web Application* (₹1,45,000+)\n5️⃣ *Starter Mobile MVP (App)* (Base: ₹24,999)\n6️⃣ *Business Pro (Dual Store App)* (Base: ₹49,500)\n7️⃣ *Custom Enterprise & Scale (App)* (Base: ₹95,000)";
             } else if (catType === 'combo') {
                 interceptorReply = isUSDTrack
                     ? "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\n👉 Reply with option number (1 to 4):\n\n1️⃣ *PLAN 1: Local AI & GMB Growth [MONTHLY]*\n💰 Setup: $69 (50% OFF) + $39/mo Retainer\n📍 GMB Verification & Map Pack Top 3 SEO\n\n2️⃣ *PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - SAVE ~25%]*\n💰 Price: $399 / Year (Save $138)\n🎁 Bonus: Free Domain (.com/.in) + Citation Blast + VIP Support\n\n3️⃣ *PLAN 2: Full Digital & AI Scale Launch [MONTHLY]*\n💰 Setup: $169 (35% OFF) + $79/mo Retainer\n💻 Custom Next.js Site + Multi-Client AI Agent\n\n4️⃣ *PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - SAVE ~30%]*\n💰 Price: $799 / Year (Save $318)\n🎁 Bonus: Free Hosting & Domain + 12 SEO Blogs + WhatsApp AI CRM Sync"

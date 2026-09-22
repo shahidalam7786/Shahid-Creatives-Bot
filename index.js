@@ -792,8 +792,8 @@ setInterval(() => {
                 zamZamBot.sendMessage(appt.chatId, reminderMsg, { parse_mode: "Markdown" }).catch(()=>{});
             } else if (appt.bot === 'consultation') {
                 const consReminder = isEn 
-                    ? `⏰ *Consultation Reminder:* Hello ${appt.clientName}, your strategy consultation call with Shahid Creatives is starting in exactly *${timeLabel}*! Please be ready. 🚀\n\n🌐 _Powered by Shahid Creatives_`
-                    : `⏰ *Consultation Reminder:* Namaste ${appt.clientName}, Shahid Creatives ke sath aapki strategy call theek *${timeLabel}* mein shuru hone wali hai! Kripya taiyar rahein. 🚀\n\n🌐 _Powered by Shahid Creatives_`;
+                    ? `⏰ *Consultation Reminder:* Hello ${appt.clientName}, your strategy consultation call with Shahid Creatives' Team is starting in exactly *${timeLabel}*! Please be ready. 🚀\n\n🌐 _Powered by Shahid Creatives_`
+                    : `⏰ *Consultation Reminder:* Namaste ${appt.clientName}, Shahid Creatives ki Team ke sath aapki strategy call theek *${timeLabel}* mein shuru hone wali hai! Kripya taiyar rahein. 🚀\n\n🌐 _Powered by Shahid Creatives_`;
                 sendUnifiedMessage(appt.chatId, consReminder, appt.platform).catch(()=>{});
             }
         }
@@ -1033,6 +1033,55 @@ async function processUnifiedMessage(from, rawText, platform) {
     
     const isInternationalNumber = platform === 'whatsapp' ? !from.startsWith("91") : false;
     const isGlobalWebsiteTemplate = rawText.includes("Global USD") || rawText.includes("Worldwide") || rawText.includes("$") || rawText.includes("lock in my custom website estimate");
+
+    // =========================================================================
+    // 🚀 NEW UPGRADE: UNIVERSAL BOOK DEMO & CONSULTATION PLAN TRIGGER
+    // =========================================================================
+    const isConsultationOrPlanTrigger = 
+        userText.includes("book demo") || 
+        userText.includes("book consultation") || 
+        userText.includes("interested in") || 
+        userText.includes("i am interested in");
+
+    if (isConsultationOrPlanTrigger) {
+        let extractedPlan = "Complete Plan / Consultation";
+        const interestMatch = rawText.match(/interested in\s*([^\.\n]+)/i);
+        if (interestMatch) {
+            extractedPlan = interestMatch[1].trim();
+        }
+
+        const isExplicitUSD = rawText.includes('USD') || rawText.includes('$');
+        const isExplicitINR = rawText.includes('INR') || rawText.includes('₹') || rawText.toLowerCase().includes('punjab') || rawText.toLowerCase().includes('india');
+        const isUSDTrack = isExplicitUSD ? true : (isExplicitINR ? false : isInternationalNumber);
+
+        userSessions[from] = {
+            step: 'awaiting_consultation_slot',
+            lang: isUSDTrack ? 'EN' : 'HINGLISH',
+            platform: platform,
+            clientName: "Valued Client",
+            clientEmail: "Not Provided",
+            clientPhone: platform === 'whatsapp' ? from : "",
+            projectScope: extractedPlan,
+            savedPlan: extractedPlan,
+            lastInteractionTime: Date.now(),
+            nudgeSent: false,
+            skipIdentityCapture: false
+        };
+
+        const currentHourIST = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Kolkata"})).getHours();
+
+        const optionA = (currentHourIST >= 17) ? "🅰️ *Kal Shaam 5:00 Baje*" : "🅰️ *Aaj Shaam 5:00 Baje*";
+        const optionB = (currentHourIST >= 17) ? "🅱️ *Parso Dopahar 12:00 Baje*" : "🅱️ *Kal Dopahar 12:00 Baje*";
+        const optionA_EN = (currentHourIST >= 17) ? "🅰️ *Tomorrow at 5:00 PM*" : "🅰️ *Today at 5:00 PM*";
+        const optionB_EN = (currentHourIST >= 17) ? "🅱️ *Day After Tomorrow at 12:00 PM*" : "🅱️ *Tomorrow at 12:00 PM*";
+
+        const replyMsg = isUSDTrack
+            ? `Hello! We received your request for *${extractedPlan}*.\n\n👤 *Direct Consultation Setup:*\n\n${optionA_EN}\n${optionB_EN}\n🅲️ *Custom Time (Type preferred time below)*\n\n👉 Reply with A, B, or C to secure your slot & choose your complete plan!`
+            : `Hello! Humne aapki request (*${extractedPlan}*) receive kar li hai.\n\n👤 *Direct Consultation Setup:*\n\n${optionA}\n${optionB}\n🅲️ *Custom Time (Apna secure timing niche type karein)*\n\n👉 Kripya **A, B, ya C** likh kar reply kijiye apna slot secure karne aur complete plan choose karne ke liye!`;
+
+        return sendUnifiedMessage(from, replyMsg, platform);
+    }
+    // =========================================================================
 
     const isWebsiteDemoInbound = 
         cleanNormalized.includes("3dayfreevipdemo") ||
@@ -1830,8 +1879,8 @@ async function processUnifiedMessage(from, rawText, platform) {
         userSessions[from].clientPhone = cleanPhone; 
 
         let descriptivePrompt = (userLang === 'EN')
-            ? `Thank you *${cleanName}*! 🙏\n\nTo lock a high-converting strategy blueprint, please share your goals in the next reply:\n\n🌐 **1. Website Development:**\nWhich plan fits your vision? (Starter Plan, Basic Plan, Starter Business Site, or E-Commerce Hub?)\n\n🤖 **2. AI-Powered Growth Retainers:**\nWhat precise processes do you want to automate?\n\n🚀 **3. Special Combo Offers:**\nSelect Plan 1 or Plan 2 (Monthly Retainer or 🎁 Annual Pass with ~30% Savings)!\n\n📱 **4. Custom Mobile App Development:**\nStarter MVP ($399), Business Pro ($799), or Enterprise ($1,499)?\n\n🌐 **5. Meta & WhatsApp AI Automation:**\nMeta Suite, WhatsApp Standalone, or Full Omnichannel?`
-            : `Thank you *${cleanName}*! 🙏\n\nStrategy call ko 100% efficient banane ke liye, kripya agle message mein niche di gayi details batayein:\n\n🌐 **Type 1:** Agar aapko Website chahiye toh specific type likhein (e.g., Landing Page, Corporate Showcase, ya Online Store).\n\n🤖 **Type 2:** Agar AI Architecture/Bot chahiye toh details likhein (e.g., AI SEO, WhatsApp Lead Bot, Sales Engine).\n\n🚀 **Type 3:** Special Combo Offers (Local AI & GMB Growth / Full Digital Scale Launch - Monthly Retainer ya 🎁 Annual Pass).\n\n📱 **Type 4:** Custom Mobile App Development (Starter MVP ₹24,999, Business Pro ₹49,500, ya Enterprise ₹95,000).\n\n🌐 **Type 5:** Complete Meta & WhatsApp Automation (FB / IG / WhatsApp AI Bots).`;
+            ? `Thank you *${cleanName}*! 🙏\n\nTo lock a high-converting strategy blueprint and select your complete plan, please choose an option below:\n\n🌐 **1. Website Development:**\nWhich plan fits your vision? (Starter Plan, Basic Plan, Starter Business Site, or E-Commerce Hub?)\n\n🤖 **2. AI-Powered Growth Retainers:**\nWhat precise processes do you want to automate?\n\n🚀 **3. Special Combo Offers:**\nSelect Plan 1 or Plan 2 (Monthly Retainer or 🎁 Annual Pass with ~30% Savings)!\n\n📱 **4. Custom Mobile App Development:**\nStarter MVP ($399), Business Pro ($799), or Enterprise ($1,499)?\n\n🌐 **5. Meta & WhatsApp AI Automation:**\nMeta Suite, WhatsApp Standalone, or Full Omnichannel?`
+            : `Thank you *${cleanName}*! 🙏\n\nStrategy call ko 100% efficient banane aur apna complete plan choose karne ke liye, kripya niche diye gaye options me se select karein:\n\n🌐 **Type 1:** Agar aapko Website chahiye toh specific type likhein (e.g., Landing Page, Corporate Showcase, ya Online Store).\n\n🤖 **Type 2:** Agar AI Architecture/Bot chahiye toh details likhein (e.g., AI SEO, WhatsApp Lead Bot, Sales Engine).\n\n🚀 **Type 3:** Special Combo Offers (Local AI & GMB Growth / Full Digital Scale Launch - Monthly Retainer ya 🎁 Annual Pass).\n\n📱 **Type 4:** Custom Mobile App Development (Starter MVP ₹24,999, Business Pro ₹49,500, ya Enterprise ₹95,000).\n\n🌐 **Type 5:** Complete Meta & WhatsApp Automation (FB / IG / WhatsApp AI Bots).`;
         return sendUnifiedMessage(from, descriptivePrompt, platform);
     }
 

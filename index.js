@@ -109,6 +109,9 @@ bot.on('error', (error) => {
 });
 
 bot.on('callback_query', async (query) => {
+    bot.answerCallbackQuery(query.id).catch(()=>{}); 
+    if (!query.message) return;
+    
     const chatId = query.message.chat.id.toString();
     const data = query.data;
 
@@ -117,12 +120,10 @@ bot.on('callback_query', async (query) => {
         const action = parts[2]; 
         const clientChatId = parts.slice(3).join('_');
         
+        bot.editMessageReplyMarkup({ inline_keyboard: [] }, { chat_id: chatId, message_id: query.message.message_id }).catch(()=>{});
+        
         if (action === 'confirm') {
-            await bot.editMessageText(query.message.text + "\n\n✅ STATUS: BOOKING CONFIRMED BY ADMIN", { 
-                chat_id: chatId, 
-                message_id: query.message.message_id,
-                reply_markup: { inline_keyboard: [] } 
-            }).catch(()=>{});
+            bot.sendMessage(chatId, `✅ *STATUS: BOOKING CONFIRMED BY ADMIN*\nClient ID: \`${clientChatId}\``, { parse_mode: 'Markdown' }).catch(()=>{});
             
             const clientPlatform = (userSessions[clientChatId] && userSessions[clientChatId].platform) ? userSessions[clientChatId].platform : (clientChatId.includes('91') || clientChatId.length > 10 ? 'whatsapp' : 'telegram');
             const clientLang = userSessions[clientChatId] ? userSessions[clientChatId].lang : 'EN';
@@ -135,26 +136,18 @@ bot.on('callback_query', async (query) => {
             
         } else if (action === 'resched') {
             mainAdminState = clientChatId;
-            await bot.editMessageText(query.message.text + "\n\n🔄 STATUS: PENDING RESCHEDULE UPDATE", { 
-                chat_id: chatId, 
-                message_id: query.message.message_id,
-                reply_markup: { inline_keyboard: [] }
-            }).catch(()=>{});
-            
-            await bot.sendMessage(chatId, `⚠️ Aapne Client (${clientChatId}) ke liye *Reschedule/Message* chuna hai.\n\n👉 *Kripya naya Time ya Message type karke bhejein:*\n_(Yeh message seedha client ko bhej diya jayega)_`, { parse_mode: "Markdown" }).catch(()=>{});
+            bot.sendMessage(chatId, `🔄 *STATUS: PENDING RESCHEDULE UPDATE*\n\n⚠️ Aapne Client (${clientChatId}) ke liye *Reschedule/Message* chuna hai.\n\n👉 *Kripya naya Time ya Message type karke bhejein:*\n_(Yeh message seedha client ko bhej diya jayega)_`, { parse_mode: "Markdown" }).catch(()=>{});
         }
-        return bot.answerCallbackQuery(query.id).catch(()=>{});
+        return;
     }
 
     if (data.startsWith('cons_time_')) {
         const selectedTime = data.replace('cons_time_', '');
         await processUnifiedMessage(chatId, `Custom Time: ${selectedTime}`, 'telegram');
-        bot.answerCallbackQuery(query.id).catch(()=>{});
     }
     else if (data.startsWith('sel_web_') || data.startsWith('sel_ai_') || data.startsWith('sel_combo_') || data.startsWith('sel_app_') || data.startsWith('sel_meta_')) {
         const number = data.split('_')[2];
         await processUnifiedMessage(chatId, number, 'telegram');
-        bot.answerCallbackQuery(query.id).catch(()=>{});
     }
 });
 
@@ -208,6 +201,9 @@ const salonSessions = {};
 let salonAdminState = null;
 
 salonBot.on('callback_query', async (query) => {
+    salonBot.answerCallbackQuery(query.id).catch(()=>{}); 
+    if (!query.message) return;
+    
     const chatId = query.message.chat.id.toString();
     const data = query.data;
     const messageId = query.message.message_id;
@@ -218,23 +214,16 @@ salonBot.on('callback_query', async (query) => {
             const action = parts[2]; 
             const clientChatId = parts[3]; 
 
+            salonBot.editMessageReplyMarkup({ inline_keyboard: [] }, { chat_id: chatId, message_id: messageId }).catch(()=>{});
+
             if (action === 'confirm') {
-                await salonBot.editMessageText(query.message.text + "\n\n✅ STATUS: BOOKING CONFIRMED BY YOU", { 
-                    chat_id: chatId, 
-                    message_id: messageId,
-                    reply_markup: { inline_keyboard: [] }
-                }).catch(()=>{});
-                await salonBot.sendMessage(clientChatId, "🎉 *Great News!*\n\nYour appointment has been *CONFIRMED* by the salon. Hum aapka intezaar kar rahe hain! ✨\n\n🌐 _Powered by Shahid Creatives_", { parse_mode: "Markdown" });
+                salonBot.sendMessage(chatId, `✅ *STATUS: BOOKING CONFIRMED BY YOU*\nClient: \`${clientChatId}\``, { parse_mode: "Markdown" }).catch(()=>{});
+                salonBot.sendMessage(clientChatId, "🎉 *Great News!*\n\nYour appointment has been *CONFIRMED* by the salon. Hum aapka intezaar kar rahe hain! ✨\n\n🌐 _Powered by Shahid Creatives_", { parse_mode: "Markdown" }).catch(()=>{});
             } else if (action === 'resched') {
                 salonAdminState = clientChatId;
-                await salonBot.editMessageText(query.message.text + "\n\n🔄 STATUS: PENDING TIME UPDATE", { 
-                    chat_id: chatId, 
-                    message_id: messageId,
-                    reply_markup: { inline_keyboard: [] }
-                }).catch(()=>{});
-                await salonBot.sendMessage(chatId, `⚠️ Aapne Client (${clientChatId}) ke liye *Reschedule* chuna hai.\n\n👉 *Kripya naya Time ya Message type karke bhejein:*\n_(Yeh message seedha client ko bhej diya jayega)_`, { parse_mode: "Markdown" });
+                salonBot.sendMessage(chatId, `🔄 *STATUS: PENDING TIME UPDATE*\n\n⚠️ Aapne Client (${clientChatId}) ke liye *Reschedule* chuna hai.\n\n👉 *Kripya naya Time ya Message type karke bhejein:*\n_(Yeh message seedha client ko bhej diya jayega)_`, { parse_mode: "Markdown" }).catch(()=>{});
             }
-            return salonBot.answerCallbackQuery(query.id).catch(()=>{});
+            return;
         }
 
         if (!salonSessions[chatId]) salonSessions[chatId] = { step: 'start' };
@@ -343,7 +332,6 @@ salonBot.on('callback_query', async (query) => {
             await salonBot.editMessageText(detailsPrompt, { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
         }
 
-        salonBot.answerCallbackQuery(query.id).catch(()=>{});
     } catch(err) { console.log(err.message); }
 });
 
@@ -462,10 +450,7 @@ salonBot.on('message', async (msg) => {
                 await axios.post('https://shahidcreatives.com/api/bot-leads?projectId=CREATIVE-106', webhookPayload, {
                     headers: { 'Content-Type': 'application/json' }
                 });
-                console.log("✅ Salon Lead Successfully Sent to Client Portal Webhook!");
-            } catch (webhookErr) {
-                console.error("❌ Salon Webhook Delivery Failed:", webhookErr.message);
-            }
+            } catch (webhookErr) {}
 
             const adminAlertMsg = `🚨 *NEW SALON LEAD ALERT!* 🚨\n\n👤 *Name:* ${session.name}\n📱 *Number:* \`${session.phone}\`\n💬 *Telegram Chat ID:* ${chatId}\n💇‍♀️ *Service:* ${session.service}\n👨‍🎨 *Specialist:* ${session.specialist}\n📅 *Slot Requested:* ${session.dateTime}\n📝 *Pre-details:* ${session.hairstyleDetails}\n\n*Action Required:*`;
             
@@ -506,6 +491,9 @@ const zamzamSessions = {};
 let zamzamAdminState = null; 
 
 zamZamBot.on('callback_query', async (query) => {
+    zamZamBot.answerCallbackQuery(query.id).catch(()=>{}); 
+    if (!query.message) return;
+
     const chatId = query.message.chat.id.toString();
     const data = query.data;
     const messageId = query.message.message_id;
@@ -516,23 +504,16 @@ zamZamBot.on('callback_query', async (query) => {
             const action = parts[2]; 
             const clientChatId = parts[3]; 
 
+            zamZamBot.editMessageReplyMarkup({ inline_keyboard: [] }, { chat_id: chatId, message_id: messageId }).catch(()=>{});
+
             if (action === 'confirm') {
-                await zamZamBot.editMessageText(query.message.text + "\n\n✅ STATUS: BOOKING CONFIRMED BY YOU", { 
-                    chat_id: chatId, 
-                    message_id: messageId,
-                    reply_markup: { inline_keyboard: [] }
-                }).catch(()=>{});
-                await zamZamBot.sendMessage(clientChatId, "🎉 *Great News!*\n\nAapki appointment Clinic dwara *CONFIRM* kar di gayi hai. Kripya samay par pahuchein! 🩺\n\n🌐 _Powered by Shahid Creatives_", { parse_mode: "Markdown" });
+                zamZamBot.sendMessage(chatId, `✅ *STATUS: BOOKING CONFIRMED BY YOU*\nPatient: \`${clientChatId}\``, { parse_mode: "Markdown" }).catch(()=>{});
+                zamZamBot.sendMessage(clientChatId, "🎉 *Great News!*\n\nAapki appointment Clinic dwara *CONFIRM* kar di gayi hai. Kripya samay par pahuchein! 🩺\n\n🌐 _Powered by Shahid Creatives_", { parse_mode: "Markdown" }).catch(()=>{});
             } else if (action === 'resched') {
                 zamzamAdminState = clientChatId; 
-                await zamZamBot.editMessageText(query.message.text + "\n\n🔄 STATUS: PENDING TIME UPDATE", { 
-                    chat_id: chatId, 
-                    message_id: messageId,
-                    reply_markup: { inline_keyboard: [] }
-                }).catch(()=>{});
-                await zamZamBot.sendMessage(chatId, `⚠️ Aapne Patient (${clientChatId}) ke liye *Reschedule/Update Time* chuna hai.\n\n👉 *Kripya naya Time ya Message type karke bhejein:*\n_(Yeh message seedha patient ko bhej diya jayega)_`, { parse_mode: "Markdown" });
+                zamZamBot.sendMessage(chatId, `🔄 *STATUS: PENDING TIME UPDATE*\n\n⚠️ Aapne Patient (${clientChatId}) ke liye *Reschedule/Update Time* chuna hai.\n\n👉 *Kripya naya Time ya Message type karke bhejein:*\n_(Yeh message seedha patient ko bhej diya jayega)_`, { parse_mode: "Markdown" }).catch(()=>{});
             }
-            return zamZamBot.answerCallbackQuery(query.id).catch(()=>{});
+            return;
         }
 
         if (!zamzamSessions[chatId]) zamzamSessions[chatId] = { step: 'start', lang: 'HIN' };
@@ -649,7 +630,6 @@ zamZamBot.on('callback_query', async (query) => {
             zamZamBot.editMessageText(probPrompt, { chat_id: chatId, message_id: messageId, parse_mode: "Markdown" });
         }
 
-        zamZamBot.answerCallbackQuery(query.id).catch(()=>{});
     } catch(err) { console.log(err.message); }
 });
 
@@ -859,7 +839,7 @@ function getBasePriceByPlan(planScope, isUSD = false) {
         if (text.includes("whatsapp enterprise") || (text.includes("gemini") && text.includes("whatsapp"))) return "79";
 
         if (text.includes("starter complete (meta & whatsapp)") || text.includes("starter complete")) return "101";
-        if (text.includes("growth complete (om omnichannel engine)") || text.includes("growth complete")) return "180";
+        if (text.includes("growth complete (omnichannel engine)") || text.includes("growth complete")) return "180";
         if (text.includes("business pro complete (enterprise meta)") || text.includes("business pro complete")) return "338";
 
         if (text.includes("starter mobile mvp") || (text.includes("mobile") && text.includes("mvp")) || (text.includes("starter") && text.includes("mobile"))) return "399";

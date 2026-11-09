@@ -1029,9 +1029,22 @@ app.post('/webhook', async (req, res) => {
                 const from = message.from;
                 const msgType = message.type;
 
-                if (msgType === 'text') {
-                    const rawText = message.text.body;
-                    console.log(`Received message from ${from}: ${rawText}`);
+                // Extract text from standard text, template quick-reply button, or interactive button/list
+                let rawText = '';
+                if (msgType === 'text' && message.text) {
+                    rawText = message.text.body;
+                } else if (msgType === 'button' && message.button) {
+                    rawText = message.button.text || message.button.payload || '';
+                } else if (msgType === 'interactive' && message.interactive) {
+                    if (message.interactive.button_reply) {
+                        rawText = message.interactive.button_reply.title || message.interactive.button_reply.id || '';
+                    } else if (message.interactive.list_reply) {
+                        rawText = message.interactive.list_reply.title || message.interactive.list_reply.id || '';
+                    }
+                }
+
+                if (rawText) {
+                    console.log(`Received message (${msgType}) from ${from}: ${rawText}`);
                     
                     if (processingLocks[from]) return;
                     processingLocks[from] = true;
@@ -1145,6 +1158,12 @@ async function processUnifiedMessage(from, rawText, platform) {
     const isInternationalNumber = platform === 'whatsapp' ? !from.startsWith("91") : false;
     const isGlobalWebsiteTemplate = rawText.includes("Global USD") || rawText.includes("Worldwide") || rawText.includes("$") || rawText.includes("lock in my custom website estimate");
 
+    // Handle template unsubscribe button gracefully
+    if (userText === "stop to unsubscribe" || userText === "unsubscribe") {
+        userSessions[from] = null;
+        return sendUnifiedMessage(from, "You have been unsubscribed from promotional updates. Type 'Hi' anytime if you need our digital services in the future! 🙏\n\n🌐 _Powered by Shahid Creatives_", platform);
+    }
+
     // Check if user is currently in the middle of an active selection/capture step
     const activeMidFlowSteps = [
         'process_requirement_menu',
@@ -1166,17 +1185,24 @@ async function processUnifiedMessage(from, rawText, platform) {
     const isCurrentlyInMidFlow = userSessions[from] && activeMidFlowSteps.includes(userSessions[from].step);
 
     // ==========================================
-    // 🪔 DIWALI DHAMAKA OFFER CLAIM INTERCEPTOR (DIWALI26 - FLAT 30% OFF)
+    // 🪔 DIWALI DHAMAKA OFFER CLAIM & "YES, SEND DETAILS" BUTTON INTERCEPTOR
     // ==========================================
+    const isYesSendDetailsBtn = 
+        userText === "yes, send details" || 
+        userText === "yes send details" || 
+        userText === "send details" ||
+        cleanNormalized === "yessenddetails";
+
     const isDiwaliOfferClaim = 
+        isYesSendDetailsBtn ||
         userText.includes("diwali26") || 
         userText.includes("claim the diwali") || 
         (userText.includes("diwali") && (userText.includes("offer") || userText.includes("claim") || userText.includes("30%")));
 
-    // Only trigger Diwali welcome if user is NOT already mid-flow (or if they explicitly send a fresh claim when not in ask_name_email)
-    if (isDiwaliOfferClaim && (!isCurrentlyInMidFlow || userText.startsWith("hi") || userText.includes("shubh diwali"))) {
-        // Prevent duplicate consecutive Diwali triggers within 20 seconds from resetting sub-menus
-        if (userSessions[from] && userSessions[from].diwaliActivatedAt && (Date.now() - userSessions[from].diwaliActivatedAt < 20000) && isCurrentlyInMidFlow) {
+    // Trigger Diwali welcome if user clicks "Yes, Send Details" or sends a Diwali claim
+    if (isDiwaliOfferClaim && (isYesSendDetailsBtn || !isCurrentlyInMidFlow || userText.startsWith("hi") || userText.includes("shubh diwali"))) {
+        // Prevent duplicate consecutive Diwali triggers within 20 seconds from resetting sub-menus (unless user explicitly tapped "Yes, Send Details")
+        if (!isYesSendDetailsBtn && userSessions[from] && userSessions[from].diwaliActivatedAt && (Date.now() - userSessions[from].diwaliActivatedAt < 20000) && isCurrentlyInMidFlow) {
             return;
         }
 
@@ -1199,7 +1225,7 @@ async function processUnifiedMessage(from, rawText, platform) {
             couponApplied: "DIWALI26"
         };
 
-        const adminAlertDiwali = `🪔 *DIWALI26 OFFER CLAIM INBOUND!* 🪔\n\n📱 *Client Contact:* ${platform === 'telegram' ? 'TG-' : '+'}${from}\n💬 *Platform:* ${platform}\n🎟️ *Coupon Activated:* DIWALI26 (Flat 30% OFF)\n📅 *Offer Validity:* Up to 11 November\n\n*Status:* Client presented with Main Service Menu.`;
+        const adminAlertDiwali = `🪔 *DIWALI26 OFFER CLAIM INBOUND!* 🪔\n\n📱 *Client Contact:* ${platform === 'telegram' ? 'TG-' : '+'}${from}\n💬 *Platform:* ${platform}\n🔘 *Trigger:* "${rawText}"\n🎟️ *Coupon Activated:* DIWALI26 (Flat 30% OFF)\n📅 *Offer Validity:* Up to 11 November\n\n*Status:* Client presented with Main Service Menu.`;
         sendAdminAlert(adminAlertDiwali);
 
         const diwaliReplyEN = `🪔 *Diwali Dhamaka Offer Activated!* 🎇\n\nCongratulations! Your promo code *DIWALI26* for *Flat 30% OFF* on Custom Websites & AI Automation is now locked in for your session! *(Valid until 11 November)* 🎉\n\nPlease select which service you would like to claim this 30% discount on by replying with an option number (*1 to 8*):\n\n1️⃣ *Web & Mobile Development Tiers (Flat 30% OFF)*\n2️⃣ *AI-Powered Growth Retainers (Flat 30% OFF)*\n3️⃣ *🚀 Special Combo Offers (🔥 HOT)*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives' Team (Direct Consultation)*\n6️⃣ *🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)*\n7️⃣ *📱 Custom Mobile App Development (iOS & Android)*\n8️⃣ *🌐 Complete Meta & WhatsApp AI Automation (FB / IG / WA)*`;
@@ -1212,6 +1238,7 @@ async function processUnifiedMessage(from, rawText, platform) {
     const isConsultationOrPlanTrigger = 
         userText.includes("book demo") || 
         userText.includes("book consultation") || 
+        userText.includes("talk to our team") ||
         userText.includes("interested in") || 
         userText.includes("i am interested in");
 

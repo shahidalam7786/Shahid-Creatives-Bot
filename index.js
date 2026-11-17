@@ -922,8 +922,8 @@ setInterval(() => {
         const session = userSessions[from];
         if (session && session.step !== 'completed' && session.step !== 'post_registration' && session.step !== 'awaiting_custom_time_input' && (now - session.lastInteractionTime > 600000) && !session.nudgeSent) {
             const nudgeMessage = (session.lang === 'EN')
-                ? "Hi! I noticed you were exploring our premium development options. Do you have any questions or need help locking in your DIWALI26 (Flat 30% OFF) slot before 11 November? 😊"
-                : "Hi! Maine dekha aap Shahid Creatives ki services explore kar rahe the. Kya aapko koi sawal hai ya DIWALI26 (Flat 30% OFF - Valid till 11 Nov) coupon lock karne me koi help chahiye? 😊";
+                ? "Hi! I noticed you were exploring our premium development options. Do you have any questions or need help locking in your SPECIAL20 (Flat 20% OFF + Free 1-Yr Domain on 20k+ Yearly Plans) slot before 30 November? 😊"
+                : "Hi! Maine dekha aap Shahid Creatives ki services explore kar rahe the. Kya aapko koi sawal hai ya SPECIAL20 (Flat 20% OFF + Yearly 20k+ Plans me Free 1-Yr Domain - Valid till 30 Nov) coupon lock karne me koi help chahiye? 😊";
             
             session.step = 'nudge_sent_waiting_reply';
             sendUnifiedMessage(from, nudgeMessage, session.platform || 'whatsapp');
@@ -958,7 +958,7 @@ app.post('/send-client-credentials', async (req, res) => {
             telegram_chat_id: tgChatId,
             project_scope: payload.plan || payload.project_scope || "Credentials Sync Event",
             calculated_price: payload.price || payload.calculated_price || 0,
-            coupon_code: "DIWALI26",
+            coupon_code: "SPECIAL20",
             email: payload.email || "Not Provided",
             discussion_notes: adminAlertText 
         });
@@ -1113,15 +1113,19 @@ async function handleIdentityAndGenerateCheckout(from, rawText, platform) {
     const matchedBasePriceStr = getBasePriceByPlan(activeScope, isUSDTrack);
     const matchedBasePrice = parseFloat(matchedBasePriceStr);
 
-    const savingAmount = Math.round(matchedBasePrice * 0.30); 
+    const savingAmount = Math.round(matchedBasePrice * 0.20); 
     const discountedBasePrice = matchedBasePrice - savingAmount;
 
     const finalPayable = calculateTotalPayable(discountedBasePrice, isUSDTrack);
     const currencySymbol = isUSDTrack ? '$' : '₹';
 
+    const isYearly20kPlus = (activeScope.toLowerCase().includes("annual") || activeScope.toLowerCase().includes("year")) && (!isUSDTrack ? matchedBasePrice >= 20000 : matchedBasePrice >= 250);
+    const freeDomainNoteEN = isYearly20kPlus ? " + *FREE 1-Year Domain*" : "";
+    const freeDomainNoteHIN = isYearly20kPlus ? " + *FREE 1-Year Domain*" : "";
+
     const displayPhone = userSessions[from].clientPhone || (platform === 'whatsapp' ? from : "Not Provided");
 
-    const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* ${displayPhone} ${platform === 'telegram' ? '(Telegram)' : '(WhatsApp)'}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${cleanEmail}\n📝 *Plan Scope:* ${activeScope}\n💵 *Base Price:* ${currencySymbol}${matchedBasePrice}\n🔥 *Discount Applied:* ${currencySymbol}${savingAmount} (DIWALI26 - 30% OFF)\n💰 *Calculated Price:* ${currencySymbol}${finalPayable}`;
+    const chatAdminNotification = `🌟 *NEW INBOUND CHAT LEAD!* 🌟\n\n📱 *Client Contact:* ${displayPhone} ${platform === 'telegram' ? '(Telegram)' : '(WhatsApp)'}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${cleanEmail}\n📝 *Plan Scope:* ${activeScope}\n💵 *Base Price:* ${currencySymbol}${matchedBasePrice}\n🔥 *Discount Applied:* ${currencySymbol}${savingAmount} (SPECIAL20 - 20% OFF${isYearly20kPlus ? ' + Free 1-Yr Domain' : ''})\n💰 *Calculated Price:* ${currencySymbol}${finalPayable}`;
     sendAdminAlert(chatAdminNotification);
 
     try {
@@ -1131,7 +1135,7 @@ async function handleIdentityAndGenerateCheckout(from, rawText, platform) {
             telegram_chat_id: platform === 'telegram' ? from : undefined, 
             project_scope: activeScope, 
             calculated_price: finalPayable, 
-            coupon_code: "DIWALI26",
+            coupon_code: "SPECIAL20",
             email: cleanEmail, 
             discussion_notes: chatAdminNotification 
         });
@@ -1142,11 +1146,11 @@ async function handleIdentityAndGenerateCheckout(from, rawText, platform) {
     const encodedEmail = encodeURIComponent(cleanEmail); 
     const encodedPlan = encodeURIComponent(activeScope);
 
-    const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${isUSDTrack ? 49 : 999}&currency=${isUSDTrack ? 'USD' : 'INR'}&totalPrice=${finalPayable}&name=${encodedName}&email=${encodedEmail}&phone=${displayPhone}&plan=${encodedPlan}&coupon=DIWALI26`;
+    const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${isUSDTrack ? 49 : 999}&currency=${isUSDTrack ? 'USD' : 'INR'}&totalPrice=${finalPayable}&name=${encodedName}&email=${encodedEmail}&phone=${displayPhone}&plan=${encodedPlan}&coupon=SPECIAL20`;
 
     let replyText = isUSDTrack 
-        ? `🪔 *Diwali Dhamaka Mubarak, ${cleanName}!* Your requirement (*${activeScope}*) is formally registered.\n\n🔥 *URGENT:* Your *Flat 30% OFF (DIWALI26)* coupon has been automatically applied to your base price! You are saving *$${savingAmount}* today. Lock your price now before the Diwali Dhamaka Offer expires on *11 November*. (*T&C Apply*)\n\n*Next Steps:*\nTo initiate your project development slot, please process the standard booking token ($49 USD) via our secure gateway below:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Shahid Creatives' Team will reach out immediately upon confirmation!_\n\n🌐 _Powered by Shahid Creatives_`
-        : `🪔 *Diwali Dhamaka Mubarak, ${cleanName}!* Aapki requirement (*${activeScope}*) successfully hamare dashboard mein register ho gayi hai.\n\n🔥 *URGENT:* Aapke base price par *Flat 30% OFF (DIWALI26)* coupon automatically apply kar diya gaya hai! Aaj is deal par aap *₹${savingAmount}* bacha rahe hain. Ye Diwali Dhamaka Offer (*Last Date: 11 November*) expire hone se pehle apna price lock karein. (*T&C Apply*)\n\n*Next Steps:*\nApna slot pakka karne aur project shuru karne ke liye kripya apna Token Amount (₹999 INR) niche diye gaye secure payment link par clear karein:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Payment verify hote hi Shahid Creatives ki Team seedha aapse sampark karegi!_\n\n🌐 _Powered by Shahid Creatives_`;
+        ? `🎉 *Special Offer Unlocked, ${cleanName}!* Your requirement (*${activeScope}*) is formally registered.\n\n🔥 *URGENT:* Your *Flat 20% OFF (SPECIAL20)* coupon${freeDomainNoteEN} has been automatically applied to your base price! You are saving *$${savingAmount}* today. *(Bonus: Get 1-Year Free Domain + 20% OFF on Yearly Plans ₹20k+ / Annual Pass)*. Lock your price now before this Special Offer expires on *30 November*. (*T&C Apply*)\n\n*Next Steps:*\nTo initiate your project development slot, please process the standard booking token ($49 USD) via our secure gateway below:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Shahid Creatives' Team will reach out immediately upon confirmation!_\n\n🌐 _Powered by Shahid Creatives_`
+        : `🎉 *Special Offer Mubarak, ${cleanName}!* Aapki requirement (*${activeScope}*) successfully hamare dashboard mein register ho gayi hai.\n\n🔥 *URGENT:* Aapke base price par *Flat 20% OFF (SPECIAL20)* coupon${freeDomainNoteHIN} automatically apply kar diya gaya hai! Aaj is deal par aap *₹${savingAmount}* bacha rahe hain. *(Bonus: Yearly Plan ₹20,000+ me 1-Year Free Domain + 20% Discount dono milenge)*. Ye Special Offer (*Last Date: 30 November*) expire hone se pehle apna price lock karein. (*T&C Apply*)\n\n*Next Steps:*\nApna slot pakka karne aur project shuru karne ke liye kripya apna Token Amount (₹999 INR) niche diye gaye secure payment link par clear karein:\n\n🔗 *Secure Checkout Portal:* ${selfPayLink}\n\n_Note: Payment verify hote hi Shahid Creatives ki Team seedha aapse sampark karegi!_\n\n🌐 _Powered by Shahid Creatives_`;
     
     return sendUnifiedMessage(from, replyText, platform);
 }
@@ -1185,24 +1189,26 @@ async function processUnifiedMessage(from, rawText, platform) {
     const isCurrentlyInMidFlow = userSessions[from] && activeMidFlowSteps.includes(userSessions[from].step);
 
     // ==========================================
-    // 🪔 DIWALI DHAMAKA OFFER CLAIM & "YES, SEND DETAILS" BUTTON INTERCEPTOR
+    // 🎉 SPECIAL OFFER CLAIM & "YES, SEND DETAILS" BUTTON INTERCEPTOR
     // ==========================================
     const isYesSendDetailsBtn = 
         userText === "yes, send details" || 
         userText === "yes send details" || 
-        userText === "send details" ||
+        userText === "send details" || 
         cleanNormalized === "yessenddetails";
 
-    const isDiwaliOfferClaim = 
+    const isSpecialOfferClaim = 
         isYesSendDetailsBtn ||
+        userText.includes("special20") || 
         userText.includes("diwali26") || 
+        userText.includes("claim the special") || 
         userText.includes("claim the diwali") || 
-        (userText.includes("diwali") && (userText.includes("offer") || userText.includes("claim") || userText.includes("30%")));
+        ((userText.includes("special") || userText.includes("diwali")) && (userText.includes("offer") || userText.includes("claim") || userText.includes("20%") || userText.includes("30%")));
 
-    // Trigger Diwali welcome if user clicks "Yes, Send Details" or sends a Diwali claim
-    if (isDiwaliOfferClaim && (isYesSendDetailsBtn || !isCurrentlyInMidFlow || userText.startsWith("hi") || userText.includes("shubh diwali"))) {
-        // Prevent duplicate consecutive Diwali triggers within 20 seconds from resetting sub-menus (unless user explicitly tapped "Yes, Send Details")
-        if (!isYesSendDetailsBtn && userSessions[from] && userSessions[from].diwaliActivatedAt && (Date.now() - userSessions[from].diwaliActivatedAt < 20000) && isCurrentlyInMidFlow) {
+    // Trigger Special Offer welcome if user clicks "Yes, Send Details" or sends an offer claim
+    if (isSpecialOfferClaim && (isYesSendDetailsBtn || !isCurrentlyInMidFlow || userText.startsWith("hi") || userText.includes("special offer") || userText.includes("shubh diwali"))) {
+        // Prevent duplicate consecutive offer triggers within 20 seconds from resetting sub-menus (unless user explicitly tapped "Yes, Send Details")
+        if (!isYesSendDetailsBtn && userSessions[from] && userSessions[from].specialOfferActivatedAt && (Date.now() - userSessions[from].specialOfferActivatedAt < 20000) && isCurrentlyInMidFlow) {
             return;
         }
 
@@ -1216,29 +1222,29 @@ async function processUnifiedMessage(from, rawText, platform) {
             platform: platform,
             clientName: "Valued Client",
             clientEmail: "",
-            projectScope: "Diwali Dhamaka Offer (DIWALI26)",
+            projectScope: "Special Offer (SPECIAL20)",
             requestedSlot: "Not Selected",
             lastSubmitedTime: 0,
             lastInteractionTime: Date.now(),
-            diwaliActivatedAt: Date.now(),
+            specialOfferActivatedAt: Date.now(),
             nudgeSent: false,
-            couponApplied: "DIWALI26"
+            couponApplied: "SPECIAL20"
         };
 
-        const adminAlertDiwali = `🪔 *DIWALI26 OFFER CLAIM INBOUND!* 🪔\n\n📱 *Client Contact:* ${platform === 'telegram' ? 'TG-' : '+'}${from}\n💬 *Platform:* ${platform}\n🔘 *Trigger:* "${rawText}"\n🎟️ *Coupon Activated:* DIWALI26 (Flat 30% OFF)\n📅 *Offer Validity:* Up to 11 November\n\n*Status:* Client presented with Main Service Menu.`;
-        sendAdminAlert(adminAlertDiwali);
+        const adminAlertSpecial = `🎉 *SPECIAL20 OFFER CLAIM INBOUND!* 🎉\n\n📱 *Client Contact:* ${platform === 'telegram' ? 'TG-' : '+'}${from}\n💬 *Platform:* ${platform}\n🔘 *Trigger:* "${rawText}"\n🎟️ *Coupon Activated:* SPECIAL20 (Flat 20% OFF + Free 1-Yr Domain on 20k+ Yearly Plans)\n📅 *Offer Validity:* Up to 30 November\n\n*Status:* Client presented with Main Service Menu.`;
+        sendAdminAlert(adminAlertSpecial);
 
-        const diwaliReplyEN = `🪔 *Diwali Dhamaka Offer Activated!* 🎇\n\nCongratulations! Your promo code *DIWALI26* for *Flat 30% OFF* on Custom Websites & AI Automation is now locked in for your session! *(Valid until 11 November)* 🎉\n\nPlease select which service you would like to claim this 30% discount on by replying with an option number (*1 to 8*):\n\n1️⃣ *Web & Mobile Development Tiers (Flat 30% OFF)*\n2️⃣ *AI-Powered Growth Retainers (Flat 30% OFF)*\n3️⃣ *🚀 Special Combo Offers (🔥 HOT)*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives' Team (Direct Consultation)*\n6️⃣ *🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)*\n7️⃣ *📱 Custom Mobile App Development (iOS & Android)*\n8️⃣ *🌐 Complete Meta & WhatsApp AI Automation (FB / IG / WA)*`;
+        const specialReplyEN = `🎉 *Special Offer Activated!* ✨\n\nCongratulations! Your promo code *SPECIAL20* for *Flat 20% OFF* on Custom Websites & AI Automation (+ *FREE 1-Year Domain + 20% OFF* on Yearly Plans ₹20k+ / Annual Pass) is now locked in for your session! *(Offer Last Date: 30 November)* 🔥\n\nPlease select which service you would like to claim this 20% discount on by replying with an option number (*1 to 8*):\n\n1️⃣ *Web & Mobile Development Tiers (Flat 20% OFF)*\n2️⃣ *AI-Powered Growth Retainers (Flat 20% OFF)*\n3️⃣ *🚀 Special Combo Offers (20% OFF + Free 1-Yr Domain on 20k+ Yearly)*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives' Team (Direct Consultation)*\n6️⃣ *🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)*\n7️⃣ *📱 Custom Mobile App Development (iOS & Android)*\n8️⃣ *🌐 Complete Meta & WhatsApp AI Automation (FB / IG / WA)*`;
 
-        const diwaliReplyHIN = `🪔 *Diwali Dhamaka Offer Activated!* 🎇\n\nMubarak ho! Aapka promo code *DIWALI26* (*Flat 30% OFF* on Custom Websites & AI Automation) successfully activate ho gaya hai! *(Last Date: 11 November)* 🎉\n\nKripya select karein ki aap kis service par apna 30% discount claim karna chahte hain (1 se 8 ke beech number reply karein):\n\n1️⃣ *Web & Mobile Development Tiers (Flat 30% OFF)*\n2️⃣ *AI-Powered Growth Retainers (Flat 30% OFF)*\n3️⃣ *🚀 Special Combo Offers (🔥 HOT)*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives ki Team (Direct Consultation)*\n6️⃣ *🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)*\n7️⃣ *📱 Custom Mobile App Development (iOS & Android)*\n8️⃣ *🌐 Complete Meta & WhatsApp AI Automation (FB / IG / WA)*`;
+        const specialReplyHIN = `🎉 *Special Offer Activated!* ✨\n\nMubarak ho! Aapka promo code *SPECIAL20* (*Flat 20% OFF* on Custom Websites & AI Automation + *Yearly Plan ₹20,000+ me 1-Year Free Domain + 20% Discount*) successfully activate ho gaya hai! *(Offer Last Date: 30 November)* 🔥\n\nKripya select karein ki aap kis service par apna 20% discount claim karna chahte hain (1 se 8 ke beech number reply karein):\n\n1️⃣ *Web & Mobile Development Tiers (Flat 20% OFF)*\n2️⃣ *AI-Powered Growth Retainers (Flat 20% OFF)*\n3️⃣ *🚀 Special Combo Offers (20% OFF + 20k+ Yearly Plan me Free 1-Yr Domain)*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives ki Team (Direct Consultation)*\n6️⃣ *🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)*\n7️⃣ *📱 Custom Mobile App Development (iOS & Android)*\n8️⃣ *🌐 Complete Meta & WhatsApp AI Automation (FB / IG / WA)*`;
 
-        return sendUnifiedMessage(from, isUSDTrack ? diwaliReplyEN : diwaliReplyHIN, platform);
+        return sendUnifiedMessage(from, isUSDTrack ? specialReplyEN : specialReplyHIN, platform);
     }
 
     const isConsultationOrPlanTrigger = 
         userText.includes("book demo") || 
         userText.includes("book consultation") || 
-        userText.includes("talk to our team") ||
+        userText.includes("talk to our team") || 
         userText.includes("interested in") || 
         userText.includes("i am interested in");
 
@@ -1282,17 +1288,17 @@ async function processUnifiedMessage(from, rawText, platform) {
     }
 
     const isWebsiteDemoInbound = 
-        cleanNormalized.includes("3dayfreevipdemo") ||
-        cleanNormalized.includes("queuedforactivation") ||
-        cleanNormalized.includes("includedingrowthtriad") ||
-        cleanNormalized.includes("demoiddemo") ||
-        cleanNormalized.includes("activationtimeline") ||
-        (cleanNormalized.includes("demoid") && cleanNormalized.includes("clientcontact")) ||
-        (cleanNormalized.includes("congratulations") && cleanNormalized.includes("vipdemo")) ||
-        cleanNormalized.includes("registrationdetails") ||
-        rawText.includes("DEMO-39516") ||
-        rawText.includes("DEMO-38661") ||
-        rawText.includes("SHAHID ENTERPRISES") ||
+        cleanNormalized.includes("3dayfreevipdemo") || 
+        cleanNormalized.includes("queuedforactivation") || 
+        cleanNormalized.includes("includedingrowthtriad") || 
+        cleanNormalized.includes("demoiddemo") || 
+        cleanNormalized.includes("activationtimeline") || 
+        (cleanNormalized.includes("demoid") && cleanNormalized.includes("clientcontact")) || 
+        (cleanNormalized.includes("congratulations") && cleanNormalized.includes("vipdemo")) || 
+        cleanNormalized.includes("registrationdetails") || 
+        rawText.includes("DEMO-39516") || 
+        rawText.includes("DEMO-38661") || 
+        rawText.includes("SHAHID ENTERPRISES") || 
         rawText.includes("SHAHID CREATIVES");
 
     if (isWebsiteDemoInbound) {
@@ -1355,7 +1361,7 @@ async function processUnifiedMessage(from, rawText, platform) {
             telegram_chat_id: platform === 'telegram' ? from : undefined, 
             project_scope: `3-Day Free VIP Demo (${demoId})`, 
             calculated_price: 0, 
-            coupon_code: "DIWALI26",
+            coupon_code: "SPECIAL20",
             email: clientEmail, 
             discussion_notes: adminAlertMsg 
         }).catch(()=>{});
@@ -1365,7 +1371,7 @@ async function processUnifiedMessage(from, rawText, platform) {
 
     if (
         userText.includes("successfully authorized and connected") || 
-        userText.includes("i have successfully authorized") ||
+        userText.includes("i have successfully authorized") || 
         userText.includes("authorized and connected google business profile") || 
         userText.includes("confirm our 24/7 ai review bot status")
     ) {
@@ -1399,7 +1405,7 @@ async function processUnifiedMessage(from, rawText, platform) {
                 telegram_chat_id: platform === 'telegram' ? from : undefined,
                 project_scope: `GBP Connection Authorized (${extDemoId})`,
                 calculated_price: 0,
-                coupon_code: "DIWALI26",
+                coupon_code: "SPECIAL20",
                 email: "Not Provided",
                 discussion_notes: adminAlertMsg
             });
@@ -1409,9 +1415,10 @@ async function processUnifiedMessage(from, rawText, platform) {
     }
 
     if (
-        rawText.includes("3-DAY FREE DEMO ACTIVATION") ||
-        rawText.includes("DIWALI DHAMAKA") ||
-        rawText.includes("11VI SHARIF SPECIAL") ||
+        rawText.includes("3-DAY FREE DEMO ACTIVATION") || 
+        rawText.includes("SPECIAL OFFER") || 
+        rawText.includes("DIWALI DHAMAKA") || 
+        rawText.includes("11VI SHARIF SPECIAL") || 
         rawText.includes("Please initiate setup handshake") ||
         (rawText.includes("Activation ID:") && rawText.includes("Phone:")) ||
         (rawText.includes("Contact Person Name:") && rawText.includes("Business or Brand Name:"))
@@ -1492,7 +1499,7 @@ async function processUnifiedMessage(from, rawText, platform) {
 
         const replyConfirmation = `🎉 *Thank you & Congratulations ${clientName}!* 🚀\n\nYour *3-Day Free VIP Demo* for *${bizName}* has been successfully registered and queued for activation!\n\n🆔 *Demo ID:* \`${activationId}\`\n👤 *Client / Contact:* ${clientName}\n📱 *Phone / WhatsApp:* ${clientPhone.startsWith('+') ? clientPhone : '+' + clientPhone}\n✉️ *Email:* ${clientEmail}\n📍 *Location:* ${city}\n🏷️ *Category:* ${category}\n\n⚡ *Included in Growth Triad:*\n1️⃣ Google Business Profile (GMB) AI Engine (Auto 5-star review replies)\n2️⃣ Hyper-Local SEO Audit Simulator (Competitor keyword ranking gaps)\n3️⃣ 24/7 Telegram & Meta-Verified WhatsApp Business API Bot (Official verified integration)\n\n✅ *Official Meta Business Verified | Zero Risk Guarantee*\n⏱️ *Activation Timeline:* *Minimum 5 Hours to Maximum 1 Working Day*\n_(Our technical team is configuring your dedicated node, knowledgebase, and verified GBP sync.)_\n\n🔗 *GBP AI Onboarding Link:*\n${onboardingLink}\n\n⚠️ *Zaroori Instruction:* Kripya GBP onboarding link ko apne *Google Business Profile (GBP) registered Google/Gmail account* se hi open/authorize karein.\n\n👉 *Direct Demo Portal:* https://shahidcreatives.com/#combo-demo\n\n- Shahid Creatives (https://shahidcreatives.com)`;
 
-        const adminAlertMsg = `🚨 *DIWALI SPECIAL / 3-DAY DEMO INBOUND LEAD!* 🚨\n\n📱 *Contact:* ${clientPhone} (${platform})\n💬 *Chat ID:* ${from}\n👤 *Contact:* ${clientName}\n🏢 *Business:* ${bizName}\n🆔 *Demo ID:* ${activationId}\n📍 *Location:* ${city}\n🏷️ *Category:* ${category}\n\n*Action:* Demo queued with 5hr-1day activation window.`;
+        const adminAlertMsg = `🚨 *SPECIAL OFFER / 3-DAY DEMO INBOUND LEAD!* 🚨\n\n📱 *Contact:* ${clientPhone} (${platform})\n💬 *Chat ID:* ${from}\n👤 *Contact:* ${clientName}\n🏢 *Business:* ${bizName}\n🆔 *Demo ID:* ${activationId}\n📍 *Location:* ${city}\n🏷️ *Category:* ${category}\n\n*Action:* Demo queued with 5hr-1day activation window.`;
         sendAdminAlert(adminAlertMsg);
 
         try {
@@ -1502,7 +1509,7 @@ async function processUnifiedMessage(from, rawText, platform) {
                 telegram_chat_id: platform === 'telegram' ? from : undefined, 
                 project_scope: `3-Day Free VIP Demo (${bizName})`, 
                 calculated_price: 0, 
-                coupon_code: "DIWALI26",
+                coupon_code: "SPECIAL20",
                 email: clientEmail, 
                 discussion_notes: adminAlertMsg 
             });
@@ -1603,28 +1610,28 @@ async function processUnifiedMessage(from, rawText, platform) {
         const matchedBasePriceStr = getBasePriceByPlan(projectScope, isUSDTrack);
         const matchedBasePrice = parseFloat(matchedBasePriceStr) || (isINRLead ? 8713 : 110);
         
-        const savingAmount = Math.round(matchedBasePrice * 0.30);
+        const savingAmount = Math.round(matchedBasePrice * 0.20);
         const discountedBasePrice = matchedBasePrice - savingAmount;
         const finalPayable = calculateTotalPayable(discountedBasePrice, isUSDTrack);
         
-        const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${projectID}&amount=${tokenAmount}&currency=${tokenCurrency}&totalPrice=${finalPayable}&name=${encodeURIComponent(clientName)}&email=${encodeURIComponent(clientEmail)}&phone=${from}&plan=${encodeURIComponent(projectScope)}&coupon=DIWALI26`;
+        const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${projectID}&amount=${tokenAmount}&currency=${tokenCurrency}&totalPrice=${finalPayable}&name=${encodeURIComponent(clientName)}&email=${encodeURIComponent(clientEmail)}&phone=${from}&plan=${encodeURIComponent(projectScope)}&coupon=SPECIAL20`;
 
         userSessions[from] = { 
-            step: 'payment_failed_resolution',
-            lang: isUSDTrack ? 'EN' : 'HINGLISH',
+            step: 'payment_failed_resolution', 
+            lang: isUSDTrack ? 'EN' : 'HINGLISH', 
             platform: platform,
             clientName: clientName, 
-            clientEmail: clientEmail,
+            clientEmail: clientEmail, 
             projectScope: projectScope, 
             savedPlan: projectScope, 
-            projectID: projectID,
-            payLink: selfPayLink,
+            projectID: projectID, 
+            payLink: selfPayLink, 
             lastInteractionTime: Date.now(), 
             nudgeSent: true 
         };
 
         const currencyAdmin = isUSDTrack ? '$' : '₹';
-        const alertMsg = `🚨 *URGENT: PAYMENT DROP-OFF REPORTED!* 🚨\n\n📱 *Client:* ${platform === 'telegram' ? 'TG-' : '+'}${from}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n👤 *Name:* ${clientName}\n📝 *Plan Scope:* ${projectScope}\n🆔 *Client ID:* ${projectID}\n💵 *Base Price:* ${currencyAdmin}${matchedBasePrice}\n🔥 *Discount Applied:* ${currencyAdmin}${savingAmount} (DIWALI26 - 30% OFF)\n💰 *Calculated Price:* ${currencyAdmin}${finalPayable}\n\n⚠️ *Action:* Client bot interaction active to check debit/cancel status.`;
+        const alertMsg = `🚨 *URGENT: PAYMENT DROP-OFF REPORTED!* 🚨\n\n📱 *Client:* ${platform === 'telegram' ? 'TG-' : '+'}${from}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n👤 *Name:* ${clientName}\n📝 *Plan Scope:* ${projectScope}\n🆔 *Client ID:* ${projectID}\n💵 *Base Price:* ${currencyAdmin}${matchedBasePrice}\n🔥 *Discount Applied:* ${currencyAdmin}${savingAmount} (SPECIAL20 - 20% OFF)\n💰 *Calculated Price:* ${currencyAdmin}${finalPayable}\n\n⚠️ *Action:* Client bot interaction active to check debit/cancel status.`;
         sendAdminAlert(alertMsg);
 
         let replyMsg = isINRLead
@@ -1734,7 +1741,7 @@ async function processUnifiedMessage(from, rawText, platform) {
                 telegram_chat_id: platform === 'telegram' ? from : undefined, 
                 project_scope: `3-Day Free VIP Demo Request (${bizName})`, 
                 calculated_price: 0, 
-                coupon_code: "DIWALI26",
+                coupon_code: "SPECIAL20",
                 email: clientEmail, 
                 discussion_notes: adminAlert 
             });
@@ -1911,7 +1918,7 @@ async function processUnifiedMessage(from, rawText, platform) {
                     telegram_chat_id: platform === 'telegram' ? from : undefined, 
                     project_scope: `${projectScope} (Status: Fully Paid Portal Form)`, 
                     calculated_price: parsedBasePrice, 
-                    coupon_code: "DIWALI26",
+                    coupon_code: "SPECIAL20",
                     email: clientEmail, 
                     discussion_notes: paidAdminAlert
                 });
@@ -1941,7 +1948,7 @@ async function processUnifiedMessage(from, rawText, platform) {
 
         const finalPayable = calculateTotalPayable(calculatedPrice, formIsUSDTrack);
 
-        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* ${platform === 'telegram' ? 'TG-' : '+'}${from}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n👤 *Name:* ${clientName}\n📝 *Plan Scope:* ${projectScope}\n💵 *Base Price:* ${currencyAdmin}${calculatedPrice + savedAmountWeb}\n🔥 *Discount Applied:* ${currencyAdmin}${savedAmountWeb} (DIWALI26)\n💰 *Calculated Price:* ${currencyAdmin}${calculatedPrice}`;
+        const adminNotification = `🌟 *NEW WEBSITE LEAD ARRIVED!* 🌟\n\n📱 *Client:* ${platform === 'telegram' ? 'TG-' : '+'}${from}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n👤 *Name:* ${clientName}\n📝 *Plan Scope:* ${projectScope}\n💵 *Base Price:* ${currencyAdmin}${calculatedPrice + savedAmountWeb}\n🔥 *Discount Applied:* ${currencyAdmin}${savedAmountWeb} (SPECIAL20 - 20% OFF)\n💰 *Calculated Price:* ${currencyAdmin}${calculatedPrice}`;
         sendAdminAlert(adminNotification);
 
         try {
@@ -1951,7 +1958,7 @@ async function processUnifiedMessage(from, rawText, platform) {
                 telegram_chat_id: platform === 'telegram' ? from : undefined, 
                 project_scope: projectScope, 
                 calculated_price: calculatedPrice, 
-                coupon_code: "DIWALI26",
+                coupon_code: "SPECIAL20",
                 email: clientEmail, 
                 discussion_notes: adminNotification 
             });
@@ -1962,11 +1969,11 @@ async function processUnifiedMessage(from, rawText, platform) {
         const tokenCurrency = isINRLead ? 'INR' : 'USD';
         const guaranteeText = isINRLead ? 'INR Slot Guarantee' : 'USD Slot Guarantee';
 
-        const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmount}&currency=${tokenCurrency}&totalPrice=${finalPayable}&name=${encodeURIComponent(clientName)}&email=${encodeURIComponent(clientEmail)}&phone=${from}&plan=${encodeURIComponent(projectScope)}&coupon=DIWALI26`;
+        const selfPayLink = `https://shahidcreatives.com/#token-booking?projectId=${uniqueProjectId}&amount=${tokenAmount}&currency=${tokenCurrency}&totalPrice=${finalPayable}&name=${encodeURIComponent(clientName)}&email=${encodeURIComponent(clientEmail)}&phone=${from}&plan=${encodeURIComponent(projectScope)}&coupon=SPECIAL20`;
 
         let clientReply = isINRLead
-            ? `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved to our dashboard.\n\n🪔 *Diwali Dhamaka!* Aapka *Flat 30% OFF (DIWALI26)* coupon apply ho chuka hai! Aapne is deal par sidha *₹${savedAmountWeb > 0 ? savedAmountWeb : '30%'}* save kar liya hai. Ye limited-time Diwali Offer (Valid till 11 November) expire hone se pehle apna slot lock karein. (*T&C Apply*)\n\n🔗 *Pay Securely Here (${guaranteeText}):* ${selfPayLink}\n\n_Note: Payment verify hote hi Shahid Creatives ki Team seedha aapse sampark karegi!_`
-            : `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved to our dashboard.\n\n🪔 *Diwali Dhamaka!* Your *Flat 30% OFF (DIWALI26)* coupon is currently applied! You just saved *$${savedAmountWeb > 0 ? savedAmountWeb : '30%'}* on this deal. Lock your slot before this limited-time Diwali Offer (Valid till 11 November) expires. (*T&C Apply*)\n\n🔗 *Pay Securely Here (${guaranteeText}):* ${selfPayLink}\n\n_Note: Shahid Creatives' Team will reach out immediately upon confirmation!_`;
+            ? `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved to our dashboard.\n\n🎉 *Special Offer!* Aapka *Flat 20% OFF (SPECIAL20)* coupon apply ho chuka hai! Aapne is deal par sidha *₹${savedAmountWeb > 0 ? savedAmountWeb : '20%'}* save kar liya hai. *(Bonus: Yearly Plan ₹20k+ me 1-Yr Free Domain + 20% OFF)*. Ye limited-time Special Offer (*Last Date: 30 November*) expire hone se pehle apna slot lock karein. (*T&C Apply*)\n\n🔗 *Pay Securely Here (${guaranteeText}):* ${selfPayLink}\n\n_Note: Payment verify hote hi Shahid Creatives ki Team seedha aapse sampark karegi!_`
+            : `Thank you *${clientName}*! 🙏 Your cost estimation data has been securely saved to our dashboard.\n\n🎉 *Special Offer!* Your *Flat 20% OFF (SPECIAL20)* coupon is currently applied! You just saved *$${savedAmountWeb > 0 ? savedAmountWeb : '20%'}* on this deal. *(Bonus: Free 1-Yr Domain + 20% OFF on Yearly Plans ₹20k+ / Annual Pass)*. Lock your slot before this limited-time Special Offer (*Last Date: 30 November*) expires. (*T&C Apply*)\n\n🔗 *Pay Securely Here (${guaranteeText}):* ${selfPayLink}\n\n_Note: Shahid Creatives' Team will reach out immediately upon confirmation!_`;
         
         return sendUnifiedMessage(from, clientReply, platform);
     }
@@ -2003,8 +2010,8 @@ async function processUnifiedMessage(from, rawText, platform) {
 
         if (processedRoute) {
             let replyText = (userSessions[from].lang === 'EN')
-                ? "Hello! Welcome to *Shahid Creatives*. 🚀\n🪔 *Diwali Dhamaka: Flat 30% OFF with Code DIWALI26 (Valid till 11 Nov)*\n\nPlease select an option number to proceed:\n\n1️⃣ *Web & Mobile Development Tiers*\n2️⃣ *AI-Powered Growth Retainers*\n3️⃣ *🚀 Special Combo Offers (🔥 HOT)*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives' Team (Direct Consultation)*\n6️⃣ *🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)*\n7️⃣ *📱 Custom Mobile App Development (iOS & Android)*\n8️⃣ *🌐 Complete Meta & WhatsApp AI Automation (FB / IG / WA)*"
-                : "Hello! Welcome to *Shahid Creatives*. 🚀\n🪔 *Diwali Dhamaka: Flat 30% OFF with Code DIWALI26 (Valid till 11 Nov)*\n\nKoshish ko aage badhane ke liye ek option number reply kijiye:\n\n1️⃣ *Web & Mobile Development Tiers*\n2️⃣ *AI-Powered Growth Retainers*\n3️⃣ *🚀 Special Combo Offers (🔥 HOT)*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives ki Team (Direct Consultation)*\n6️⃣ *🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)*\n7️⃣ *📱 Custom Mobile App Development (iOS & Android)*\n8️⃣ *🌐 Complete Meta & WhatsApp AI Automation (FB / IG / WA)*";
+                ? "Hello! Welcome to *Shahid Creatives*. 🚀\n🎉 *Special Offer: Flat 20% OFF with Code SPECIAL20 + Free 1-Yr Domain on 20k+ Yearly Plans (Valid till 30 Nov)*\n\nPlease select an option number to proceed:\n\n1️⃣ *Web & Mobile Development Tiers*\n2️⃣ *AI-Powered Growth Retainers*\n3️⃣ *🚀 Special Combo Offers (🔥 HOT)*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives' Team (Direct Consultation)*\n6️⃣ *🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)*\n7️⃣ *📱 Custom Mobile App Development (iOS & Android)*\n8️⃣ *🌐 Complete Meta & WhatsApp AI Automation (FB / IG / WA)*"
+                : "Hello! Welcome to *Shahid Creatives*. 🚀\n🎉 *Special Offer: Flat 20% OFF with Code SPECIAL20 + Yearly 20k+ Plans me Free 1-Yr Domain (Valid till 30 Nov)*\n\nKoshish ko aage badhane ke liye ek option number reply kijiye:\n\n1️⃣ *Web & Mobile Development Tiers*\n2️⃣ *AI-Powered Growth Retainers*\n3️⃣ *🚀 Special Combo Offers (🔥 HOT)*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives ki Team (Direct Consultation)*\n6️⃣ *🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)*\n7️⃣ *📱 Custom Mobile App Development (iOS & Android)*\n8️⃣ *🌐 Complete Meta & WhatsApp AI Automation (FB / IG / WA)*";
             return sendUnifiedMessage(from, replyText, platform);
         } else {
             return sendUnifiedMessage(from, "Welcome to *Shahid Creatives*! 🚀 Please select your location layout to proceed:\n\n1️⃣ *India (Tax/Billing: ₹ INR)*\n2️⃣ *Outside India (Global Billing: $ USD)*", platform);
@@ -2078,8 +2085,8 @@ async function processUnifiedMessage(from, rawText, platform) {
         userSessions[from].clientPhone = cleanPhone; 
 
         let descriptivePrompt = (userLang === 'EN')
-            ? `Thank you *${cleanName}*! 🙏\n\nTo lock a high-converting strategy blueprint and select your complete plan, please choose an option below:\n\n🌐 *1. Website Development:*\nWhich plan fits your vision? (Starter Plan, Basic Plan, Starter Business Site, or E-Commerce Hub?)\n\n🤖 *2. AI-Powered Growth Retainers:*\nWhat precise processes do you want to automate?\n\n🚀 *3. Special Combo Offers:*\nSelect Plan 1 or Plan 2 (Monthly Retainer or 🎁 Annual Pass with ~30% Savings)!\n\n📱 *4. Custom Mobile App Development:*\nStarter MVP ($399), Business Pro ($799), or Enterprise ($1,499)?\n\n🌐 *5. Meta & WhatsApp AI Automation:*\nMeta Suite, WhatsApp Standalone, or Full Omnichannel?`
-            : `Thank you *${cleanName}*! 🙏\n\nStrategy call ko 100% efficient banane aur apna complete plan choose karne ke liye, kripya niche diye gaye options me se select karein:\n\n🌐 *Type 1:* Agar aapko Website chahiye toh specific type likhein (e.g., Landing Page, Corporate Showcase, ya Online Store).\n\n🤖 *Type 2:* Agar AI Architecture/Bot chahiye toh details likhein (e.g., AI SEO, WhatsApp Lead Bot, Sales Engine).\n\n🚀 *Type 3:* Special Combo Offers (Local AI & GMB Growth / Full Digital Scale Launch - Monthly Retainer ya 🎁 Annual Pass).\n\n📱 *Type 4:* Custom Mobile App Development (Starter MVP ₹24,999, Business Pro ₹49,500, ya Enterprise ₹95,000).\n\n🌐 *Type 5:* Complete Meta & WhatsApp Automation (FB / IG / WhatsApp AI Bots).`;
+            ? `Thank you *${cleanName}*! 🙏\n\nTo lock a high-converting strategy blueprint and select your complete plan, please choose an option below:\n\n🌐 *1. Website Development:*\nWhich plan fits your vision? (Starter Plan, Basic Plan, Starter Business Site, or E-Commerce Hub?)\n\n🤖 *2. AI-Powered Growth Retainers:*\nWhat precise processes do you want to automate?\n\n🚀 *3. Special Combo Offers:*\nSelect Plan 1 or Plan 2 (Monthly Retainer or 🎁 Annual Pass with 20% OFF + Free 1-Yr Domain)!\n\n📱 *4. Custom Mobile App Development:*\nStarter MVP ($399), Business Pro ($799), or Enterprise ($1,499)?\n\n🌐 *5. Meta & WhatsApp AI Automation:*\nMeta Suite, WhatsApp Standalone, or Full Omnichannel?`
+            : `Thank you *${cleanName}*! 🙏\n\nStrategy call ko 100% efficient banane aur apna complete plan choose karne ke liye, kripya niche diye gaye options me se select karein:\n\n🌐 *Type 1:* Agar aapko Website chahiye toh specific type likhein (e.g., Landing Page, Corporate Showcase, ya Online Store).\n\n🤖 *Type 2:* Agar AI Architecture/Bot chahiye toh details likhein (e.g., AI SEO, WhatsApp Lead Bot, Sales Engine).\n\n🚀 *Type 3:* Special Combo Offers (Local AI & GMB Growth / Full Digital Scale Launch - Monthly Retainer ya 🎁 Annual Pass 20k+ with 20% OFF + Free 1-Yr Domain).\n\n📱 *Type 4:* Custom Mobile App Development (Starter MVP ₹24,999, Business Pro ₹49,500, ya Enterprise ₹95,000).\n\n🌐 *Type 5:* Complete Meta & WhatsApp Automation (FB / IG / WhatsApp AI Bots).`;
         return sendUnifiedMessage(from, descriptivePrompt, platform);
     }
 
@@ -2106,16 +2113,16 @@ async function processUnifiedMessage(from, rawText, platform) {
                     : "⚠️ Kripya clear batayein! Aapko hamare active modules mein se kis tarah ka web/app chahiye? \n\n👉 Niche diye gaye options mein se ek number (1-7) reply karein:\n1️⃣ *Landing Page/Funnel* (₹12,300)\n2️⃣ *Business/Corporate Website* (Base: ₹25,500)\n3️⃣ *E-commerce Website (Online Store)* (₹47,500)\n4️⃣ *Custom Web Application* (₹1,45,000+)\n5️⃣ *Starter Mobile MVP (App)* (Base: ₹24,999)\n6️⃣ *Business Pro (Dual Store App)* (Base: ₹49,500)\n7️⃣ *Custom Enterprise & Scale (App)* (Base: ₹95,000)";
             } else if (catType === 'combo') {
                 interceptorReply = isUSDTrack
-                    ? "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\n👉 Reply with option number (1 to 4):\n\n1️⃣ *PLAN 1: Local AI & GMB Growth [MONTHLY]*\n💰 Setup: $69 (50% OFF) + $39/mo Retainer\n📍 GMB Verification & Map Pack Top 3 SEO\n\n2️⃣ *PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - SAVE ~25%]*\n💰 Price: $399 / Year (Save $138)\n🎁 Bonus: Free Domain (.com/.in) + Citation Blast + VIP Support\n\n3️⃣ *PLAN 2: Full Digital & AI Scale Launch [MONTHLY]*\n💰 Setup: $169 (35% OFF) + $79/mo Retainer\n💻 Custom Next.js Site + Multi-Client AI Agent\n\n4️⃣ *PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - SAVE ~30%]*\n💰 Price: $799 / Year (Save $318)\n🎁 Bonus: Free Hosting & Domain + 12 SEO Blogs + WhatsApp AI CRM Sync"
-                    : "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\n👉 Niche me se ek number (1 se 4) reply karein:\n\n1️⃣ *PLAN 1: Local AI & GMB Growth [MONTHLY RETAINER]*\n💰 Setup: ₹4,999 (50% OFF) + Monthly ₹2,499/mo\n📍 Local Map Pack SEO, Citations & Review Bot\n\n2️⃣ *PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - SAVE ~30%]*\n💰 Price: ₹24,999 / Year (Save ₹10,000)\n🎁 Perks: Free 1-Yr Domain + Citation Blast + Unlimited AI Credits + VIP Support\n\n3️⃣ *PLAN 2: Full Digital & AI Scale Launch [MONTHLY RETAINER]*\n💰 Setup: ₹12,999 (35% OFF) + Monthly ₹4,999/mo\n💻 High-Speed Next.js Website + Multi-Client AI Agent\n\n4️⃣ *PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - SAVE ~32%]*\n💰 Price: ₹49,999 / Year (Save ₹23,000)\n🎁 Perks: Free Premium Hosting + Domain + 12 SEO Blogs + AI WhatsApp CRM Sync";
+                    ? "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\n👉 Reply with option number (1 to 4):\n\n1️⃣ *PLAN 1: Local AI & GMB Growth [MONTHLY]*\n💰 Setup: $69 (20% OFF via SPECIAL20) + $39/mo Retainer\n📍 GMB Verification & Map Pack Top 3 SEO\n\n2️⃣ *PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - 20% OFF + FREE 1-YR DOMAIN]*\n💰 Price: $399 / Year (20% OFF via SPECIAL20)\n🎁 Bonus: Free 1-Yr Domain (.com/.in) + Citation Blast + VIP Support\n\n3️⃣ *PLAN 2: Full Digital & AI Scale Launch [MONTHLY]*\n💰 Setup: $169 (20% OFF via SPECIAL20) + $79/mo Retainer\n💻 Custom Next.js Site + Multi-Client AI Agent\n\n4️⃣ *PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - 20% OFF + FREE 1-YR DOMAIN]*\n💰 Price: $799 / Year (20% OFF via SPECIAL20)\n🎁 Bonus: Free Hosting & 1-Yr Domain + 12 SEO Blogs + WhatsApp AI CRM Sync"
+                    : "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\n👉 Niche me se ek number (1 se 4) reply karein:\n\n1️⃣ *PLAN 1: Local AI & GMB Growth [MONTHLY RETAINER]*\n💰 Setup: ₹4,999 (20% OFF via SPECIAL20) + Monthly ₹2,499/mo\n📍 Local Map Pack SEO, Citations & Review Bot\n\n2️⃣ *PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - 20% OFF + FREE 1-YR DOMAIN]*\n💰 Price: ₹24,999 / Year (20% OFF via SPECIAL20 + Free 1-Yr Domain)\n🎁 Perks: Free 1-Yr Domain + Citation Blast + Unlimited AI Credits + VIP Support\n\n3️⃣ *PLAN 2: Full Digital & AI Scale Launch [MONTHLY RETAINER]*\n💰 Setup: ₹12,999 (20% OFF via SPECIAL20) + Monthly ₹4,999/mo\n💻 High-Speed Next.js Website + Multi-Client AI Agent\n\n4️⃣ *PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - 20% OFF + FREE 1-YR DOMAIN]*\n💰 Price: ₹49,999 / Year (20% OFF via SPECIAL20 + Free 1-Yr Domain)\n🎁 Perks: Free Premium Hosting + 1-Yr Domain + 12 SEO Blogs + AI WhatsApp CRM Sync";
             } else if (catType === 'app') {
                 interceptorReply = isUSDTrack
                     ? "📱 *CUSTOM MOBILE APP DEVELOPMENT (iOS & Android)*\n\n👉 Reply with an option number (1-3):\n1️⃣ *Starter Mobile MVP* ($399)\n2️⃣ *Business Pro (Dual Store)* ($799)\n3️⃣ *Custom Enterprise & Scale* ($1,499)"
                     : "📱 *CUSTOM MOBILE APP DEVELOPMENT (iOS & Android)*\n\n👉 Niche diye gaye options mein se ek number (1-3) reply karein:\n1️⃣ *Starter Mobile MVP* (₹24,999)\n2️⃣ *Business Pro (Dual Store)* (₹49,500)\n3️⃣ *Custom Enterprise & Scale* (₹95,000)";
             } else if (catType === 'meta') {
                 interceptorReply = isUSDTrack
-                    ? "🌐 *COMPLETE META & WHATSAPP AI AUTOMATION (USD)*\n_(+20% Extra + 3.5% PG Fee included | 🪔 Flat 30% OFF via DIWALI26 till 11 Nov)_\n\n👉 Reply with an option number (1 to 9):\n\n🔹 *Meta Business (FB / IG):*\n1️⃣ Starter AI Suite (FB / IG) - Setup: $56 | $28/mo\n2️⃣ Growth AI Suite (FB + IG Dual) - Setup: $112 | $56/mo\n3️⃣ Pro AI Suite (Multi-Account & CRM) - Setup: $225 | $112/mo\n\n🔹 *WhatsApp Business (Standalone):*\n4️⃣ WhatsApp Starter - Setup: $22 | $56/mo\n5️⃣ WhatsApp Growth (Bookings & UPI) - Setup: $45 | $112/mo\n6️⃣ WhatsApp Enterprise (Gemini AI Bot) - Setup: $79 | $211/mo\n\n🔹 *Complete Meta Suite (WA + IG + FB):*\n7️⃣ Starter Complete (Meta & WhatsApp) - Setup: $101 | $35/mo\n8️⃣ Growth Complete (Omnichannel Engine) - Setup: $180 | $70/mo\n9️⃣ Business Pro Complete (Enterprise) - Setup: $338 | $127/mo"
-                    : "🌐 *COMPLETE META & WHATSAPP AI AUTOMATION (INR)*\n_(18% GST + 2.5% PG Fee | 🪔 Flat 30% OFF via DIWALI26 till 11 Nov)_\n\n👉 Niche diye gaye options mein se ek number (1 se 9) reply karein:\n\n🔹 *Meta Business (FB / IG):*\n1️⃣ Starter AI Suite (FB / IG) - Setup: ₹3,999 | ₹1,999/mo\n2️⃣ Growth AI Suite (FB + IG Dual) - Setup: ₹7,999 | ₹3,999/mo\n3️⃣ Pro AI Suite (Multi-Account & CRM) - Setup: ₹15,999 | ₹7,999/mo\n\n🔹 *WhatsApp Business (Standalone):*\n4️⃣ WhatsApp Starter - Setup: ₹1,599 | ₹3,999/mo\n5️⃣ WhatsApp Growth - Setup: ₹3,199 | ₹7,999/mo\n6️⃣ WhatsApp Enterprise (Gemini AI Bot) - Setup: ₹5,599 | ₹14,999/mo\n\n🔹 *Complete Meta Suite (WA + IG + FB):*\n7️⃣ Starter Complete (Meta & WhatsApp) - Setup: ₹7,199 | ₹2,499/mo\n8️⃣ Growth Complete (Omnichannel Engine) - Setup: ₹12,799 | ₹4,999/mo\n9️⃣ Business Pro Complete (Enterprise) - Setup: ₹23,999 | ₹8,999/mo";
+                    ? "🌐 *COMPLETE META & WHATSAPP AI AUTOMATION (USD)*\n_(+20% Extra + 3.5% PG Fee included | 🎉 Flat 20% OFF via SPECIAL20 till 30 Nov)_\n\n👉 Reply with an option number (1 to 9):\n\n🔹 *Meta Business (FB / IG):*\n1️⃣ Starter AI Suite (FB / IG) - Setup: $56 | $28/mo\n2️⃣ Growth AI Suite (FB + IG Dual) - Setup: $112 | $56/mo\n3️⃣ Pro AI Suite (Multi-Account & CRM) - Setup: $225 | $112/mo\n\n🔹 *WhatsApp Business (Standalone):*\n4️⃣ WhatsApp Starter - Setup: $22 | $56/mo\n5️⃣ WhatsApp Growth (Bookings & UPI) - Setup: $45 | $112/mo\n6️⃣ WhatsApp Enterprise (Gemini AI Bot) - Setup: $79 | $211/mo\n\n🔹 *Complete Meta Suite (WA + IG + FB):*\n7️⃣ Starter Complete (Meta & WhatsApp) - Setup: $101 | $35/mo\n8️⃣ Growth Complete (Omnichannel Engine) - Setup: $180 | $70/mo\n9️⃣ Business Pro Complete (Enterprise) - Setup: $338 | $127/mo"
+                    : "🌐 *COMPLETE META & WHATSAPP AI AUTOMATION (INR)*\n_(18% GST + 2.5% PG Fee | 🎉 Flat 20% OFF via SPECIAL20 till 30 Nov)_\n\n👉 Niche diye gaye options mein se ek number (1 se 9) reply karein:\n\n🔹 *Meta Business (FB / IG):*\n1️⃣ Starter AI Suite (FB / IG) - Setup: ₹3,999 | ₹1,999/mo\n2️⃣ Growth AI Suite (FB + IG Dual) - Setup: ₹7,999 | ₹3,999/mo\n3️⃣ Pro AI Suite (Multi-Account & CRM) - Setup: ₹15,999 | ₹7,999/mo\n\n🔹 *WhatsApp Business (Standalone):*\n4️⃣ WhatsApp Starter - Setup: ₹1,599 | ₹3,999/mo\n5️⃣ WhatsApp Growth - Setup: ₹3,199 | ₹7,999/mo\n6️⃣ WhatsApp Enterprise (Gemini AI Bot) - Setup: ₹5,599 | ₹14,999/mo\n\n🔹 *Complete Meta Suite (WA + IG + FB):*\n7️⃣ Starter Complete (Meta & WhatsApp) - Setup: ₹7,199 | ₹2,499/mo\n8️⃣ Growth Complete (Omnichannel Engine) - Setup: ₹12,799 | ₹4,999/mo\n9️⃣ Business Pro Complete (Enterprise) - Setup: ₹23,999 | ₹8,999/mo";
             } else {
                 interceptorReply = isUSDTrack 
                     ? "⚠️ Please be specific! What AI architecture do you want? \n\n👉 Reply with an option number (1-8):\n1️⃣ *Starter Digital Maintainer* ($77)\n2️⃣ *Web Conversion Engine* ($155)\n3️⃣ *Omnichannel Growth Partner* ($311)\n4️⃣ *Full-Scale Ecosystem Operations* ($499)\n5️⃣ *Elite Intelligence* ($799)\n6️⃣ *Telegram Universal Automation - Starter* ($77)\n7️⃣ *Telegram Universal Automation - Growth* ($155)\n8️⃣ *Telegram Universal Automation - Elite* ($311)"
@@ -2181,9 +2188,9 @@ async function processUnifiedMessage(from, rawText, platform) {
             }
         } else if (cat === 'combo') {
             if (userText === '1') selectedScope = "PLAN 1: Local AI & GMB Growth [MONTHLY RETAINER]";
-            else if (userText === '2') selectedScope = "PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - SAVE ~30%]";
+            else if (userText === '2') selectedScope = "PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - 20% OFF + FREE 1-YR DOMAIN]";
             else if (userText === '3') selectedScope = "PLAN 2: Full Digital & AI Scale Launch [MONTHLY RETAINER]";
-            else if (userText === '4') selectedScope = "PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - SAVE ~32%]";
+            else if (userText === '4') selectedScope = "PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - 20% OFF + FREE 1-YR DOMAIN]";
         } else if (cat === 'app') {
             selectedScope = userText === '1' ? "Starter Mobile MVP" : (userText === '2' ? "Business Pro (Dual Store)" : "Custom Enterprise & Scale");
         } else {
@@ -2335,13 +2342,13 @@ async function processUnifiedMessage(from, rawText, platform) {
             dynamicCategory = "PLAN 1: Local AI & GMB Growth [MONTHLY RETAINER]";
             isComboMatch = true;
         } else if (userText === '2') {
-            dynamicCategory = "PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - SAVE ~30%]";
+            dynamicCategory = "PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - 20% OFF + FREE 1-YR DOMAIN]";
             isComboMatch = true;
         } else if (userText === '3') {
             dynamicCategory = "PLAN 2: Full Digital & AI Scale Launch [MONTHLY RETAINER]";
             isComboMatch = true;
         } else if (userText === '4') {
-            dynamicCategory = "PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - SAVE ~32%]";
+            dynamicCategory = "PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - 20% OFF + FREE 1-YR DOMAIN]";
             isComboMatch = true;
         }
 
@@ -2351,8 +2358,8 @@ async function processUnifiedMessage(from, rawText, platform) {
             userSessions[from].selectedServiceScope = dynamicCategory;
 
             let promptText = (userLang === 'EN')
-                ? (platform === 'telegram' ? `Awesome! Selected: *${dynamicCategory}*. 🚀\n\n⚠️ *Package Note:* Domain Name & Hosting Fees are NOT included in Monthly setups. Annual Passes include Free Hosting & Domain Perks!\n\n📝 Kindly reply with your *Full Name, Email Address, and Mobile Number* (comma separated).` : `Awesome! Selected: *${dynamicCategory}*. 🚀\n\n⚠️ *Package Note:* Domain Name & Hosting Fees are NOT included in Monthly setups. Annual Passes include Free Hosting & Domain Perks!\n\n📝 Kindly reply with your *Full Name* and *Email Address*.`)
-                : (platform === 'telegram' ? `Awesome! Aapne *${dynamicCategory}* select kiya hai. 🚀\n\n⚠️ *Package Note:* Monthly setups me Domain/Hosting included nahi hai. Annual Passes me Free Domain & Premium Hosting perks milte hain!\n\n📝 Ab kripya apna *Full Name, Email ID, aur Mobile Number* reply mein bhej lijiye.` : `Awesome! Aapne *${dynamicCategory}* select kiya hai. 🚀\n\n⚠️ *Package Note:* Monthly setups me Domain/Hosting included nahi hai. Annual Passes me Free Domain & Premium Hosting perks milte hain!\n\n📝 Ab kripya apna *Full Name* aur *Email ID* reply mein bhej lijiye.`);
+                ? (platform === 'telegram' ? `Awesome! Selected: *${dynamicCategory}*. 🚀\n\n⚠️ *Package Note:* Domain Name & Hosting Fees are NOT included in Monthly setups. Annual Passes (₹20k+) include Free 1-Yr Domain + 20% Discount!\n\n📝 Kindly reply with your *Full Name, Email Address, and Mobile Number* (comma separated).` : `Awesome! Selected: *${dynamicCategory}*. 🚀\n\n⚠️ *Package Note:* Domain Name & Hosting Fees are NOT included in Monthly setups. Annual Passes (₹20k+) include Free 1-Yr Domain + 20% Discount!\n\n📝 Kindly reply with your *Full Name* and *Email Address*.`)
+                : (platform === 'telegram' ? `Awesome! Aapne *${dynamicCategory}* select kiya hai. 🚀\n\n⚠️ *Package Note:* Monthly setups me Domain/Hosting included nahi hai. Yearly Plans (₹20,000+) me Free 1-Yr Domain + 20% Discount dono milte hain!\n\n📝 Ab kripya apna *Full Name, Email ID, aur Mobile Number* reply mein bhej lijiye.` : `Awesome! Aapne *${dynamicCategory}* select kiya hai. 🚀\n\n⚠️ *Package Note:* Monthly setups me Domain/Hosting included nahi hai. Yearly Plans (₹20,000+) me Free 1-Yr Domain + 20% Discount dono milte hain!\n\n📝 Ab kripya apna *Full Name* aur *Email ID* reply mein bhej lijiye.`);
 
             return sendUnifiedMessage(from, promptText, platform);
         } else {
@@ -2406,8 +2413,8 @@ async function processUnifiedMessage(from, rawText, platform) {
             if (hasValidIdentity) {
                 userSessions[from].step = 'collect_custom_query_and_time'; 
                 let descriptivePrompt = (userLang === 'EN')
-                    ? `Thank you *${session.clientName}*! 🙏\n\nTo lock a high-converting strategy blueprint, please share your goals in the next reply:\n\n🌐 *1. Website Development:*\nWhich plan fits your vision? (Starter Plan, Basic Plan, Starter Business Site, or E-Commerce Hub?)\n\n🤖 *2. AI-Powered Growth Retainers:*\nWhat precise processes do you want to automate?\n\n🚀 *3. Special Combo Offers:*\nSelect Plan 1 or Plan 2 (Monthly Retainer or 🎁 Annual Pass with ~30% Savings)!\n\n📱 *4. Custom Mobile App Development:*\nStarter MVP ($399), Business Pro ($799), or Enterprise ($1,499)?\n\n🌐 *5. Meta & WhatsApp AI Automation:*\nMeta Suite, WhatsApp Standalone, or Full Omnichannel?`
-                    : `Thank you *${session.clientName}*! 🙏\n\nStrategy call ko 100% efficient banane ke liye, kripya agle message mein niche di gayi details batayein:\n\n🌐 *Type 1:* Agar aapko Website chahiye toh specific type likhein (e.g., Landing Page, Corporate Showcase, ya Online Store).\n\n🤖 *Type 2:* Agar AI Architecture/Bot chahiye toh details likhein (e.g., AI SEO, WhatsApp Lead Bot, Sales Engine).\n\n🚀 *Type 3:* Special Combo Offers (Local AI & GMB Growth / Full Digital Scale Launch - Monthly Retainer ya 🎁 Annual Pass).\n\n📱 *Type 4:* Custom Mobile App Development (Starter MVP ₹24,999, Business Pro ₹49,500, ya Enterprise ₹95,000).\n\n🌐 *Type 5:* Complete Meta & WhatsApp Automation (FB / IG / WhatsApp AI Bots).`;
+                    ? `Thank you *${session.clientName}*! 🙏\n\nTo lock a high-converting strategy blueprint, please share your goals in the next reply:\n\n🌐 *1. Website Development:*\nWhich plan fits your vision? (Starter Plan, Basic Plan, Starter Business Site, or E-Commerce Hub?)\n\n🤖 *2. AI-Powered Growth Retainers:*\nWhat precise processes do you want to automate?\n\n🚀 *3. Special Combo Offers:*\nSelect Plan 1 or Plan 2 (Monthly Retainer or 🎁 Annual Pass with 20% OFF + Free 1-Yr Domain)!\n\n📱 *4. Custom Mobile App Development:*\nStarter MVP ($399), Business Pro ($799), or Enterprise ($1,499)?\n\n🌐 *5. Meta & WhatsApp AI Automation:*\nMeta Suite, WhatsApp Standalone, or Full Omnichannel?`
+                    : `Thank you *${session.clientName}*! 🙏\n\nStrategy call ko 100% efficient banane ke liye, kripya agle message mein niche di gayi details batayein:\n\n🌐 *Type 1:* Agar aapko Website chahiye toh specific type likhein (e.g., Landing Page, Corporate Showcase, ya Online Store).\n\n🤖 *Type 2:* Agar AI Architecture/Bot chahiye toh details likhein (e.g., AI SEO, WhatsApp Lead Bot, Sales Engine).\n\n🚀 *Type 3:* Special Combo Offers (Local AI & GMB Growth / Full Digital Scale Launch - Monthly Retainer ya 🎁 Annual Pass 20k+ with 20% OFF + Free 1-Yr Domain).\n\n📱 *Type 4:* Custom Mobile App Development (Starter MVP ₹24,999, Business Pro ₹49,500, ya Enterprise ₹95,000).\n\n🌐 *Type 5:* Complete Meta & WhatsApp Automation (FB / IG / WhatsApp AI Bots).`;
                 return sendUnifiedMessage(from, descriptivePrompt, platform);
             } else {
                 userSessions[from].step = 'collect_consultation_identity'; 
@@ -2424,8 +2431,8 @@ async function processUnifiedMessage(from, rawText, platform) {
             if (hasValidIdentity) {
                 userSessions[from].step = 'collect_custom_query_and_time'; 
                 let descriptivePrompt = (userLang === 'EN')
-                    ? `Thank you *${session.clientName}*! 🙏\n\nTo lock a high-converting strategy blueprint, please share your goals in the next reply:\n\n🌐 *1. Website Development:*\nWhich plan fits your vision? (Starter Plan, Basic Plan, Starter Business Site, or E-Commerce Hub?)\n\n🤖 *2. AI-Powered Growth Retainers:*\nWhat precise processes do you want to automate?\n\n🚀 *3. Special Combo Offers:*\nSelect Plan 1 or Plan 2 (Monthly Retainer or 🎁 Annual Pass with ~30% Savings)!\n\n📱 *4. Custom Mobile App Development:*\nStarter MVP ($399), Business Pro ($799), or Enterprise ($1,499)?\n\n🌐 *5. Meta & WhatsApp AI Automation:*\nMeta Suite, WhatsApp Standalone, or Full Omnichannel?`
-                    : `Thank you *${session.clientName}*! 🙏\n\nStrategy call ko 100% efficient banane ke liye, kripya agle message mein niche di gayi details batayein:\n\n🌐 *Type 1:* Agar aapko Website chahiye toh specific type likhein (e.g., Landing Page, Corporate Showcase, ya Online Store).\n\n🤖 *Type 2:* Agar AI Architecture/Bot chahiye toh details likhein (e.g., AI SEO, WhatsApp Lead Bot, Sales Engine).\n\n🚀 *Type 3:* Special Combo Offers (Local AI & GMB Growth / Full Digital Scale Launch - Monthly Retainer ya 🎁 Annual Pass).\n\n📱 *Type 4:* Custom Mobile App Development (Starter MVP ₹24,999, Business Pro ₹49,500, ya Enterprise ₹95,000).\n\n🌐 *Type 5:* Complete Meta & WhatsApp Automation (FB / IG / WhatsApp AI Bots).`;
+                    ? `Thank you *${session.clientName}*! 🙏\n\nTo lock a high-converting strategy blueprint, please share your goals in the next reply:\n\n🌐 *1. Website Development:*\nWhich plan fits your vision? (Starter Plan, Basic Plan, Starter Business Site, or E-Commerce Hub?)\n\n🤖 *2. AI-Powered Growth Retainers:*\nWhat precise processes do you want to automate?\n\n🚀 *3. Special Combo Offers:*\nSelect Plan 1 or Plan 2 (Monthly Retainer or 🎁 Annual Pass with 20% OFF + Free 1-Yr Domain)!\n\n📱 *4. Custom Mobile App Development:*\nStarter MVP ($399), Business Pro ($799), or Enterprise ($1,499)?\n\n🌐 *5. Meta & WhatsApp AI Automation:*\nMeta Suite, WhatsApp Standalone, or Full Omnichannel?`
+                    : `Thank you *${session.clientName}*! 🙏\n\nStrategy call ko 100% efficient banane ke liye, kripya agle message mein niche di gayi details batayein:\n\n🌐 *Type 1:* Agar aapko Website chahiye toh specific type likhein (e.g., Landing Page, Corporate Showcase, ya Online Store).\n\n🤖 *Type 2:* Agar AI Architecture/Bot chahiye toh details likhein (e.g., AI SEO, WhatsApp Lead Bot, Sales Engine).\n\n🚀 *Type 3:* Special Combo Offers (Local AI & GMB Growth / Full Digital Scale Launch - Monthly Retainer ya 🎁 Annual Pass 20k+ with 20% OFF + Free 1-Yr Domain).\n\n📱 *Type 4:* Custom Mobile App Development (Starter MVP ₹24,999, Business Pro ₹49,500, ya Enterprise ₹95,000).\n\n🌐 *Type 5:* Complete Meta & WhatsApp Automation (FB / IG / WhatsApp AI Bots).`;
                 return sendUnifiedMessage(from, descriptivePrompt, platform);
             } else {
                 userSessions[from].step = 'collect_consultation_identity'; 
@@ -2464,8 +2471,8 @@ async function processUnifiedMessage(from, rawText, platform) {
 
         if (!isCoreMatch) {
             let replyText = (userSessions[from].lang === 'EN')
-                ? "Hello! Welcome to *Shahid Creatives*. 🚀\n🪔 *Diwali Dhamaka: Claim Flat 30% OFF with Code DIWALI26 (Valid till 11 Nov)*\n\nPlease select an option number to proceed:\n\n1️⃣ *Web & Mobile Development Tiers*\n2️⃣ *AI-Powered Growth Retainers*\n3️⃣ *🚀 Special Combo Offers (🔥 HOT)*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives' Team (Direct Consultation)*\n6️⃣ *🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)*\n7️⃣ *📱 Custom Mobile App Development (iOS & Android)*\n8️⃣ *🌐 Complete Meta & WhatsApp AI Automation (FB / IG / WA)*"
-                : "Hello! Welcome to *Shahid Creatives*. 🚀\n🪔 *Diwali Dhamaka: Claim Flat 30% OFF with Code DIWALI26 (Valid till 11 Nov)*\n\nKoshish ko aage badhane ke liye ek option number reply kijiye:\n\n1️⃣ *Web & Mobile Development Tiers*\n2️⃣ *AI-Powered Growth Retainers*\n3️⃣ *🚀 Special Combo Offers (🔥 HOT)*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives ki Team (Direct Consultation)*\n6️⃣ *🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)*\n7️⃣ *📱 Custom Mobile App Development (iOS & Android)*\n8️⃣ *🌐 Complete Meta & WhatsApp AI Automation (FB / IG / WA)*";
+                ? "Hello! Welcome to *Shahid Creatives*. 🚀\n🎉 *Special Offer: Claim Flat 20% OFF with Code SPECIAL20 + Free 1-Yr Domain on 20k+ Yearly Plans (Valid till 30 Nov)*\n\nPlease select an option number to proceed:\n\n1️⃣ *Web & Mobile Development Tiers*\n2️⃣ *AI-Powered Growth Retainers*\n3️⃣ *🚀 Special Combo Offers (🔥 HOT)*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives' Team (Direct Consultation)*\n6️⃣ *🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)*\n7️⃣ *📱 Custom Mobile App Development (iOS & Android)*\n8️⃣ *🌐 Complete Meta & WhatsApp AI Automation (FB / IG / WA)*"
+                : "Hello! Welcome to *Shahid Creatives*. 🚀\n🎉 *Special Offer: Claim Flat 20% OFF with Code SPECIAL20 + Yearly 20k+ Plans me Free 1-Yr Domain (Valid till 30 Nov)*\n\nKoshish ko aage badhane ke liye ek option number reply kijiye:\n\n1️⃣ *Web & Mobile Development Tiers*\n2️⃣ *AI-Powered Growth Retainers*\n3️⃣ *🚀 Special Combo Offers (🔥 HOT)*\n4️⃣ *💳 Direct Booking & Token System*\n5️⃣ *👤 Talk to Shahid Creatives ki Team (Direct Consultation)*\n6️⃣ *🎁 3-Day Free VIP Demo: Growth Triad (Zero Risk)*\n7️⃣ *📱 Custom Mobile App Development (iOS & Android)*\n8️⃣ *🌐 Complete Meta & WhatsApp AI Automation (FB / IG / WA)*";
             return sendUnifiedMessage(from, replyText, platform);
         }
 
@@ -2482,8 +2489,8 @@ async function processUnifiedMessage(from, rawText, platform) {
         } else if (targetMenuRoute === '3') {
             userSessions[from].step = 'process_combo_menu';
             return sendUnifiedMessage(from, (userSessions[from].lang === 'EN')
-                ? "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\nPlease select your preferred Special Combo Package & Billing Cycle by replying with 1, 2, 3, or 4:\n\n1️⃣ *PLAN 1: Local AI & GMB Growth [MONTHLY]*\n• Price: Setup $69 + $39/mo\n\n2️⃣ *PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - SAVE ~25%]*\n• Price: $399/Year (Save $138)\n• Bonus: Free Domain + Citation Blast + VIP Support\n\n3️⃣ *PLAN 2: Full Digital & AI Scale Launch [MONTHLY]*\n• Price: Setup $169 + $79/mo\n\n4️⃣ *PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - SAVE ~32%]*\n• Price: $799/Year (Save $318)\n• Bonus: Free Premium Hosting + Domain + 12 SEO Blogs + AI CRM Sync\n\n⚠️ *Package Note:* Domain & Hosting Fees are NOT included in Monthly setups. Annual Passes include Free Hosting & Domain Perks!"
-                : "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\nKripya apna preferred Special Combo Package aur Billing Cycle chunne ke liye 1, 2, 3 ya 4 reply karein:\n\n1️⃣ *PLAN 1: Local AI & GMB Growth [MONTHLY RETAINER]*\n• Price: Setup ₹4,999 + Monthly ₹2,499/mo\n\n2️⃣ *PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - SAVE ~30%]*\n• Price: ₹24,999/Year (Bachat ₹10,000)\n• Bonus Perks: Free 1-Yr Domain + Citation Blast + VIP Support\n\n3️⃣ *PLAN 2: Full Digital & AI Scale Launch [MONTHLY RETAINER]*\n• Price: Setup ₹12,999 + Monthly ₹4,999/mo\n\n4️⃣ *PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - SAVE ~32%]*\n• Price: ₹49,999/Year (Bachat ₹23,000)\n• Bonus Perks: Free Premium Hosting + Domain + 12 SEO Blogs + AI WhatsApp CRM Sync\n\n⚠️ *Package Note:* Monthly packages me Domain & Hosting Fees included nahi hai. Annual Pass me Free Hosting aur Domain Perks shamil hain!", platform);
+                ? "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\nPlease select your preferred Special Combo Package & Billing Cycle by replying with 1, 2, 3, or 4:\n\n1️⃣ *PLAN 1: Local AI & GMB Growth [MONTHLY]*\n• Price: Setup $69 (20% OFF via SPECIAL20) + $39/mo\n\n2️⃣ *PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - 20% OFF + FREE 1-YR DOMAIN]*\n• Price: $399/Year (20% OFF via SPECIAL20)\n• Bonus: Free 1-Yr Domain + Citation Blast + VIP Support\n\n3️⃣ *PLAN 2: Full Digital & AI Scale Launch [MONTHLY]*\n• Price: Setup $169 (20% OFF via SPECIAL20) + $79/mo\n\n4️⃣ *PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - 20% OFF + FREE 1-YR DOMAIN]*\n• Price: $799/Year (20% OFF via SPECIAL20)\n• Bonus: Free Premium Hosting + 1-Yr Domain + 12 SEO Blogs + AI CRM Sync\n\n⚠️ *Package Note:* Domain & Hosting Fees are NOT included in Monthly setups. Annual Passes (₹20k+) include Free 1-Yr Domain + 20% Discount!"
+                : "🚀 *SPECIAL COMBO OFFERS (🔥 HOT)*\n\nKripya apna preferred Special Combo Package aur Billing Cycle chunne ke liye 1, 2, 3 ya 4 reply karein:\n\n1️⃣ *PLAN 1: Local AI & GMB Growth [MONTHLY RETAINER]*\n• Price: Setup ₹4,999 (20% OFF via SPECIAL20) + Monthly ₹2,499/mo\n\n2️⃣ *PLAN 1: Local AI & GMB Growth 🎁 [ANNUAL PASS - 20% OFF + FREE 1-YR DOMAIN]*\n• Price: ₹24,999/Year (20% OFF via SPECIAL20 + Free 1-Yr Domain)\n• Bonus Perks: Free 1-Yr Domain + Citation Blast + VIP Support\n\n3️⃣ *PLAN 2: Full Digital & AI Scale Launch [MONTHLY RETAINER]*\n• Price: Setup ₹12,999 (20% OFF via SPECIAL20) + Monthly ₹4,999/mo\n\n4️⃣ *PLAN 2: Full Digital & AI Scale Launch 🎁 [ANNUAL PASS - 20% OFF + FREE 1-YR DOMAIN]*\n• Price: ₹49,999/Year (20% OFF via SPECIAL20 + Free 1-Yr Domain)\n• Bonus Perks: Free Premium Hosting + 1-Yr Domain + 12 SEO Blogs + AI WhatsApp CRM Sync\n\n⚠️ *Package Note:* Monthly packages me Domain & Hosting Fees included nahi hai. Yearly Plans (₹20,000+) me Free 1-Yr Domain aur 20% Discount shamil hain!", platform);
         } else if (targetMenuRoute === '4') {
             userSessions[from].step = 'process_requirement_menu';
             return sendUnifiedMessage(from, (userSessions[from].lang === 'EN')
@@ -2519,8 +2526,8 @@ async function processUnifiedMessage(from, rawText, platform) {
             const isUSDTrack = (userSessions[from].lang === 'EN');
 
             const menu8Text = isUSDTrack
-                ? "🌐 *COMPLETE META & WHATSAPP AI AUTOMATION (USD PLANS)*\n_(+20% Extra + 3.5% PG Fee included | 🪔 Flat 30% OFF via DIWALI26 till 11 Nov)_\n\n👉 Reply with an option number (*1 to 9*):\n\n🔹 *Meta Business (FB / IG):*\n1️⃣ *Starter AI Suite (FB / IG)* - Setup: $56 (Was $70) | $28/mo\n2️⃣ *Growth AI Suite (FB + IG Dual)* - Setup: $112 (Was $140) | $56/mo\n3️⃣ *Pro AI Suite (Multi-Account & CRM)* - Setup: $225 (Was $280) | $112/mo\n\n🔹 *WhatsApp Business (Standalone):*\n4️⃣ *WhatsApp Starter* - Setup: $22 (Was $28) | $56/mo\n5️⃣ *WhatsApp Growth* - Setup: $45 (Was $56) | $112/mo\n6️⃣ *WhatsApp Enterprise (Gemini AI)* - Setup: $79 (Was $98) | $211/mo\n\n🔹 *Complete Meta Suite (Omnichannel WA+IG+FB):*\n7️⃣ *Starter Complete* - Setup: $101 (Was $126) | $35/mo\n8️⃣ *Growth Complete* - Setup: $180 (Was $225) | $70/mo\n9️⃣ *Business Pro Complete* - Setup: $338 (Was $423) | $127/mo"
-                : "🌐 *COMPLETE META & WHATSAPP AI AUTOMATION (INR PLANS)*\n_(18% GST + 2.5% PG Fee | 🪔 Code DIWALI26 Applied - Flat 30% OFF till 11 Nov)_\n\n👉 Reply with an option number (*1 se 9*):\n\n🔹 *Meta Business (FB / IG):*\n1️⃣ *Starter AI Suite (FB / IG)* - Setup: ₹3,999 (Was ₹4,999) | ₹1,999/mo\n2️⃣ *Growth AI Suite (FB + IG Dual)* - Setup: ₹7,999 (Was ₹9,999) | ₹3,999/mo\n3️⃣ *Pro AI Suite (Multi-Account & CRM)* - Setup: ₹15,999 (Was ₹19,999) | ₹7,999/mo\n\n🔹 *WhatsApp Business (Standalone):*\n4️⃣ *WhatsApp Starter* - Setup: ₹1,599 (Was ₹1,999) | ₹3,999/mo\n5️⃣ *WhatsApp Growth* - Setup: ₹3,199 (Was ₹3,999) | ₹7,999/mo\n6️⃣ *WhatsApp Enterprise (Gemini AI)* - Setup: ₹5,599 (Was ₹6,999) | ₹14,999/mo\n\n🔹 *Complete Meta Suite (Omnichannel WA+IG+FB):*\n7️⃣ *Starter Complete* - Setup: ₹7,199 (Was ₹8,999) | ₹2,499/mo\n8️⃣ *Growth Complete* - Setup: ₹12,799 (Was ₹15,999) | ₹4,999/mo\n9️⃣ *Business Pro Complete* - Setup: ₹23,999 (Was ₹29,999) | ₹8,999/mo";
+                ? "🌐 *COMPLETE META & WHATSAPP AI AUTOMATION (USD PLANS)*\n_(+20% Extra + 3.5% PG Fee included | 🎉 Flat 20% OFF via SPECIAL20 till 30 Nov)_\n\n👉 Reply with an option number (*1 to 9*):\n\n🔹 *Meta Business (FB / IG):*\n1️⃣ *Starter AI Suite (FB / IG)* - Setup: $56 (Was $70) | $28/mo\n2️⃣ *Growth AI Suite (FB + IG Dual)* - Setup: $112 (Was $140) | $56/mo\n3️⃣ *Pro AI Suite (Multi-Account & CRM)* - Setup: $225 (Was $280) | $112/mo\n\n🔹 *WhatsApp Business (Standalone):*\n4️⃣ *WhatsApp Starter* - Setup: $22 (Was $28) | $56/mo\n5️⃣ *WhatsApp Growth* - Setup: $45 (Was $56) | $112/mo\n6️⃣ *WhatsApp Enterprise (Gemini AI)* - Setup: $79 (Was $98) | $211/mo\n\n🔹 *Complete Meta Suite (Omnichannel WA+IG+FB):*\n7️⃣ *Starter Complete* - Setup: $101 (Was $126) | $35/mo\n8️⃣ *Growth Complete* - Setup: $180 (Was $225) | $70/mo\n9️⃣ *Business Pro Complete* - Setup: $338 (Was $423) | $127/mo"
+                : "🌐 *COMPLETE META & WHATSAPP AI AUTOMATION (INR PLANS)*\n_(18% GST + 2.5% PG Fee | 🎉 Code SPECIAL20 Applied - Flat 20% OFF till 30 Nov)_\n\n👉 Reply with an option number (*1 se 9*):\n\n🔹 *Meta Business (FB / IG):*\n1️⃣ *Starter AI Suite (FB / IG)* - Setup: ₹3,999 (Was ₹4,999) | ₹1,999/mo\n2️⃣ *Growth AI Suite (FB + IG Dual)* - Setup: ₹7,999 (Was ₹9,999) | ₹3,999/mo\n3️⃣ *Pro AI Suite (Multi-Account & CRM)* - Setup: ₹15,999 (Was ₹19,999) | ₹7,999/mo\n\n🔹 *WhatsApp Business (Standalone):*\n4️⃣ *WhatsApp Starter* - Setup: ₹1,599 (Was ₹1,999) | ₹3,999/mo\n5️⃣ *WhatsApp Growth* - Setup: ₹3,199 (Was ₹3,999) | ₹7,999/mo\n6️⃣ *WhatsApp Enterprise (Gemini AI)* - Setup: ₹5,599 (Was ₹6,999) | ₹14,999/mo\n\n🔹 *Complete Meta Suite (Omnichannel WA+IG+FB):*\n7️⃣ *Starter Complete* - Setup: ₹7,199 (Was ₹8,999) | ₹2,499/mo\n8️⃣ *Growth Complete* - Setup: ₹12,799 (Was ₹15,999) | ₹4,999/mo\n9️⃣ *Business Pro Complete* - Setup: ₹23,999 (Was ₹29,999) | ₹8,999/mo";
 
             let tgOptions = null;
             if (platform === 'telegram') {
@@ -2556,12 +2563,13 @@ async function finalizeConsultationLead(from, textInput, res, platform) {
     const matchedBasePriceStr = getBasePriceByPlan(textInput, isUSDTrack);
     const matchedBasePrice = parseFloat(matchedBasePriceStr);
     
-    const savingAmount = Math.round(matchedBasePrice * 0.30);
+    const savingAmount = Math.round(matchedBasePrice * 0.20);
     const discountedBasePrice = matchedBasePrice - savingAmount;
     const finalCalculatedPrice = calculateTotalPayable(discountedBasePrice, isUSDTrack);
     
     const currency = isUSDTrack ? '$' : '₹';
     const taxLabel = isUSDTrack ? 'incl Gateway Fees' : 'incl GST';
+    const isYearly20kPlus = (textInput.toLowerCase().includes("annual") || textInput.toLowerCase().includes("year")) && (!isUSDTrack ? matchedBasePrice >= 20000 : matchedBasePrice >= 250);
 
     let apptTimestamp = null;
     const dateObjCons = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
@@ -2679,7 +2687,7 @@ async function finalizeConsultationLead(from, textInput, res, platform) {
     const optionsDate = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' };
     let displayAdminDate = new Date(apptTimestamp).toLocaleString('en-IN', optionsDate);
 
-    const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* ${displayPhone} ${platform === 'telegram' ? '(Telegram)' : '(WhatsApp)'}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details:* ${displayAdminDate} (Input: ${dynamicSlot})\n💬 *User Stated Objectives:* "${textInput}"\n💵 *Base Price:* ${currency}${matchedBasePrice}\n🔥 *Discount Applied:* ${currency}${savingAmount} (DIWALI26 - 30% OFF)\n💰 *Calculated Price:* ${currency}${finalCalculatedPrice} (${taxLabel})\n\n🤖 *Status:* Live details captured securely!`;
+    const comprehensiveAdminAlert = `🚨 *PRE-QUALIFIED B2B CONSULTATION LEAD!* 🚨\n\n📱 *Client Contact:* ${displayPhone} ${platform === 'telegram' ? '(Telegram)' : '(WhatsApp)'}\n💬 *Telegram Chat ID:* ${platform === 'telegram' ? from : 'N/A'}\n👤 *Name:* ${cleanName}\n✉️ *Email:* ${clientEmail}\n📝 *Slot Details:* ${displayAdminDate} (Input: ${dynamicSlot})\n💬 *User Stated Objectives:* "${textInput}"\n💵 *Base Price:* ${currency}${matchedBasePrice}\n🔥 *Discount Applied:* ${currency}${savingAmount} (SPECIAL20 - 20% OFF${isYearly20kPlus ? ' + Free 1-Yr Domain' : ''})\n💰 *Calculated Price:* ${currency}${finalCalculatedPrice} (${taxLabel})\n\n🤖 *Status:* Live details captured securely!`;
     
     const WHATSAPP_ADMIN_NUMBER = process.env.WHATSAPP_ADMIN_NUMBER || "917529839762";
     sendWhatsAppMessage(WHATSAPP_ADMIN_NUMBER, comprehensiveAdminAlert);
@@ -2715,7 +2723,7 @@ async function finalizeConsultationLead(from, textInput, res, platform) {
             discussion_notes: `*User Stated Objectives:* "${textInput}"\n\n${comprehensiveAdminAlert}`, 
             project_scope: textInput, 
             calculated_price: finalCalculatedPrice,
-            coupon_code: "DIWALI26"
+            coupon_code: "SPECIAL20"
         });
     } catch (apiErr) { console.error("Dashboard parameters execution failure handler."); }
 
